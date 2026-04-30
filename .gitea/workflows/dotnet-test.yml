@@ -1,0 +1,22 @@
+name: .NET Build And Test
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest-dotnet
+    strategy:
+      matrix:
+        configuration: [Debug, Release]
+
+    steps:
+    - uses: actions/checkout@v3
+    - name: Restore dependencies
+      run: dotnet restore -v n /p:EnableWindowsTargeting=true
+    - name: Build
+      run: dotnet build --configuration ${{ matrix.configuration }} --no-restore /p:EnableWindowsTargeting=true
+    - name: Test
+      run: dotnet test --configuration ${{ matrix.configuration }} --no-build --verbosity normal /p:EnableWindowsTargeting=true
