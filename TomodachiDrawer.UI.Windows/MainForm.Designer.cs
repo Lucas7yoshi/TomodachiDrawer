@@ -32,8 +32,8 @@
             previewGroupBox = new GroupBox();
             DitheringComboBox = new ComboBox();
             previewPictureBox = new PixelBox();
-            label2 = new Label();
-            label1 = new Label();
+            DitheringLabel = new Label();
+            ColorMatcherLabel = new Label();
             ColorMatcherComboBox = new ComboBox();
             openImageFileDialog = new OpenFileDialog();
             inputGroupBox = new GroupBox();
@@ -43,8 +43,8 @@
             InGameSetupExplanation = new Button();
             OutputExplanationButton = new Button();
             ExportRP2040Button = new Button();
-            label6 = new Label();
-            label5 = new Label();
+            OutputWriteImageLabel = new Label();
+            OutputFlashFirmwareLabel = new Label();
             FlashBaseFirmwareButton = new Button();
             OutputRP2040StatusLabel = new Label();
             imageList1 = new ImageList(components);
@@ -54,12 +54,12 @@
             debugGroupBox = new GroupBox();
             OutputSaveButton = new Button();
             TSPTimeLimitUpDown = new NumericUpDown();
-            label3 = new Label();
+            TSPSolverTimeLimitLabel = new Label();
             routingGroupBox = new GroupBox();
             TSPSolverTimeLimitHelpButton = new Button();
-            label7 = new Label();
+            TSPSolverSecondsLabel = new Label();
             CrappyLogBox = new TextBox();
-            groupBox1 = new GroupBox();
+            logGroupBox = new GroupBox();
             previewGroupBox.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)previewPictureBox).BeginInit();
             inputGroupBox.SuspendLayout();
@@ -67,15 +67,15 @@
             debugGroupBox.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)TSPTimeLimitUpDown).BeginInit();
             routingGroupBox.SuspendLayout();
-            groupBox1.SuspendLayout();
+            logGroupBox.SuspendLayout();
             SuspendLayout();
             // 
             // previewGroupBox
             // 
             previewGroupBox.Controls.Add(DitheringComboBox);
             previewGroupBox.Controls.Add(previewPictureBox);
-            previewGroupBox.Controls.Add(label2);
-            previewGroupBox.Controls.Add(label1);
+            previewGroupBox.Controls.Add(DitheringLabel);
+            previewGroupBox.Controls.Add(ColorMatcherLabel);
             previewGroupBox.Controls.Add(ColorMatcherComboBox);
             previewGroupBox.Location = new Point(382, 12);
             previewGroupBox.Name = "previewGroupBox";
@@ -102,23 +102,23 @@
             previewPictureBox.TabIndex = 4;
             previewPictureBox.TabStop = false;
             // 
-            // label2
+            // DitheringLabel
             // 
-            label2.AutoSize = true;
-            label2.Location = new Point(271, 19);
-            label2.Name = "label2";
-            label2.Size = new Size(59, 15);
-            label2.TabIndex = 3;
-            label2.Text = "Dithering:";
+            DitheringLabel.AutoSize = true;
+            DitheringLabel.Location = new Point(271, 19);
+            DitheringLabel.Name = "DitheringLabel";
+            DitheringLabel.Size = new Size(59, 15);
+            DitheringLabel.TabIndex = 3;
+            DitheringLabel.Text = "Dithering:";
             // 
-            // label1
+            // ColorMatcherLabel
             // 
-            label1.AutoSize = true;
-            label1.Location = new Point(6, 19);
-            label1.Name = "label1";
-            label1.Size = new Size(86, 15);
-            label1.TabIndex = 2;
-            label1.Text = "Color Matcher:";
+            ColorMatcherLabel.AutoSize = true;
+            ColorMatcherLabel.Location = new Point(6, 19);
+            ColorMatcherLabel.Name = "ColorMatcherLabel";
+            ColorMatcherLabel.Size = new Size(86, 15);
+            ColorMatcherLabel.TabIndex = 2;
+            ColorMatcherLabel.Text = "Color Matcher:";
             // 
             // ColorMatcherComboBox
             // 
@@ -163,8 +163,8 @@
             outputGroupBox.Controls.Add(InGameSetupExplanation);
             outputGroupBox.Controls.Add(OutputExplanationButton);
             outputGroupBox.Controls.Add(ExportRP2040Button);
-            outputGroupBox.Controls.Add(label6);
-            outputGroupBox.Controls.Add(label5);
+            outputGroupBox.Controls.Add(OutputWriteImageLabel);
+            outputGroupBox.Controls.Add(OutputFlashFirmwareLabel);
             outputGroupBox.Controls.Add(FlashBaseFirmwareButton);
             outputGroupBox.Controls.Add(OutputRP2040StatusLabel);
             outputGroupBox.Location = new Point(12, 463);
@@ -206,23 +206,23 @@
             ExportRP2040Button.UseVisualStyleBackColor = true;
             ExportRP2040Button.Click += ExportRP2040Button_Click;
             // 
-            // label6
+            // OutputWriteImageLabel
             // 
-            label6.AutoSize = true;
-            label6.Location = new Point(239, 95);
-            label6.Name = "label6";
-            label6.Size = new Size(71, 15);
-            label6.TabIndex = 9;
-            label6.Text = "Write Image";
+            OutputWriteImageLabel.AutoSize = true;
+            OutputWriteImageLabel.Location = new Point(239, 95);
+            OutputWriteImageLabel.Name = "OutputWriteImageLabel";
+            OutputWriteImageLabel.Size = new Size(71, 15);
+            OutputWriteImageLabel.TabIndex = 9;
+            OutputWriteImageLabel.Text = "Write Image";
             // 
-            // label5
+            // OutputFlashFirmwareLabel
             // 
-            label5.AutoSize = true;
-            label5.Location = new Point(11, 95);
-            label5.Name = "label5";
-            label5.Size = new Size(117, 15);
-            label5.TabIndex = 8;
-            label5.Text = "Flash Firmware Once";
+            OutputFlashFirmwareLabel.AutoSize = true;
+            OutputFlashFirmwareLabel.Location = new Point(11, 95);
+            OutputFlashFirmwareLabel.Name = "OutputFlashFirmwareLabel";
+            OutputFlashFirmwareLabel.Size = new Size(117, 15);
+            OutputFlashFirmwareLabel.TabIndex = 8;
+            OutputFlashFirmwareLabel.Text = "Flash Firmware Once";
             // 
             // FlashBaseFirmwareButton
             // 
@@ -308,21 +308,21 @@
             TSPTimeLimitUpDown.TabIndex = 7;
             TSPTimeLimitUpDown.Value = new decimal(new int[] { 5, 0, 0, 65536 });
             // 
-            // label3
+            // TSPSolverTimeLimitLabel
             // 
-            label3.AutoSize = true;
-            label3.Location = new Point(6, 19);
-            label3.Name = "label3";
-            label3.Size = new Size(122, 15);
-            label3.TabIndex = 8;
-            label3.Text = "TSP Solver Time Limit";
+            TSPSolverTimeLimitLabel.AutoSize = true;
+            TSPSolverTimeLimitLabel.Location = new Point(6, 19);
+            TSPSolverTimeLimitLabel.Name = "TSPSolverTimeLimitLabel";
+            TSPSolverTimeLimitLabel.Size = new Size(122, 15);
+            TSPSolverTimeLimitLabel.TabIndex = 8;
+            TSPSolverTimeLimitLabel.Text = "TSP Solver Time Limit";
             // 
             // routingGroupBox
             // 
             routingGroupBox.Controls.Add(TSPSolverTimeLimitHelpButton);
-            routingGroupBox.Controls.Add(label7);
+            routingGroupBox.Controls.Add(TSPSolverSecondsLabel);
             routingGroupBox.Controls.Add(TSPTimeLimitUpDown);
-            routingGroupBox.Controls.Add(label3);
+            routingGroupBox.Controls.Add(TSPSolverTimeLimitLabel);
             routingGroupBox.Location = new Point(12, 78);
             routingGroupBox.Name = "routingGroupBox";
             routingGroupBox.Size = new Size(358, 89);
@@ -340,14 +340,14 @@
             TSPSolverTimeLimitHelpButton.UseVisualStyleBackColor = true;
             TSPSolverTimeLimitHelpButton.Click += TSPSolverTimeLimitHelpButton_Click;
             // 
-            // label7
+            // TSPSolverSecondsLabel
             // 
-            label7.AutoSize = true;
-            label7.Location = new Point(260, 19);
-            label7.Name = "label7";
-            label7.Size = new Size(50, 15);
-            label7.TabIndex = 10;
-            label7.Text = "seconds";
+            TSPSolverSecondsLabel.AutoSize = true;
+            TSPSolverSecondsLabel.Location = new Point(260, 19);
+            TSPSolverSecondsLabel.Name = "TSPSolverSecondsLabel";
+            TSPSolverSecondsLabel.Size = new Size(50, 15);
+            TSPSolverSecondsLabel.TabIndex = 10;
+            TSPSolverSecondsLabel.Text = "seconds";
             // 
             // CrappyLogBox
             // 
@@ -360,15 +360,15 @@
             CrappyLogBox.Size = new Size(352, 262);
             CrappyLogBox.TabIndex = 10;
             // 
-            // groupBox1
+            // logGroupBox
             // 
-            groupBox1.Controls.Add(CrappyLogBox);
-            groupBox1.Location = new Point(12, 173);
-            groupBox1.Name = "groupBox1";
-            groupBox1.Size = new Size(358, 284);
-            groupBox1.TabIndex = 11;
-            groupBox1.TabStop = false;
-            groupBox1.Text = "Log";
+            logGroupBox.Controls.Add(CrappyLogBox);
+            logGroupBox.Location = new Point(12, 173);
+            logGroupBox.Name = "logGroupBox";
+            logGroupBox.Size = new Size(358, 284);
+            logGroupBox.TabIndex = 11;
+            logGroupBox.TabStop = false;
+            logGroupBox.Text = "Log";
             // 
             // MainForm
             // 
@@ -376,7 +376,7 @@
             AutoScaleDimensions = new SizeF(7F, 15F);
             AutoScaleMode = AutoScaleMode.Font;
             ClientSize = new Size(1156, 612);
-            Controls.Add(groupBox1);
+            Controls.Add(logGroupBox);
             Controls.Add(routingGroupBox);
             Controls.Add(debugGroupBox);
             Controls.Add(outputGroupBox);
@@ -397,16 +397,16 @@
             ((System.ComponentModel.ISupportInitialize)TSPTimeLimitUpDown).EndInit();
             routingGroupBox.ResumeLayout(false);
             routingGroupBox.PerformLayout();
-            groupBox1.ResumeLayout(false);
-            groupBox1.PerformLayout();
+            logGroupBox.ResumeLayout(false);
+            logGroupBox.PerformLayout();
             ResumeLayout(false);
         }
 
         #endregion
         private GroupBox previewGroupBox;
         private ComboBox ColorMatcherComboBox;
-        private Label label1;
-        private Label label2;
+        private Label ColorMatcherLabel;
+        private Label DitheringLabel;
         private OpenFileDialog openImageFileDialog;
         private GroupBox inputGroupBox;
         private Button OpenImageButton;
@@ -420,19 +420,19 @@
         private GroupBox debugGroupBox;
         private ComboBox DitheringComboBox;
         private NumericUpDown TSPTimeLimitUpDown;
-        private Label label3;
+        private Label TSPSolverTimeLimitLabel;
         private GroupBox routingGroupBox;
         private Button TSPSolverTimeLimitHelpButton;
-        private Label label7;
+        private Label TSPSolverSecondsLabel;
         private Button FlashBaseFirmwareButton;
         private Label OutputRP2040StatusLabel;
         private Button OutputSaveButton;
         private TextBox CrappyLogBox;
         private Button ExportRP2040Button;
-        private Label label6;
-        private Label label5;
+        private Label OutputWriteImageLabel;
+        private Label OutputFlashFirmwareLabel;
         private Button OutputExplanationButton;
         private Button InGameSetupExplanation;
-        private GroupBox groupBox1;
+        private GroupBox logGroupBox;
     }
 }
