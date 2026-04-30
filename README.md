@@ -28,6 +28,7 @@ Initial setup requires a few steps, made easier by the windows UI.
 9. Select "Export to RP2040" which will write it directly to the RP2040.
 10. Unplug the RP2040 and connect it to your switch (Note: Ensure "Wired Pro Controller Communication" is enabled in your settings!)
     - Note: you must have Palette house open, on "pro" mode, the cursor in the top left of where you want it drawn, zoomed out, and your top colour to be set to black.
+11. Upon completion, the RGB LED on the Pi will go to a rainbow. If you disconnect it and reconnect it, it will draw it again. Connect to your PC to change the image!
 	
 
 ## Contributing
