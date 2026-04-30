@@ -33,7 +33,6 @@ namespace TomodachiDrawer.UI.Windows
                 while (true)
                 {
                     var rp2040Path = UF2Flasher.FindRP2040Drive();
-                    Console.WriteLine(rp2040Path);
                     if (rp2040Path != null)
                     {
                         // Update the UI with the found path
@@ -75,9 +74,32 @@ namespace TomodachiDrawer.UI.Windows
             backgroundWorker.RunWorkerAsync();
         }
 
+        private void LoadImage(string path)
+        {
+            if (File.Exists(path))
+            {
+                var img = SKBitmap.Decode(path);
+                if (img.Width > 256 || img.Height > 256)
+                {
+                    MessageBox.Show($"{Path.GetFileName(path)} is too big! Max of 256x256.", "Image too big", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    return;
+                }
+                else
+                {
+                    currentImagePath = path;
+                    ImagePathBox.Text = path;
+                    UpdatePreview();
+                    Log($"Loaded image: {Path.GetFileName(path)} ({img.Width}x{img.Height})");
+                }
+            }
+            else
+            {
+                Log($"File does not exist..? {path}");
+            }
+        }
+
         private void UpdatePreview()
         {
-            // may be customizable in the future so we instantiate.
             var pal = new ColourPalette(new DummySink());
             var selectedQuantizer = ColorMatcherComboBox.SelectedItem?.ToString();
             if (selectedQuantizer == null)
@@ -89,7 +111,7 @@ namespace TomodachiDrawer.UI.Windows
 
             var previewBitmap = preview.ToBitmap();
             previewPictureBox.Image = previewBitmap;
-            CrappyLogBox.AppendText($"Updated preview for {Path.GetFileName(currentImagePath)} using {selectedQuantizer}\r\n");
+            Log($"Updated preview for {Path.GetFileName(currentImagePath)} using {selectedQuantizer}");
         }
 
         private void OpenImageButton_Click(object sender, EventArgs e)
@@ -99,20 +121,22 @@ namespace TomodachiDrawer.UI.Windows
             if (Control.ModifierKeys == Keys.Shift)
             {
                 //string filePath = @"E:\Downloads\fox_real_256x256.png";
-                string filePath = @"E:\Downloads\32x32_fox.png";
-                currentImagePath = filePath;
-                ImagePathBox.Text = filePath;
-                UpdatePreview();
+                //string filePath = @"E:\Downloads\32x32_fox.png";
+                //currentImagePath = filePath;
+                //ImagePathBox.Text = filePath;
+                //UpdatePreview();
+                LoadImage(@"E:\Downloads\32x32_fox.png");
                 return;
             }
 #endif
             if (openImageFileDialog.ShowDialog() == DialogResult.OK)
             {
-                string filePath = openImageFileDialog.FileName;
-                currentImagePath = filePath;
-                ImagePathBox.Text = filePath;
+                //string filePath = openImageFileDialog.FileName;
+                //currentImagePath = filePath;
+                //ImagePathBox.Text = filePath;
 
-                UpdatePreview();
+                //UpdatePreview();
+                LoadImage(openImageFileDialog.FileName);
             }
         }
 
@@ -134,8 +158,6 @@ namespace TomodachiDrawer.UI.Windows
                 OutputSaveButton.Enabled = false;
                 CrappyLogBox.AppendText("Starting export...\r\n");
 
-
-
                 await Task.Run(async () =>
                 {
                     var fileOutput = new FileControllerSink(outputPath);
@@ -150,25 +172,6 @@ namespace TomodachiDrawer.UI.Windows
             }
         }
 
-        //        private void OutputButton_Click(object sender, EventArgs e)
-        //        {
-        //            var fileOutput = new FileControllerSink(OutputPathTextBox.Text);
-        //            var drawer = new CanvasDrawer(fileOutput);
-        //            drawer.ConnectAndConfirmController();
-        //            drawer
-        //                .DrawImage(
-        //                    SKBitmap.Decode(currentImagePath),
-        //                    ColorMatcherComboBox.SelectedItem.ToString(),
-        //                    (float)TSPTimeLimitUpDown.Value
-        //                )
-        //                .Wait();
-        //            fileOutput.Dispose();
-        //#if DEBUG
-        //            var fileSize = new FileInfo(OutputPathTextBox.Text).Length;
-        //            Console.WriteLine($"Output file size: {fileSize:n0} bytes");
-        //#endif
-        //        }
-
         private Dictionary<PaletteColour, SKBitmap> colourLayersDebug = new();
 
         #region DEBUG GROUP BOX STUFF
@@ -179,7 +182,7 @@ namespace TomodachiDrawer.UI.Windows
             var cp = new ColourPalette(new DummySink());
             var quantized = cp.QuantizeImage(
                 SKBitmap.Decode(currentImagePath),
-                ColorMatcherComboBox.SelectedItem!.ToString()
+                ColorMatcherComboBox.SelectedItem.ToString()
             );
             var layers = cp.BuildFineLayers(quantized);
             foreach (var layer in layers)
@@ -262,7 +265,7 @@ The TSP solve is not used always, a simpler ""snaking"" algorithm is used if its
 
         private void OutputExplanationButton_Click(object sender, EventArgs e)
         {
-            MessageBox.Show("TODO");
+            MessageBox.Show("Your RP2040-Zero (or similar) needs two things in its memory (it's flash):\r\n- The code that reads the instructions to draw your image and pipe it to the switch\r\n- The instructions to draw your image.\r\n\r\n\r\nTo connect your device for flashing, hold down the \"BOOT\" button and plug it in, or hold \"BOOT\" and press \"RESET\" while it is connected.\r\n\r\nYou only need to flash the code/\"firmware\" once.\r\n\r\nYou then flash the image data onto it for each image, without needing to reflash the firmware.\r\n\r\nWhen you first install the firmware, it'll reset itself, flash yellow 3 times, and then flash red.\r\nFlashing red is expected, as that means it cannot find the image data.\r\nReconnect it using the same \"BOOT\" button steps as described above, load your image, and hit \"Export to RP2040\".\r\n\r\nAgain, it will reboot, but now you can unplug it and plug it into your switch.\r\n\r\nYOU MUST HAVE \"Pro Controller Wired Commmunication\" ENABLED.\r\nGo to system settings -> Controllers & Accessories -> Pro Controller Wired Communication\r\n");
         }
 
         private async void ExportRP2040Button_Click(object sender, EventArgs e)
@@ -294,6 +297,31 @@ The TSP solve is not used always, a simpler ""snaking"" algorithm is used if its
             });
 
             ExportRP2040Button.Enabled = true;
+        }
+
+        private void MainForm_DragEnter(object sender, DragEventArgs e)
+        {
+            if (e.Data != null && e.Data.GetDataPresent(DataFormats.FileDrop))
+            {
+                e.Effect = DragDropEffects.Copy;
+            }
+        }
+
+        private void MainForm_DragDrop(object sender, DragEventArgs e)
+        {
+            if (e.Data != null && e.Data.GetDataPresent(DataFormats.FileDrop))
+            {
+                var files = (string[]?)e.Data.GetData(DataFormats.FileDrop);
+                if (files != null)
+                {
+                    LoadImage(files.First());
+                }
+            }
+        }
+
+        private void InGameSetupExplanation_Click(object sender, EventArgs e)
+        {
+            MessageBox.Show("Setup in game is fairly straightforward.\r\n- Navigate to the palette house\r\n- Ensure you are on the \"advanced\" drawing UI\r\n- Ensure your top colour is set to Black (it is by default)\r\n- Set your cursor to the TOP LEFT of where you want the drawing to be.\r\n- Ensure the full area of the canvas that will be drawn is on screen.\r\n\r\nIf the canvas is zoomed in, it will cause the cursor to desync as the canvas moves when the cursor gets on the edges. Zooming out fully avoids this.\r\n\r\nIf your image is 256x256, set it all the way in the top left. If your image is smaller, set your cursor to where you want the topleft most pixel of your drawing to be.", "In Game Setup", MessageBoxButtons.OK);
         }
     }
 }

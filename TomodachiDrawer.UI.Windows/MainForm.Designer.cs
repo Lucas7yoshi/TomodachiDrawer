@@ -58,6 +58,7 @@
             TSPSolverTimeLimitHelpButton = new Button();
             label7 = new Label();
             CrappyLogBox = new TextBox();
+            InGameSetupExplanation = new Button();
             previewGroupBox.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)previewPictureBox).BeginInit();
             inputGroupBox.SuspendLayout();
@@ -157,6 +158,7 @@
             // 
             // outputGroupBox
             // 
+            outputGroupBox.Controls.Add(InGameSetupExplanation);
             outputGroupBox.Controls.Add(OutputExplanationButton);
             outputGroupBox.Controls.Add(ExportRP2040Button);
             outputGroupBox.Controls.Add(label6);
@@ -172,7 +174,7 @@
             // 
             // OutputExplanationButton
             // 
-            OutputExplanationButton.Location = new Point(6, 57);
+            OutputExplanationButton.Location = new Point(6, 37);
             OutputExplanationButton.Name = "OutputExplanationButton";
             OutputExplanationButton.Size = new Size(352, 23);
             OutputExplanationButton.TabIndex = 11;
@@ -345,8 +347,19 @@
             CrappyLogBox.Size = new Size(364, 284);
             CrappyLogBox.TabIndex = 10;
             // 
+            // InGameSetupExplanation
+            // 
+            InGameSetupExplanation.Location = new Point(6, 66);
+            InGameSetupExplanation.Name = "InGameSetupExplanation";
+            InGameSetupExplanation.Size = new Size(352, 23);
+            InGameSetupExplanation.TabIndex = 12;
+            InGameSetupExplanation.Text = "Setup in game explanation";
+            InGameSetupExplanation.UseVisualStyleBackColor = true;
+            InGameSetupExplanation.Click += InGameSetupExplanation_Click;
+            // 
             // MainForm
             // 
+            AllowDrop = true;
             AutoScaleDimensions = new SizeF(7F, 15F);
             AutoScaleMode = AutoScaleMode.Font;
             ClientSize = new Size(1156, 612);
@@ -358,6 +371,8 @@
             Controls.Add(previewGroupBox);
             Name = "MainForm";
             Text = "Tomodachi Drawer (UI.Windows)";
+            DragDrop += MainForm_DragDrop;
+            DragEnter += MainForm_DragEnter;
             previewGroupBox.ResumeLayout(false);
             previewGroupBox.PerformLayout();
             ((System.ComponentModel.ISupportInitialize)previewPictureBox).EndInit();
@@ -403,5 +418,6 @@
         private Label label6;
         private Label label5;
         private Button OutputExplanationButton;
+        private Button InGameSetupExplanation;
     }
 }
