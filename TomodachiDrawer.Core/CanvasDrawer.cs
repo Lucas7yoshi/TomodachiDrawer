@@ -58,6 +58,7 @@ namespace TomodachiDrawer.Core
 
             // First off we are just putting all the individual details into the fine detail pass,
             // following passes will start to remove from that and add to the stamp passes.
+            // TODO: This doesnt really make too much sense to be in the palette class... Maybe move here?
             var layers = _palette.BuildFineLayers(quantizedMap);
 
             // !!!
@@ -129,6 +130,37 @@ namespace TomodachiDrawer.Core
                 _log($"[{layerNumber}/{totalLayers}] {l.Colour.DisplayName}: snake={snakeSink.TotalTime.TotalSeconds:F3}s, tsp={tspPart} → {(usedSnake ? "snake" : "tsp")}");
             }
             _log($"Done! Total draw time: {totalTimeSeconds:F3}s");
+        }
+
+        private static readonly int[] LargeBrushSizes = [27, 19, 13, 7, 3];
+
+        /// <summary>Takes in a ColourLayer and detects large areas that can be better drawn with stamps.</summary>
+        /// <param name="l"></param>
+        private void DetectUniformAreas(ColourLayer l)
+        {
+            // need to build a more useful 2d array for scanning since l.FineDetailPoints is uh well, just a hashset of points.
+            var points = new bool[256,256];
+            foreach (var p in l.FineDetailPoints)
+                points[p.X, p.Y] = true;
+
+            foreach (var brushSize in LargeBrushSizes)
+            {
+                int half = brushSize / 2; // rounds down. which is fine.
+                // TODO: Pickup from here.
+            }
+        }
+
+        private bool IsUniformArea(bool[,] map, int cx, int cy, int brushSize)
+        {
+            int half = brushSize / 2; // rounds down.
+            for (int dy = -half; dy <= half; dy++)
+            {
+                for (int dx = -half; dx <= half; dx++)
+                    if (!map[cy + dy, cx + dx])
+                        return false;
+            }
+
+            return true;
         }
 
         private void FineDetailSnake(ISwitchOutput output, ColourLayer l)

@@ -40,6 +40,7 @@
             OpenImageButton = new Button();
             ImagePathBox = new TextBox();
             outputGroupBox = new GroupBox();
+            InGameSetupExplanation = new Button();
             OutputExplanationButton = new Button();
             ExportRP2040Button = new Button();
             label6 = new Label();
@@ -58,7 +59,7 @@
             TSPSolverTimeLimitHelpButton = new Button();
             label7 = new Label();
             CrappyLogBox = new TextBox();
-            InGameSetupExplanation = new Button();
+            groupBox1 = new GroupBox();
             previewGroupBox.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)previewPictureBox).BeginInit();
             inputGroupBox.SuspendLayout();
@@ -66,6 +67,7 @@
             debugGroupBox.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)TSPTimeLimitUpDown).BeginInit();
             routingGroupBox.SuspendLayout();
+            groupBox1.SuspendLayout();
             SuspendLayout();
             // 
             // previewGroupBox
@@ -171,6 +173,16 @@
             outputGroupBox.TabIndex = 3;
             outputGroupBox.TabStop = false;
             outputGroupBox.Text = "RP2040 Output";
+            // 
+            // InGameSetupExplanation
+            // 
+            InGameSetupExplanation.Location = new Point(6, 66);
+            InGameSetupExplanation.Name = "InGameSetupExplanation";
+            InGameSetupExplanation.Size = new Size(352, 23);
+            InGameSetupExplanation.TabIndex = 12;
+            InGameSetupExplanation.Text = "Setup in game explanation";
+            InGameSetupExplanation.UseVisualStyleBackColor = true;
+            InGameSetupExplanation.Click += InGameSetupExplanation_Click;
             // 
             // OutputExplanationButton
             // 
@@ -339,23 +351,24 @@
             // 
             // CrappyLogBox
             // 
-            CrappyLogBox.Location = new Point(12, 173);
+            CrappyLogBox.Dock = DockStyle.Fill;
+            CrappyLogBox.Location = new Point(3, 19);
             CrappyLogBox.Multiline = true;
             CrappyLogBox.Name = "CrappyLogBox";
             CrappyLogBox.ReadOnly = true;
             CrappyLogBox.ScrollBars = ScrollBars.Vertical;
-            CrappyLogBox.Size = new Size(364, 284);
+            CrappyLogBox.Size = new Size(352, 262);
             CrappyLogBox.TabIndex = 10;
             // 
-            // InGameSetupExplanation
+            // groupBox1
             // 
-            InGameSetupExplanation.Location = new Point(6, 66);
-            InGameSetupExplanation.Name = "InGameSetupExplanation";
-            InGameSetupExplanation.Size = new Size(352, 23);
-            InGameSetupExplanation.TabIndex = 12;
-            InGameSetupExplanation.Text = "Setup in game explanation";
-            InGameSetupExplanation.UseVisualStyleBackColor = true;
-            InGameSetupExplanation.Click += InGameSetupExplanation_Click;
+            groupBox1.Controls.Add(CrappyLogBox);
+            groupBox1.Location = new Point(12, 173);
+            groupBox1.Name = "groupBox1";
+            groupBox1.Size = new Size(358, 284);
+            groupBox1.TabIndex = 11;
+            groupBox1.TabStop = false;
+            groupBox1.Text = "Log";
             // 
             // MainForm
             // 
@@ -363,7 +376,7 @@
             AutoScaleDimensions = new SizeF(7F, 15F);
             AutoScaleMode = AutoScaleMode.Font;
             ClientSize = new Size(1156, 612);
-            Controls.Add(CrappyLogBox);
+            Controls.Add(groupBox1);
             Controls.Add(routingGroupBox);
             Controls.Add(debugGroupBox);
             Controls.Add(outputGroupBox);
@@ -384,8 +397,9 @@
             ((System.ComponentModel.ISupportInitialize)TSPTimeLimitUpDown).EndInit();
             routingGroupBox.ResumeLayout(false);
             routingGroupBox.PerformLayout();
+            groupBox1.ResumeLayout(false);
+            groupBox1.PerformLayout();
             ResumeLayout(false);
-            PerformLayout();
         }
 
         #endregion
@@ -419,5 +433,6 @@
         private Label label5;
         private Button OutputExplanationButton;
         private Button InGameSetupExplanation;
+        private GroupBox groupBox1;
     }
 }
