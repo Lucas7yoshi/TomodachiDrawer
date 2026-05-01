@@ -377,6 +377,8 @@ The TSP solve is not used always, a simpler ""snaking"" algorithm is used if its
 
             ExportRP2040Button.Enabled = false;
 
+            TimeSpan totalTime = TimeSpan.MaxValue;
+
             await Task.Run(async () =>
             {
                 string tempOutputName = Path.Combine(
@@ -418,9 +420,14 @@ The TSP solve is not used always, a simpler ""snaking"" algorithm is used if its
                     // delete temp file.
                     File.Delete(tempOutputName);
                 }
+
+                totalTime = timingSink.TotalTime;
             });
 
             ExportRP2040Button.Enabled = true;
+
+            var estimateStr = $"{totalTime.ToString("h\\hm\\ms\\s")}";
+            DrawTimeEstimateLabel.Text = $"Draw Time Estimate: {estimateStr}";
         }
 
         private void MainForm_DragEnter(object sender, DragEventArgs e)
@@ -450,6 +457,42 @@ The TSP solve is not used always, a simpler ""snaking"" algorithm is used if its
                 "In Game Setup",
                 MessageBoxButtons.OK
             );
+        }
+
+        // repeated code for benchmarking
+        private async void DebugBenchmarkButton_Click(object sender, EventArgs e)
+        {
+            var imagePath = currentImagePath;
+            var quantizer = ColorMatcherComboBox.SelectedItem!.ToString()!;
+            var tspLimit = (float)TSPTimeLimitUpDown.Value;
+
+            double time = 0;
+
+            await Task.Run(async () =>
+            {
+                string tempOutputName = Path.Combine(
+                    Path.GetTempPath(),
+                    $"rp2040output{new Random().Next(1000000, 9999999)}.tdld"
+                );
+                Log($"Exporting to RP2040 flash ({Path.GetFileName(tempOutputName)})");
+                //var fileOutput = new FileControllerSink(tempOutputName);
+                var timingSink = new TimingSink();
+                var drawer = new CanvasDrawer(timingSink, Log);
+                drawer.ConnectAndConfirmController();
+                Log("Starting to generate inputs...");
+                await drawer.DrawImage(
+                    SKBitmap.Decode(imagePath),
+                    quantizer,
+                    tspLimit,
+                    DebugDisableLargeStamps.Checked
+                );
+                //fileOutput.Dispose();
+
+                Log($"True complete overall time is: {timingSink.TotalTime.TotalSeconds}s");
+                time = timingSink.TotalTime.TotalSeconds;
+            });
+
+            DebugBenchmarkOutput.Text = $"{time:F3}s";
         }
     }
 }

@@ -28,7 +28,6 @@
         /// </summary>
         private void InitializeComponent()
         {
-            components = new System.ComponentModel.Container();
             previewGroupBox = new GroupBox();
             DitheringComboBox = new ComboBox();
             previewPictureBox = new PixelBox();
@@ -47,11 +46,12 @@
             OutputFlashFirmwareLabel = new Label();
             FlashBaseFirmwareButton = new Button();
             OutputRP2040StatusLabel = new Label();
-            imageList1 = new ImageList(components);
             saveOutputFileDialog = new SaveFileDialog();
             debugColourComboBox = new ComboBox();
             DebugColourLayerButton = new Button();
             debugGroupBox = new GroupBox();
+            DebugBenchmarkButton = new Button();
+            DebugBenchmarkOutput = new TextBox();
             DebugDisableLargeStamps = new CheckBox();
             DebugShowBiggerCheckBox = new CheckBox();
             DebugFineTestCheckBox = new CheckBox();
@@ -63,6 +63,7 @@
             TSPSolverSecondsLabel = new Label();
             CrappyLogBox = new TextBox();
             logGroupBox = new GroupBox();
+            DrawTimeEstimateLabel = new Label();
             previewGroupBox.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)previewPictureBox).BeginInit();
             inputGroupBox.SuspendLayout();
@@ -247,12 +248,6 @@
             OutputRP2040StatusLabel.TabIndex = 5;
             OutputRP2040StatusLabel.Text = "RP2040 Status: Not Found";
             // 
-            // imageList1
-            // 
-            imageList1.ColorDepth = ColorDepth.Depth32Bit;
-            imageList1.ImageSize = new Size(16, 16);
-            imageList1.TransparentColor = Color.Transparent;
-            // 
             // saveOutputFileDialog
             // 
             saveOutputFileDialog.DefaultExt = "tdld";
@@ -279,6 +274,8 @@
             // 
             // debugGroupBox
             // 
+            debugGroupBox.Controls.Add(DebugBenchmarkButton);
+            debugGroupBox.Controls.Add(DebugBenchmarkOutput);
             debugGroupBox.Controls.Add(DebugDisableLargeStamps);
             debugGroupBox.Controls.Add(DebugShowBiggerCheckBox);
             debugGroupBox.Controls.Add(DebugFineTestCheckBox);
@@ -291,6 +288,23 @@
             debugGroupBox.TabIndex = 6;
             debugGroupBox.TabStop = false;
             debugGroupBox.Text = "Debug";
+            // 
+            // DebugBenchmarkButton
+            // 
+            DebugBenchmarkButton.Location = new Point(46, 389);
+            DebugBenchmarkButton.Name = "DebugBenchmarkButton";
+            DebugBenchmarkButton.Size = new Size(100, 23);
+            DebugBenchmarkButton.TabIndex = 10;
+            DebugBenchmarkButton.Text = "Benchmark";
+            DebugBenchmarkButton.UseVisualStyleBackColor = true;
+            DebugBenchmarkButton.Click += DebugBenchmarkButton_Click;
+            // 
+            // DebugBenchmarkOutput
+            // 
+            DebugBenchmarkOutput.Location = new Point(46, 360);
+            DebugBenchmarkOutput.Name = "DebugBenchmarkOutput";
+            DebugBenchmarkOutput.Size = new Size(100, 23);
+            DebugBenchmarkOutput.TabIndex = 9;
             // 
             // DebugDisableLargeStamps
             // 
@@ -361,7 +375,7 @@
             routingGroupBox.Controls.Add(TSPSolverTimeLimitLabel);
             routingGroupBox.Location = new Point(12, 78);
             routingGroupBox.Name = "routingGroupBox";
-            routingGroupBox.Size = new Size(358, 89);
+            routingGroupBox.Size = new Size(358, 51);
             routingGroupBox.TabIndex = 9;
             routingGroupBox.TabStop = false;
             routingGroupBox.Text = "Routing";
@@ -399,12 +413,22 @@
             // logGroupBox
             // 
             logGroupBox.Controls.Add(CrappyLogBox);
-            logGroupBox.Location = new Point(12, 173);
+            logGroupBox.Location = new Point(12, 135);
             logGroupBox.Name = "logGroupBox";
             logGroupBox.Size = new Size(358, 284);
             logGroupBox.TabIndex = 11;
             logGroupBox.TabStop = false;
             logGroupBox.Text = "Log";
+            // 
+            // DrawTimeEstimateLabel
+            // 
+            DrawTimeEstimateLabel.AutoSize = true;
+            DrawTimeEstimateLabel.Font = new Font("Segoe UI", 18F, FontStyle.Bold, GraphicsUnit.Point, 0);
+            DrawTimeEstimateLabel.Location = new Point(12, 428);
+            DrawTimeEstimateLabel.Name = "DrawTimeEstimateLabel";
+            DrawTimeEstimateLabel.Size = new Size(288, 32);
+            DrawTimeEstimateLabel.TabIndex = 12;
+            DrawTimeEstimateLabel.Text = "Draw Time Estimate: ???";
             // 
             // MainForm
             // 
@@ -412,6 +436,7 @@
             AutoScaleDimensions = new SizeF(7F, 15F);
             AutoScaleMode = AutoScaleMode.Font;
             ClientSize = new Size(1156, 612);
+            Controls.Add(DrawTimeEstimateLabel);
             Controls.Add(logGroupBox);
             Controls.Add(routingGroupBox);
             Controls.Add(debugGroupBox);
@@ -437,6 +462,7 @@
             logGroupBox.ResumeLayout(false);
             logGroupBox.PerformLayout();
             ResumeLayout(false);
+            PerformLayout();
         }
 
         #endregion
@@ -449,7 +475,6 @@
         private Button OpenImageButton;
         private TextBox ImagePathBox;
         private GroupBox outputGroupBox;
-        private ImageList imageList1;
         private PixelBox previewPictureBox;
         private SaveFileDialog saveOutputFileDialog;
         private ComboBox debugColourComboBox;
@@ -474,5 +499,8 @@
         private CheckBox DebugFineTestCheckBox;
         private CheckBox DebugShowBiggerCheckBox;
         private CheckBox DebugDisableLargeStamps;
+        private TextBox DebugBenchmarkOutput;
+        private Button DebugBenchmarkButton;
+        private Label DrawTimeEstimateLabel;
     }
 }

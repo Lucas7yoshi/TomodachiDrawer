@@ -92,10 +92,8 @@ namespace TomodachiDrawer.Core
                 layerNumber++;
                 _palette.SelectColour(l.Colour, 25.0);
 
-                // ============= Stamps. TODO ============
-                // (like the actual drawing of the big brush goes here)
 
-                // ============= Stamps. Todo. End. ======
+                // STAMPS
                 if (l.StampsBySize?.Count > 0)
                 {
                     var stampSink = new TimingSink();
@@ -123,6 +121,7 @@ namespace TomodachiDrawer.Core
                     stampSink.ReplayTo(_realOutput);
                     totalInLayerTime += stampSink.TotalTime.TotalSeconds;
                 }
+                // END STAMPS.
 
                 // ============= Fine details
                 _toolbar.SelectBrush(1); // no-op if already selected.
@@ -180,7 +179,10 @@ namespace TomodachiDrawer.Core
             );
         }
 
-        private static readonly int[] LargeBrushSizes = [27, 19, 13, 7, 3];
+        private static readonly int[] LargeBrushSizes =             [27, 19, 13, 7, 3];
+        // eviction thresholds are how many of that size there must be for it to commit to doing larger brushes over smaller ones.
+        // bigger ones fill more area so they get more slack. 
+        private static readonly int[] LargeBrushEvictionThreshold = [1, 1, 1, 5, 12];
 
         /// <summary>Takes in a ColourLayer and detects large areas that can be better drawn with stamps.</summary>
         /// <param name="l"></param>
@@ -223,8 +225,27 @@ namespace TomodachiDrawer.Core
                         }
                     }
                 }
+
+                if (largeBrushPoints.Count == 0)
+                    continue;
+
+                // Evict lone stamps or small amounts of them
+                // The overhead of going to them is generally not worth it.
+
+                int indexOfBrushSize = Array.IndexOf(LargeBrushSizes, brushSize);
+                if (largeBrushPoints.Count < LargeBrushEvictionThreshold[indexOfBrushSize])
+                {
+                    _log($"\tEVICTED {largeBrushPoints.Count} areas for size {brushSize}^2 because too few.");
+                    // un-clear the area.
+                    foreach (var p in largeBrushPoints)
+                    {
+                        RefillStampArea(points, l.FineDetailPoints, p.X, p.Y, brushSize);
+                    }
+                    continue;
+                }
+
                 l.StampsBySize[brushSize] = largeBrushPoints;
-                _log($"\tFound {largeBrushPoints.Count} areas for size {brushSize}^2");
+                _log($"\tFOUND {largeBrushPoints.Count} areas for size {brushSize}^2");
             }
         }
 
@@ -260,6 +281,24 @@ namespace TomodachiDrawer.Core
             }
         }
 
+        private void RefillStampArea(
+            bool[,] map,
+            HashSet<CanvasPoint> points,
+            int cx,
+            int cy,
+            int brushSize
+        )
+        {
+            int half = brushSize / 2;
+            for (int dy = -half; dy <= half; dy++)
+            {
+                for (int dx = -half; dx <= half; dx++)
+                {
+                    points.Add(new CanvasPoint(cx + dx, cy + dy));
+                    map[cx + dx, cy + dy] = true;
+                }
+            }
+        }
         private void FineDetailSnake(ISwitchOutput output, ColourLayer l)
         {
             // find the nearest edge.
