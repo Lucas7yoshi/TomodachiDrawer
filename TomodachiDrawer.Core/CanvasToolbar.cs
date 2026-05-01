@@ -1,4 +1,6 @@
-﻿using TomodachiDrawer.Core.Interfaces;
+﻿using System.Runtime.InteropServices.Marshalling;
+
+using TomodachiDrawer.Core.Interfaces;
 using TomodachiDrawer.Core.OutputSinks;
 
 namespace TomodachiDrawer.Core
@@ -29,8 +31,10 @@ namespace TomodachiDrawer.Core
             _output = output;
         }
 
+        public bool SelectBrush(int brushSize) => SelectBrush(_output, brushSize);
+
         /// <returns>Whether or not it actually moved</returns>
-        public bool SelectBrush(int brushSize)
+        public bool SelectBrush(ISwitchOutput output, int brushSize)
         {
             int targetColumn = BrushColumnBySize[brushSize];
 
@@ -39,45 +43,45 @@ namespace TomodachiDrawer.Core
                 return false;
             }
 
-            _output.Tap(Button.X);
-            _output.Delay(250);
+            output.Tap(Button.X);
+            output.Delay(250);
             if (!_toolbarHomed)
             {
                 for (int i = 0; i < ToolbarItemCount; i++)
-                    _output.Tap(DPad.LEFT); // Slam to left
+                    output.Tap(DPad.LEFT); // Slam to left
                 for (int i = 0; i < ToolbarBrushIndex; i++)
-                    _output.Tap(DPad.RIGHT); // Go to brush
+                    output.Tap(DPad.RIGHT); // Go to brush
                 _toolbarHomed = true;
             }
 
             // open submenu
-            _output.Tap(Button.X);
-            _output.Delay(250);
+            output.Tap(Button.X);
+            output.Delay(250);
 
             int currentColumn = _lastBrushColumn;
             if (currentColumn < 0)
             {
                 for (int i = 0; i < BrushSubmenuRows; i++)
-                    _output.Tap(DPad.UP);
+                    output.Tap(DPad.UP);
                 for (int i = 0; i < BrushSubmenuColumns; i++)
-                    _output.Tap(DPad.LEFT);
+                    output.Tap(DPad.LEFT);
 
-                _output.Tap(DPad.DOWN);
-                _output.Tap(DPad.DOWN);
+                output.Tap(DPad.DOWN);
+                output.Tap(DPad.DOWN);
                 currentColumn = 0;
             }
 
             int deltaX = targetColumn - currentColumn;
             var dir = deltaX > 0 ? DPad.RIGHT : DPad.LEFT;
             for (int i = 0; i < Math.Abs(deltaX); i++)
-                _output.Tap(dir);
+                output.Tap(dir);
             _lastBrushColumn = targetColumn;
 
             // Confirm and return to canvas.
-            _output.Tap(Button.A);
-            _output.Delay(250);
-            _output.Tap(Button.A);
-            _output.Delay(500);
+            output.Tap(Button.A);
+            output.Delay(250);
+            output.Tap(Button.A);
+            output.Delay(500);
 
             return true;
         }

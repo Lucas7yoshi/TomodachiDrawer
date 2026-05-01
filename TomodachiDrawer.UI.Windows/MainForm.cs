@@ -100,6 +100,10 @@ namespace TomodachiDrawer.UI.Windows
 
         private void UpdatePreview()
         {
+            if (!File.Exists(currentImagePath)) {
+                Log($"File does not exist, cannot update preview: {currentImagePath}");
+                return;
+            }
             var pal = new ColourPalette(new DummySink());
             var selectedQuantizer = ColorMatcherComboBox.SelectedItem?.ToString();
             if (selectedQuantizer == null)
@@ -325,12 +329,19 @@ The TSP solve is not used always, a simpler ""snaking"" algorithm is used if its
             {
                 string tempOutputName = Path.Combine(Path.GetTempPath(), $"rp2040output{new Random().Next(1000000, 9999999)}.tdld");
                 Log($"Exporting to RP2040 flash ({Path.GetFileName(tempOutputName)})");
-                var fileOutput = new FileControllerSink(tempOutputName);
-                var drawer = new CanvasDrawer(fileOutput, Log);
+                //var fileOutput = new FileControllerSink(tempOutputName);
+                var timingSink = new TimingSink();
+                var drawer = new CanvasDrawer(timingSink, Log);
                 drawer.ConnectAndConfirmController();
                 Log("Starting to generate inputs...");
-                await drawer.DrawImage(SKBitmap.Decode(imagePath), quantizer, tspLimit);
-                fileOutput.Dispose();
+                await drawer.DrawImage(SKBitmap.Decode(imagePath), quantizer, tspLimit, DebugDisableLargeStamps.Checked);
+                //fileOutput.Dispose();
+
+                Log($"True complete overall time is: {timingSink.TotalTime.TotalSeconds}s");
+                // actually output now
+                var fileSink = new FileControllerSink(tempOutputName);
+                timingSink.ReplayTo(fileSink);
+                fileSink.Dispose();
 
                 var tdldBytes = File.ReadAllBytes(tempOutputName);
                 var uf2bytes = UF2Flasher.BuildTDLDUF2(tdldBytes);
@@ -338,6 +349,12 @@ The TSP solve is not used always, a simpler ""snaking"" algorithm is used if its
                 {
                     File.WriteAllBytes(UF2Flasher.FindRP2040Drive() + "tdld_image.uf2", uf2bytes);
                     Log("Wrote to RP2040 flash. Unplug the RP2040 and plug it into the switch without holding any button.");
+                }
+
+                if (File.Exists(tempOutputName))
+                {
+                    // delete temp file.
+                    File.Delete(tempOutputName);
                 }
             });
 

@@ -52,6 +52,8 @@
             debugColourComboBox = new ComboBox();
             DebugColourLayerButton = new Button();
             debugGroupBox = new GroupBox();
+            DebugDisableLargeStamps = new CheckBox();
+            DebugShowBiggerCheckBox = new CheckBox();
             DebugFineTestCheckBox = new CheckBox();
             OutputSaveButton = new Button();
             TSPTimeLimitUpDown = new NumericUpDown();
@@ -61,7 +63,6 @@
             TSPSolverSecondsLabel = new Label();
             CrappyLogBox = new TextBox();
             logGroupBox = new GroupBox();
-            DebugShowBiggerCheckBox = new CheckBox();
             previewGroupBox.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)previewPictureBox).BeginInit();
             inputGroupBox.SuspendLayout();
@@ -278,6 +279,7 @@
             // 
             // debugGroupBox
             // 
+            debugGroupBox.Controls.Add(DebugDisableLargeStamps);
             debugGroupBox.Controls.Add(DebugShowBiggerCheckBox);
             debugGroupBox.Controls.Add(DebugFineTestCheckBox);
             debugGroupBox.Controls.Add(debugColourComboBox);
@@ -289,6 +291,26 @@
             debugGroupBox.TabIndex = 6;
             debugGroupBox.TabStop = false;
             debugGroupBox.Text = "Debug";
+            // 
+            // DebugDisableLargeStamps
+            // 
+            DebugDisableLargeStamps.AutoSize = true;
+            DebugDisableLargeStamps.Location = new Point(29, 235);
+            DebugDisableLargeStamps.Name = "DebugDisableLargeStamps";
+            DebugDisableLargeStamps.Size = new Size(138, 19);
+            DebugDisableLargeStamps.TabIndex = 8;
+            DebugDisableLargeStamps.Text = "Disable Large Stamps";
+            DebugDisableLargeStamps.UseVisualStyleBackColor = true;
+            // 
+            // DebugShowBiggerCheckBox
+            // 
+            DebugShowBiggerCheckBox.AutoSize = true;
+            DebugShowBiggerCheckBox.Location = new Point(108, 56);
+            DebugShowBiggerCheckBox.Name = "DebugShowBiggerCheckBox";
+            DebugShowBiggerCheckBox.Size = new Size(92, 19);
+            DebugShowBiggerCheckBox.TabIndex = 7;
+            DebugShowBiggerCheckBox.Text = "Show Bigger";
+            DebugShowBiggerCheckBox.UseVisualStyleBackColor = true;
             // 
             // DebugFineTestCheckBox
             // 
@@ -384,16 +406,6 @@
             logGroupBox.TabStop = false;
             logGroupBox.Text = "Log";
             // 
-            // DebugShowBiggerCheckBox
-            // 
-            DebugShowBiggerCheckBox.AutoSize = true;
-            DebugShowBiggerCheckBox.Location = new Point(108, 56);
-            DebugShowBiggerCheckBox.Name = "DebugShowBiggerCheckBox";
-            DebugShowBiggerCheckBox.Size = new Size(92, 19);
-            DebugShowBiggerCheckBox.TabIndex = 7;
-            DebugShowBiggerCheckBox.Text = "Show Bigger";
-            DebugShowBiggerCheckBox.UseVisualStyleBackColor = true;
-            // 
             // MainForm
             // 
             AllowDrop = true;
@@ -461,5 +473,6 @@
         private GroupBox logGroupBox;
         private CheckBox DebugFineTestCheckBox;
         private CheckBox DebugShowBiggerCheckBox;
+        private CheckBox DebugDisableLargeStamps;
     }
 }

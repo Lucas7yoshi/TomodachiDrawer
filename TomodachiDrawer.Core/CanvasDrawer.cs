@@ -1,8 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Diagnostics;
-using System.Security.Cryptography.X509Certificates;
-using System.Text;
+﻿using System.Diagnostics;
 
 using Google.OrTools.ConstraintSolver;
 
@@ -95,20 +91,33 @@ namespace TomodachiDrawer.Core
                 // ============= Stamps. Todo. End. ======
                 if (l.StampsBySize?.Count > 0)
                 {
+                    var stampSink = new TimingSink();
                     foreach (var sbs in l.StampsBySize)
                     {
                         if (sbs.Value.Count == 0)
                             continue;
                         int brushSize = sbs.Key;
                         
-                        _toolbar.SelectBrush(brushSize);
+                        _toolbar.SelectBrush(stampSink, brushSize);
                         // todo TSP routing lol
 
-                        // Send the route off to TSP every time.
+                        var dumbRoute = new List<CanvasPoint>(sbs.Value);
+                        var optimizedRoute = PerformTSP(dumbRoute, 0.5f); // half a sec per stamp size per colour is prob reasonable?
+                        if (optimizedRoute == null)
+                            optimizedRoute = dumbRoute;
+
+                        foreach (var point in optimizedRoute)
+                        {
+                            NavigateTo(stampSink, point);
+                            (stampSink as ISwitchOutput).Tap(Button.A);
+                        }
+
+                        
                     }
+                    _log($"\tStamps: {stampSink.TotalSeconds:F3}s");
+                    stampSink.ReplayTo(_realOutput);
+                    totalInLayerTime += stampSink.TotalTime.TotalSeconds;
                 }
-
-
 
                 // ============= Fine details
                 _toolbar.SelectBrush(1); // no-op if already selected.
@@ -402,61 +411,10 @@ namespace TomodachiDrawer.Core
             // Find start point, this logic will need adjusted in time
             // when we eventually reorder layers to be the most optimal.
 
-            var points = l.FineDetailPoints.ToArray();
-            var closestPointIndex = 0;
-            var closestPointDist = MeasureDistanceToFromCurrent(points[0].X, points[0].Y);
-            for (int i = 0; i < points.Length; i++)
-            {
-                var p = points[i];
-                var distance = MeasureDistanceToFromCurrent(p.X, p.Y);
-                if (distance < closestPointDist)
-                {
-                    closestPointIndex = i;
-                    closestPointDist = distance;
-                }
-            }
+            var optimizedRoute = PerformTSP(l.FineDetailPoints.ToList(), timeLimitSeconds);
 
-
-            var manager = new RoutingIndexManager(l.FineDetailPoints.Count, 1, closestPointIndex);
-            var routing = new RoutingModel(manager);
-
-            int transitCallbackIndex = routing.RegisterTransitCallback(
-                (long fromIndex, long toIndex) =>
-            {
-
-                var fromNode = manager.IndexToNode(fromIndex);
-                var toNode = manager.IndexToNode(toIndex);
-                // return Math.Max(Math.Abs(_cursorX - targetX), Math.Abs(_cursorY - targetY));
-                return Math.Max(
-                    Math.Abs(points[fromNode].X - points[toNode].X),
-                    Math.Abs(points[fromNode].Y - points[toNode].Y)
-                );
-            });
-
-            routing.SetArcCostEvaluatorOfAllVehicles(transitCallbackIndex);
-
-            var searchParameters = operations_research_constraint_solver.DefaultRoutingSearchParameters();
-            searchParameters.FirstSolutionStrategy = FirstSolutionStrategy.Types.Value.PathCheapestArc;
-            searchParameters.LocalSearchMetaheuristic = LocalSearchMetaheuristic.Types.Value.GuidedLocalSearch;
-            // need to get int seconds and int nanoseconds because... google.
-            int seconds = (int)timeLimitSeconds;
-            int nanoseconds = (int)((timeLimitSeconds - seconds) * 1_000_000_000);
-            searchParameters.TimeLimit = new Google.Protobuf.WellKnownTypes.Duration { Seconds = seconds, Nanos = nanoseconds };
-
-            var sw = Stopwatch.StartNew();
-            var solution = routing.SolveWithParameters(searchParameters);
-            sw.Stop();
-
-            if (solution is null)
+            if (optimizedRoute == null)
                 return;
-
-            var optimizedRoute = new List<CanvasPoint>(points.Length);
-            long index = routing.Start(0);
-            while (routing.IsEnd(index) == false)
-            {
-                optimizedRoute.Add(points[manager.IndexToNode(index)]);
-                index = solution.Value(routing.NextVar(index));
-            }
 
             // Navigate through the optimised route.
             // A is held across consecutive points that are exactly 1 step apart (Chebyshev == 1).
@@ -497,6 +455,67 @@ namespace TomodachiDrawer.Core
                     output.Tap(Button.A);
                 }
             }
+        }
+
+        private List<CanvasPoint>? PerformTSP(List<CanvasPoint> inputPoints, float timeLimitSeconds)
+        {
+            var points = inputPoints.ToArray();
+            var closestPointIndex = 0;
+            var closestPointDist = MeasureDistanceToFromCurrent(points[0].X, points[0].Y);
+            for (int i = 0; i < points.Length; i++)
+            {
+                var p = points[i];
+                var distance = MeasureDistanceToFromCurrent(p.X, p.Y);
+                if (distance < closestPointDist)
+                {
+                    closestPointIndex = i;
+                    closestPointDist = distance;
+                }
+            }
+
+
+            var manager = new RoutingIndexManager(points.Length, 1, closestPointIndex);
+            var routing = new RoutingModel(manager);
+
+            int transitCallbackIndex = routing.RegisterTransitCallback(
+                (long fromIndex, long toIndex) =>
+                {
+
+                    var fromNode = manager.IndexToNode(fromIndex);
+                    var toNode = manager.IndexToNode(toIndex);
+                    // return Math.Max(Math.Abs(_cursorX - targetX), Math.Abs(_cursorY - targetY));
+                    return Math.Max(
+                        Math.Abs(points[fromNode].X - points[toNode].X),
+                        Math.Abs(points[fromNode].Y - points[toNode].Y)
+                    );
+                });
+
+            routing.SetArcCostEvaluatorOfAllVehicles(transitCallbackIndex);
+
+            var searchParameters = operations_research_constraint_solver.DefaultRoutingSearchParameters();
+            searchParameters.FirstSolutionStrategy = FirstSolutionStrategy.Types.Value.PathCheapestArc;
+            searchParameters.LocalSearchMetaheuristic = LocalSearchMetaheuristic.Types.Value.GuidedLocalSearch;
+            // need to get int seconds and int nanoseconds because... google.
+            int seconds = (int)timeLimitSeconds;
+            int nanoseconds = (int)((timeLimitSeconds - seconds) * 1_000_000_000);
+            searchParameters.TimeLimit = new Google.Protobuf.WellKnownTypes.Duration { Seconds = seconds, Nanos = nanoseconds };
+
+            var sw = Stopwatch.StartNew();
+            var solution = routing.SolveWithParameters(searchParameters);
+            sw.Stop();
+
+            if (solution is null)
+                return null;
+
+            var optimizedRoute = new List<CanvasPoint>(points.Length);
+            long index = routing.Start(0);
+            while (routing.IsEnd(index) == false)
+            {
+                optimizedRoute.Add(points[manager.IndexToNode(index)]);
+                index = solution.Value(routing.NextVar(index));
+            }
+
+            return optimizedRoute;
         }
 
         // Commented out for now to avoid me accidentally not doing it correctly.

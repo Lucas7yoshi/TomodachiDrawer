@@ -8,7 +8,7 @@ namespace TomodachiDrawer.Core.OutputSinks
     /// and the actions are recorded into the list and played back when needed. This is mostly for TSP solves
     /// to keep code from being a mess.
     /// </summary>
-    internal sealed class TimingSink : ISwitchOutput
+    public sealed class TimingSink : ISwitchOutput
     {
         //
         private readonly List<Action<ISwitchOutput>> _actions = [];
