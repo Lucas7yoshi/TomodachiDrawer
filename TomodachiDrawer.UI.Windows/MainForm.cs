@@ -126,7 +126,7 @@ namespace TomodachiDrawer.UI.Windows
             );
 
             var previewBitmap = preview.ToBitmap();
-            previewPictureBox.Image = previewBitmap;
+            previewPixelBox.Image = previewBitmap;
             Log(
                 $"Updated preview for {Path.GetFileName(currentImagePath)} using {selectedQuantizer}"
             );
@@ -291,7 +291,7 @@ namespace TomodachiDrawer.UI.Windows
             if (layer == -1 || colourLayersDebug.Count == 0)
                 return;
             var colour = colourLayersDebug.Keys.ElementAt(layer);
-            previewPictureBox.Image = colourLayersDebug[colour].ToBitmap();
+            previewPixelBox.Image = colourLayersDebug[colour].ToBitmap();
         }
 
         #endregion

@@ -29,8 +29,8 @@
         private void InitializeComponent()
         {
             previewGroupBox = new GroupBox();
+            previewPixelBox = new PixelBox();
             DitheringComboBox = new ComboBox();
-            previewPictureBox = new PixelBox();
             DitheringLabel = new Label();
             ColorMatcherLabel = new Label();
             ColorMatcherComboBox = new ComboBox();
@@ -65,7 +65,7 @@
             logGroupBox = new GroupBox();
             DrawTimeEstimateLabel = new Label();
             previewGroupBox.SuspendLayout();
-            ((System.ComponentModel.ISupportInitialize)previewPictureBox).BeginInit();
+            ((System.ComponentModel.ISupportInitialize)previewPixelBox).BeginInit();
             inputGroupBox.SuspendLayout();
             outputGroupBox.SuspendLayout();
             debugGroupBox.SuspendLayout();
@@ -76,8 +76,8 @@
             // 
             // previewGroupBox
             // 
+            previewGroupBox.Controls.Add(previewPixelBox);
             previewGroupBox.Controls.Add(DitheringComboBox);
-            previewGroupBox.Controls.Add(previewPictureBox);
             previewGroupBox.Controls.Add(DitheringLabel);
             previewGroupBox.Controls.Add(ColorMatcherLabel);
             previewGroupBox.Controls.Add(ColorMatcherComboBox);
@@ -88,23 +88,25 @@
             previewGroupBox.TabStop = false;
             previewGroupBox.Text = "Preview";
             // 
+            // previewPixelBox
+            // 
+            previewPixelBox.BorderStyle = BorderStyle.FixedSingle;
+            previewPixelBox.Location = new Point(0, 66);
+            previewPixelBox.Name = "previewPixelBox";
+            previewPixelBox.Size = new Size(512, 512);
+            previewPixelBox.SizeMode = PictureBoxSizeMode.Zoom;
+            previewPixelBox.TabIndex = 6;
+            previewPixelBox.TabStop = false;
+            // 
             // DitheringComboBox
             // 
+            DitheringComboBox.Enabled = false;
             DitheringComboBox.FormattingEnabled = true;
             DitheringComboBox.Location = new Point(271, 37);
             DitheringComboBox.Name = "DitheringComboBox";
             DitheringComboBox.Size = new Size(247, 23);
             DitheringComboBox.TabIndex = 5;
-            // 
-            // previewPictureBox
-            // 
-            previewPictureBox.BorderStyle = BorderStyle.FixedSingle;
-            previewPictureBox.Location = new Point(6, 66);
-            previewPictureBox.Name = "previewPictureBox";
-            previewPictureBox.Size = new Size(512, 512);
-            previewPictureBox.SizeMode = PictureBoxSizeMode.Zoom;
-            previewPictureBox.TabIndex = 4;
-            previewPictureBox.TabStop = false;
+            DitheringComboBox.Text = "TODO";
             // 
             // DitheringLabel
             // 
@@ -449,7 +451,7 @@
             DragEnter += MainForm_DragEnter;
             previewGroupBox.ResumeLayout(false);
             previewGroupBox.PerformLayout();
-            ((System.ComponentModel.ISupportInitialize)previewPictureBox).EndInit();
+            ((System.ComponentModel.ISupportInitialize)previewPixelBox).EndInit();
             inputGroupBox.ResumeLayout(false);
             inputGroupBox.PerformLayout();
             outputGroupBox.ResumeLayout(false);
@@ -502,5 +504,6 @@
         private TextBox DebugBenchmarkOutput;
         private Button DebugBenchmarkButton;
         private Label DrawTimeEstimateLabel;
+        private PixelBox previewPixelBox;
     }
 }
