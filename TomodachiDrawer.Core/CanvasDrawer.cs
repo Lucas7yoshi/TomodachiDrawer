@@ -182,6 +182,7 @@ namespace TomodachiDrawer.Core
         private static readonly int[] LargeBrushSizes =             [27, 19, 13, 7, 3];
         // eviction thresholds are how many of that size there must be for it to commit to doing larger brushes over smaller ones.
         // bigger ones fill more area so they get more slack. 
+        // TODO: MORE WORK TWEAKING THESE!!!
         private static readonly int[] LargeBrushEvictionThreshold = [1, 1, 1, 5, 12];
 
         /// <summary>Takes in a ColourLayer and detects large areas that can be better drawn with stamps.</summary>
