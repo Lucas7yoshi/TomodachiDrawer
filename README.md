@@ -12,7 +12,7 @@ Initial setup requires a few steps, made easier by the windows UI.
 
 ### Following the YouTube tutorial is recommended:
 
-<iframe width="560" height="315" src="https://www.youtube.com/embed/GIaiw3gzabo?si=HPh3-RGrGtKq0VnQ" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
+[YouTube Tutorial](https://youtu.be/GIaiw3gzabo)
 
 
 ### Or briefly, in text:
