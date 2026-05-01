@@ -35,7 +35,7 @@ namespace TomodachiDrawer.Core
             _log = logger ?? Console.WriteLine;
         }
 
-        public async Task DrawImage(SKBitmap image, string quantizerName, float tspTimeLimit = 1.0f)
+        public async Task DrawImage(SKBitmap image, string quantizerName, float tspTimeLimit = 1.0f, bool disableLargeBrush = false)
         {
             if (image.Width > CanvasWidth || image.Height > CanvasHeight)
                 throw new InvalidDataException($"Image too big. Max is {CanvasWidth}x{CanvasHeight}.");
@@ -64,8 +64,20 @@ namespace TomodachiDrawer.Core
             // !!!
             // TODO: Stamp/Uniform area detection.
             // !!!
+            _log("Detecting uniform areas for large brushes...");
+            if (!disableLargeBrush)
+            {
+                foreach (var l in layers)
+                {
+                    DetectUniformAreas(l);
+                }
+            }
 
-            double totalTimeSeconds = 0.0;
+            // NOTE:
+            // This doesnt include the SelectColour and SelectBrush stuff, for benchmarking
+            // that is quite important!!! (Especially when i come back to work on larger stamps)
+            // diminishing returns and all that.
+            double totalInLayerTime = 0.0;
 
             var totalLayers = layers.Count;
             // 80% divided by total layers.
@@ -81,6 +93,21 @@ namespace TomodachiDrawer.Core
                 // (like the actual drawing of the big brush goes here)
 
                 // ============= Stamps. Todo. End. ======
+                if (l.StampsBySize?.Count > 0)
+                {
+                    foreach (var sbs in l.StampsBySize)
+                    {
+                        if (sbs.Value.Count == 0)
+                            continue;
+                        int brushSize = sbs.Key;
+                        
+                        _toolbar.SelectBrush(brushSize);
+                        // todo TSP routing lol
+
+                        // Send the route off to TSP every time.
+                    }
+                }
+
 
 
                 // ============= Fine details
@@ -115,38 +142,68 @@ namespace TomodachiDrawer.Core
                 if (usedSnake)
                 {
                     snakeSink.ReplayTo(_realOutput);
-                    totalTimeSeconds += snakeSink.TotalTime.TotalSeconds;
+                    totalInLayerTime += snakeSink.TotalTime.TotalSeconds;
                     _cursorX = afterSnakeX;
                     _cursorY = afterSnakeY;
                 }
                 else
                 {
                     tspSink.ReplayTo(_realOutput);
-                    totalTimeSeconds += tspSink.TotalTime.TotalSeconds;
+                    totalInLayerTime += tspSink.TotalTime.TotalSeconds;
                     _cursorX = afterTspX;
                     _cursorY = afterTspY;
                 }
                 string tspPart = tspHasSolution ? $"{tspSink.TotalTime.TotalSeconds:F3}s" : "no solution";
-                _log($"[{layerNumber}/{totalLayers}] {l.Colour.DisplayName}: snake={snakeSink.TotalTime.TotalSeconds:F3}s, tsp={tspPart} → {(usedSnake ? "snake" : "tsp")}");
+                _log($"[{layerNumber}/{totalLayers}] {l.Colour.DisplayName}: snake={snakeSink.TotalTime.TotalSeconds:F3}s, tsp={tspPart} -> {(usedSnake ? "snake" : "tsp")}");
             }
-            _log($"Done! Total draw time: {totalTimeSeconds:F3}s");
+            _log($"Done! Total in layer draw time: {totalInLayerTime:F3}s (Doesnt include colour/brush selection)");
         }
 
         private static readonly int[] LargeBrushSizes = [27, 19, 13, 7, 3];
 
         /// <summary>Takes in a ColourLayer and detects large areas that can be better drawn with stamps.</summary>
         /// <param name="l"></param>
-        private void DetectUniformAreas(ColourLayer l)
+        public void DetectUniformAreas(ColourLayer l)
         {
+            // NOTES:
+            // 3x3 Brushes seem to be past the point of diminishing returns,
+            // will probably dump those unless there a good number of them?
+            // TODO: That ^
+
             // need to build a more useful 2d array for scanning since l.FineDetailPoints is uh well, just a hashset of points.
             var points = new bool[256,256];
             foreach (var p in l.FineDetailPoints)
                 points[p.X, p.Y] = true;
 
+            // So:
+            // When we find a good stampable area, we need to remove it from consideration (from the bool[,] array)
+            // and also remove those points from the fine detail pass.
+
+            l.StampsBySize = new Dictionary<int, List<CanvasPoint>>();
+
+            _log($"Scanning {l.Colour.DisplayName} for large brush");
+
             foreach (var brushSize in LargeBrushSizes)
             {
                 int half = brushSize / 2; // rounds down. which is fine.
                 // TODO: Pickup from here.
+                var largeBrushPoints = new List<CanvasPoint>();
+                for (int x = half; x < 256 - half; x++)
+                {
+                    for (int y = half; y < 256 - half; y++)
+                    {
+                        var isUniform = IsUniformArea(points, x, y, brushSize);
+                        if (isUniform)
+                        {
+                            largeBrushPoints.Add(new CanvasPoint(x, y));
+                            // Remove it from FineDetail and our consideration map (points)
+                            ClearStampArea(points, l.FineDetailPoints, x, y, brushSize);
+                            // continue onwards to find more points :3
+                        }
+                    }
+                }
+                l.StampsBySize[brushSize] = largeBrushPoints;
+                _log($"\tFound {largeBrushPoints.Count} areas for size {brushSize}^2");
             }
         }
 
@@ -156,11 +213,24 @@ namespace TomodachiDrawer.Core
             for (int dy = -half; dy <= half; dy++)
             {
                 for (int dx = -half; dx <= half; dx++)
-                    if (!map[cy + dy, cx + dx])
+                    if (!map[cx + dx, cy + dy])
                         return false;
             }
 
             return true;
+        }
+
+        private void ClearStampArea(bool[,] map, HashSet<CanvasPoint> points, int cx, int cy, int brushSize)
+        {
+            int half = brushSize / 2;
+            for (int dy = -half; dy <= half; dy++)
+            {
+                for (int dx = -half; dx <= half; dx++)
+                {
+                    points.Remove(new CanvasPoint(cx + dx, cy + dy));
+                    map[cx + dx, cy + dy] = false;
+                }
+            }
         }
 
         private void FineDetailSnake(ISwitchOutput output, ColourLayer l)

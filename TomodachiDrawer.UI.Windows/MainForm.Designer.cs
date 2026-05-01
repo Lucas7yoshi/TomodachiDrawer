@@ -52,6 +52,7 @@
             debugColourComboBox = new ComboBox();
             DebugColourLayerButton = new Button();
             debugGroupBox = new GroupBox();
+            DebugFineTestCheckBox = new CheckBox();
             OutputSaveButton = new Button();
             TSPTimeLimitUpDown = new NumericUpDown();
             TSPSolverTimeLimitLabel = new Label();
@@ -60,6 +61,7 @@
             TSPSolverSecondsLabel = new Label();
             CrappyLogBox = new TextBox();
             logGroupBox = new GroupBox();
+            DebugShowBiggerCheckBox = new CheckBox();
             previewGroupBox.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)previewPictureBox).BeginInit();
             inputGroupBox.SuspendLayout();
@@ -266,9 +268,9 @@
             // 
             // DebugColourLayerButton
             // 
-            DebugColourLayerButton.Location = new Point(6, 51);
+            DebugColourLayerButton.Location = new Point(6, 81);
             DebugColourLayerButton.Name = "DebugColourLayerButton";
-            DebugColourLayerButton.Size = new Size(214, 23);
+            DebugColourLayerButton.Size = new Size(140, 23);
             DebugColourLayerButton.TabIndex = 5;
             DebugColourLayerButton.Text = "Debug Colour Layers";
             DebugColourLayerButton.UseVisualStyleBackColor = true;
@@ -276,6 +278,8 @@
             // 
             // debugGroupBox
             // 
+            debugGroupBox.Controls.Add(DebugShowBiggerCheckBox);
+            debugGroupBox.Controls.Add(DebugFineTestCheckBox);
             debugGroupBox.Controls.Add(debugColourComboBox);
             debugGroupBox.Controls.Add(DebugColourLayerButton);
             debugGroupBox.Controls.Add(OutputSaveButton);
@@ -286,9 +290,19 @@
             debugGroupBox.TabStop = false;
             debugGroupBox.Text = "Debug";
             // 
+            // DebugFineTestCheckBox
+            // 
+            DebugFineTestCheckBox.AutoSize = true;
+            DebugFineTestCheckBox.Location = new Point(6, 56);
+            DebugFineTestCheckBox.Name = "DebugFineTestCheckBox";
+            DebugFineTestCheckBox.Size = new Size(96, 19);
+            DebugFineTestCheckBox.TabIndex = 6;
+            DebugFineTestCheckBox.Text = "Find Uniform";
+            DebugFineTestCheckBox.UseVisualStyleBackColor = true;
+            // 
             // OutputSaveButton
             // 
-            OutputSaveButton.Location = new Point(6, 80);
+            OutputSaveButton.Location = new Point(0, 161);
             OutputSaveButton.Name = "OutputSaveButton";
             OutputSaveButton.Size = new Size(214, 23);
             OutputSaveButton.TabIndex = 4;
@@ -370,6 +384,16 @@
             logGroupBox.TabStop = false;
             logGroupBox.Text = "Log";
             // 
+            // DebugShowBiggerCheckBox
+            // 
+            DebugShowBiggerCheckBox.AutoSize = true;
+            DebugShowBiggerCheckBox.Location = new Point(108, 56);
+            DebugShowBiggerCheckBox.Name = "DebugShowBiggerCheckBox";
+            DebugShowBiggerCheckBox.Size = new Size(92, 19);
+            DebugShowBiggerCheckBox.TabIndex = 7;
+            DebugShowBiggerCheckBox.Text = "Show Bigger";
+            DebugShowBiggerCheckBox.UseVisualStyleBackColor = true;
+            // 
             // MainForm
             // 
             AllowDrop = true;
@@ -394,6 +418,7 @@
             outputGroupBox.ResumeLayout(false);
             outputGroupBox.PerformLayout();
             debugGroupBox.ResumeLayout(false);
+            debugGroupBox.PerformLayout();
             ((System.ComponentModel.ISupportInitialize)TSPTimeLimitUpDown).EndInit();
             routingGroupBox.ResumeLayout(false);
             routingGroupBox.PerformLayout();
@@ -434,5 +459,7 @@
         private Button OutputExplanationButton;
         private Button InGameSetupExplanation;
         private GroupBox logGroupBox;
+        private CheckBox DebugFineTestCheckBox;
+        private CheckBox DebugShowBiggerCheckBox;
     }
 }

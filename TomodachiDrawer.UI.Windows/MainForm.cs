@@ -185,20 +185,65 @@ namespace TomodachiDrawer.UI.Windows
                 ColorMatcherComboBox.SelectedItem.ToString()
             );
             var layers = cp.BuildFineLayers(quantized);
-            foreach (var layer in layers)
+            colourLayersDebug.Clear();
+            if (DebugFineTestCheckBox.Checked)
             {
-                var bitmap = new SKBitmap(quantized.GetLength(0), quantized.GetLength(1));
-                foreach (var p in layer.FineDetailPoints)
+                var cd = new CanvasDrawer(new DummySink(), Log);
+                foreach (var l in layers)
                 {
-                    bitmap.SetPixel(
-                        p.X,
-                        p.Y,
-                        new SKColor(layer.Colour.R, layer.Colour.G, layer.Colour.B)
-                    );
+                    cd.DetectUniformAreas(l);
                 }
-
-                colourLayersDebug[layer.Colour] = bitmap;
             }
+            if (!DebugShowBiggerCheckBox.Checked)
+            {
+                foreach (var layer in layers)
+                {
+                    var bitmap = new SKBitmap(quantized.GetLength(0), quantized.GetLength(1));
+                    foreach (var p in layer.FineDetailPoints)
+                    {
+                        bitmap.SetPixel(
+                            p.X,
+                            p.Y,
+                            new SKColor(layer.Colour.R, layer.Colour.G, layer.Colour.B)
+                        );
+                    }
+
+                    colourLayersDebug[layer.Colour] = bitmap;
+                }
+            }
+            else
+            {
+                foreach (var layer in layers)
+                {
+                    var bitmap = new SKBitmap(quantized.GetLength(0), quantized.GetLength(1));
+                    foreach (var kv in layer.StampsBySize)
+                    {
+                        // draw the bigger stamps.
+                        int stampSize = kv.Key;
+                        foreach (var p in kv.Value)
+                        {
+                            for (int x = -stampSize / 2; x <= stampSize / 2; x++)
+                            {
+                                for (int y = -stampSize / 2 ; y <= stampSize /2; y++)
+                                {
+                                    int drawX = p.X + x;
+                                    int drawY = p.Y + y;
+                                    if (drawX >= 0 && drawX < bitmap.Width && drawY >= 0 && drawY < bitmap.Height)
+                                    {
+                                        bitmap.SetPixel(
+                                            drawX,
+                                            drawY,
+                                            new SKColor(layer.Colour.R, layer.Colour.G, layer.Colour.B)
+                                        );
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    colourLayersDebug[layer.Colour] = bitmap;
+                }
+            }
+
 
             debugColourComboBox.Items.Clear();
             foreach (var cld in colourLayersDebug)
