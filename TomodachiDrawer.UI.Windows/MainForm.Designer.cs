@@ -477,7 +477,6 @@
         private Button OpenImageButton;
         private TextBox ImagePathBox;
         private GroupBox outputGroupBox;
-        private PixelBox previewPictureBox;
         private SaveFileDialog saveOutputFileDialog;
         private ComboBox debugColourComboBox;
         private Button DebugColourLayerButton;
