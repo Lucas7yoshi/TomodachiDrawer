@@ -1,9 +1,6 @@
 ﻿using System.Diagnostics;
-
 using Google.OrTools.ConstraintSolver;
-
 using SkiaSharp;
-
 using TomodachiDrawer.Core.Interfaces;
 using TomodachiDrawer.Core.Models;
 using TomodachiDrawer.Core.OutputSinks;
@@ -31,11 +28,22 @@ namespace TomodachiDrawer.Core
             _log = logger ?? Console.WriteLine;
         }
 
-        public async Task DrawImage(SKBitmap image, string quantizerName, float tspTimeLimit = 1.0f, bool disableLargeBrush = false)
+        public async Task DrawImage(
+            SKBitmap image,
+            string quantizerName,
+            float tspTimeLimit = 1.0f,
+            bool disableLargeBrush = false
+        )
         {
             if (image.Width > CanvasWidth || image.Height > CanvasHeight)
-                throw new InvalidDataException($"Image too big. Max is {CanvasWidth}x{CanvasHeight}.");
-            ArgumentOutOfRangeException.ThrowIfLessThanOrEqual(tspTimeLimit, 0.0f, nameof(tspTimeLimit));
+                throw new InvalidDataException(
+                    $"Image too big. Max is {CanvasWidth}x{CanvasHeight}."
+                );
+            ArgumentOutOfRangeException.ThrowIfLessThanOrEqual(
+                tspTimeLimit,
+                0.0f,
+                nameof(tspTimeLimit)
+            );
 
             // Stages:
             // 1: Perform Color quantization to the tomodachi life pallete
@@ -84,7 +92,6 @@ namespace TomodachiDrawer.Core
                 layerNumber++;
                 _palette.SelectColour(l.Colour, 25.0);
 
-
                 // ============= Stamps. TODO ============
                 // (like the actual drawing of the big brush goes here)
 
@@ -97,7 +104,7 @@ namespace TomodachiDrawer.Core
                         if (sbs.Value.Count == 0)
                             continue;
                         int brushSize = sbs.Key;
-                        
+
                         _toolbar.SelectBrush(stampSink, brushSize);
                         // todo TSP routing lol
 
@@ -111,8 +118,6 @@ namespace TomodachiDrawer.Core
                             NavigateTo(stampSink, point);
                             (stampSink as ISwitchOutput).Tap(Button.A);
                         }
-
-                        
                     }
                     _log($"\tStamps: {stampSink.TotalSeconds:F3}s");
                     stampSink.ReplayTo(_realOutput);
@@ -147,7 +152,8 @@ namespace TomodachiDrawer.Core
                 //_cursorY = savedY;
 
                 bool tspHasSolution = tspSink.TotalMilliseconds > 0;
-                bool usedSnake = !tspHasSolution || snakeSink.TotalMilliseconds <= tspSink.TotalMilliseconds;
+                bool usedSnake =
+                    !tspHasSolution || snakeSink.TotalMilliseconds <= tspSink.TotalMilliseconds;
                 if (usedSnake)
                 {
                     snakeSink.ReplayTo(_realOutput);
@@ -162,10 +168,16 @@ namespace TomodachiDrawer.Core
                     _cursorX = afterTspX;
                     _cursorY = afterTspY;
                 }
-                string tspPart = tspHasSolution ? $"{tspSink.TotalTime.TotalSeconds:F3}s" : "no solution";
-                _log($"[{layerNumber}/{totalLayers}] {l.Colour.DisplayName}: snake={snakeSink.TotalTime.TotalSeconds:F3}s, tsp={tspPart} -> {(usedSnake ? "snake" : "tsp")}");
+                string tspPart = tspHasSolution
+                    ? $"{tspSink.TotalTime.TotalSeconds:F3}s"
+                    : "no solution";
+                _log(
+                    $"[{layerNumber}/{totalLayers}] {l.Colour.DisplayName}: snake={snakeSink.TotalTime.TotalSeconds:F3}s, tsp={tspPart} -> {(usedSnake ? "snake" : "tsp")}"
+                );
             }
-            _log($"Done! Total in layer draw time: {totalInLayerTime:F3}s (Doesnt include colour/brush selection)");
+            _log(
+                $"Done! Total in layer draw time: {totalInLayerTime:F3}s (Doesnt include colour/brush selection)"
+            );
         }
 
         private static readonly int[] LargeBrushSizes = [27, 19, 13, 7, 3];
@@ -180,7 +192,7 @@ namespace TomodachiDrawer.Core
             // TODO: That ^
 
             // need to build a more useful 2d array for scanning since l.FineDetailPoints is uh well, just a hashset of points.
-            var points = new bool[256,256];
+            var points = new bool[256, 256];
             foreach (var p in l.FineDetailPoints)
                 points[p.X, p.Y] = true;
 
@@ -229,7 +241,13 @@ namespace TomodachiDrawer.Core
             return true;
         }
 
-        private void ClearStampArea(bool[,] map, HashSet<CanvasPoint> points, int cx, int cy, int brushSize)
+        private void ClearStampArea(
+            bool[,] map,
+            HashSet<CanvasPoint> points,
+            int cx,
+            int cy,
+            int brushSize
+        )
         {
             int half = brushSize / 2;
             for (int dy = -half; dy <= half; dy++)
@@ -244,17 +262,13 @@ namespace TomodachiDrawer.Core
 
         private void FineDetailSnake(ISwitchOutput output, ColourLayer l)
         {
-
             // find the nearest edge.
             int topLeft = MeasureDistanceToFromCurrent(l.Extents.MinX, l.Extents.MinY);
             int topRight = MeasureDistanceToFromCurrent(l.Extents.MaxX, l.Extents.MinY);
             int bottomLeft = MeasureDistanceToFromCurrent(l.Extents.MinX, l.Extents.MaxY);
             int bottomRight = MeasureDistanceToFromCurrent(l.Extents.MaxX, l.Extents.MaxY);
 
-            int bestDist = Math.Min(
-                Math.Min(topLeft, topRight),
-                Math.Min(bottomLeft, bottomRight)
-            );
+            int bestDist = Math.Min(Math.Min(topLeft, topRight), Math.Min(bottomLeft, bottomRight));
 
             bool goingDown = false;
             bool goingRight = false;
@@ -323,7 +337,8 @@ namespace TomodachiDrawer.Core
                 //int startX = goingRight ? l.Extents.MinX : l.Extents.MaxX;
                 //int endX = goingRight ? l.Extents.MaxX : l.Extents.MinX;
 
-                int startX, endX;
+                int startX,
+                    endX;
                 if (goingRight)
                 {
                     startX = l.FineDetailPoints.Where(p => p.Y == y).Min(p => p.X);
@@ -363,9 +378,7 @@ namespace TomodachiDrawer.Core
                         break;
                     }
 
-                    bool isNextPoint = l.FineDetailPoints.Contains(
-                        new CanvasPoint(x + xStep, y)
-                    );
+                    bool isNextPoint = l.FineDetailPoints.Contains(new CanvasPoint(x + xStep, y));
                     if (holdingA && !isNextPoint)
                     {
                         output.Release(Button.A);
@@ -425,7 +438,8 @@ namespace TomodachiDrawer.Core
                 var point = optimizedRoute[idx];
                 NavigateTo(output, point);
 
-                bool nextIsAdjacent = idx + 1 < optimizedRoute.Count
+                bool nextIsAdjacent =
+                    idx + 1 < optimizedRoute.Count
                     && Math.Max(
                         Math.Abs(optimizedRoute[idx + 1].X - point.X),
                         Math.Abs(optimizedRoute[idx + 1].Y - point.Y)
@@ -473,14 +487,12 @@ namespace TomodachiDrawer.Core
                 }
             }
 
-
             var manager = new RoutingIndexManager(points.Length, 1, closestPointIndex);
             var routing = new RoutingModel(manager);
 
             int transitCallbackIndex = routing.RegisterTransitCallback(
                 (long fromIndex, long toIndex) =>
                 {
-
                     var fromNode = manager.IndexToNode(fromIndex);
                     var toNode = manager.IndexToNode(toIndex);
                     // return Math.Max(Math.Abs(_cursorX - targetX), Math.Abs(_cursorY - targetY));
@@ -488,17 +500,29 @@ namespace TomodachiDrawer.Core
                         Math.Abs(points[fromNode].X - points[toNode].X),
                         Math.Abs(points[fromNode].Y - points[toNode].Y)
                     );
-                });
+                }
+            );
 
             routing.SetArcCostEvaluatorOfAllVehicles(transitCallbackIndex);
 
-            var searchParameters = operations_research_constraint_solver.DefaultRoutingSearchParameters();
-            searchParameters.FirstSolutionStrategy = FirstSolutionStrategy.Types.Value.PathCheapestArc;
-            searchParameters.LocalSearchMetaheuristic = LocalSearchMetaheuristic.Types.Value.GuidedLocalSearch;
+            var searchParameters =
+                operations_research_constraint_solver.DefaultRoutingSearchParameters();
+            searchParameters.FirstSolutionStrategy = FirstSolutionStrategy
+                .Types
+                .Value
+                .PathCheapestArc;
+            searchParameters.LocalSearchMetaheuristic = LocalSearchMetaheuristic
+                .Types
+                .Value
+                .GuidedLocalSearch;
             // need to get int seconds and int nanoseconds because... google.
             int seconds = (int)timeLimitSeconds;
             int nanoseconds = (int)((timeLimitSeconds - seconds) * 1_000_000_000);
-            searchParameters.TimeLimit = new Google.Protobuf.WellKnownTypes.Duration { Seconds = seconds, Nanos = nanoseconds };
+            searchParameters.TimeLimit = new Google.Protobuf.WellKnownTypes.Duration
+            {
+                Seconds = seconds,
+                Nanos = nanoseconds,
+            };
 
             var sw = Stopwatch.StartNew();
             var solution = routing.SolveWithParameters(searchParameters);
@@ -524,7 +548,8 @@ namespace TomodachiDrawer.Core
         //private void NavigateY(int targetY) => NavigateY(_output, targetY);
         //private void NavigateTo(CanvasPoint p) => NavigateTo(_output, p.X, p.Y);
 
-        private void NavigateTo(ISwitchOutput output, CanvasPoint p) => NavigateTo(output, p.X, p.Y);
+        private void NavigateTo(ISwitchOutput output, CanvasPoint p) =>
+            NavigateTo(output, p.X, p.Y);
 
         private void NavigateTo(ISwitchOutput output, int targetX, int targetY)
         {

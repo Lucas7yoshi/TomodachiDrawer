@@ -159,7 +159,9 @@ namespace TomodachiDrawer.Core.OutputSinks
                     // 1 byte repeat record
                     byte record = (byte)(Opcode.RepeatLast1 << 4 | (byte)_pendingRepeats);
                     _writer.Write(record);
-                    Console.WriteLine($"RepeatLast1: Repeating opcode 0x{_lastSingleByteRecord:X2} {_pendingRepeats} times");
+                    Console.WriteLine(
+                        $"RepeatLast1: Repeating opcode 0x{_lastSingleByteRecord:X2} {_pendingRepeats} times"
+                    );
                 }
                 else
                 {
@@ -169,7 +171,9 @@ namespace TomodachiDrawer.Core.OutputSinks
                     );
                     byte lower = (byte)(_pendingRepeats & 0xFF);
                     _writer.Write([opcodeAndHighNibble, lower]);
-                    Console.WriteLine($"RepeatLast2: Repeating opcode 0x{_lastSingleByteRecord:X2} {_pendingRepeats} times");
+                    Console.WriteLine(
+                        $"RepeatLast2: Repeating opcode 0x{_lastSingleByteRecord:X2} {_pendingRepeats} times"
+                    );
                 }
 
                 _lastSingleByteRecord = null;

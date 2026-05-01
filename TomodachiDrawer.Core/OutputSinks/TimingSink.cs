@@ -31,15 +31,21 @@ namespace TomodachiDrawer.Core.OutputSinks
         }
 
         public void Press(Button btn) => _actions.Add(o => o.Press(btn));
+
         public void Release(Button btn) => _actions.Add(o => o.Release(btn));
+
         public void Press(DPad dir) => _actions.Add(o => o.Press(dir));
+
         public void Release(DPad dir) => _actions.Add(o => o.Release(dir));
+
         public void ReleaseAll() => _actions.Add(o => o.ReleaseAll());
-        public void SetStick(Stick stick, byte value) => _actions.Add(o => o.SetStick(stick, value));
+
+        public void SetStick(Stick stick, byte value) =>
+            _actions.Add(o => o.SetStick(stick, value));
 
         void ISwitchOutput.Tap(Button btn, double holdDuration, double releaseDuration)
         {
-            if (holdDuration == 25.0 && releaseDuration == 25.0 )
+            if (holdDuration == 25.0 && releaseDuration == 25.0)
             {
                 //WriteNibbleRecord(Opcode.TapButton, (byte)btn);
                 _totalMilliseconds += holdDuration + releaseDuration;
@@ -68,6 +74,7 @@ namespace TomodachiDrawer.Core.OutputSinks
             Release(dir);
             Delay(releaseDuration);
         }
+
         public void Dispose() { }
     }
 }

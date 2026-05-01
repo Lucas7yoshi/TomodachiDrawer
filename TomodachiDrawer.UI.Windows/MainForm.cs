@@ -1,8 +1,6 @@
+using System.ComponentModel;
 using SkiaSharp;
 using SkiaSharp.Views.Desktop;
-
-using System.ComponentModel;
-
 using TomodachiDrawer.Core;
 using TomodachiDrawer.Core.ImageProcessing;
 using TomodachiDrawer.Core.OutputSinks;
@@ -21,7 +19,6 @@ namespace TomodachiDrawer.UI.Windows
             ColorMatcherComboBox.SelectedIndex = 0;
             ColorMatcherComboBox.SelectedIndexChanged += (s, e) => UpdatePreview();
 
-
 #if !DEBUG
             this.Size = new Size(934, 651);
 #endif
@@ -36,37 +33,46 @@ namespace TomodachiDrawer.UI.Windows
                     if (rp2040Path != null)
                     {
                         // Update the UI with the found path
-                        this.Invoke((MethodInvoker)delegate
-                        {
-                            OutputRP2040StatusLabel.Text = $"RP2040 found: {rp2040Path}";
-                            OutputRP2040StatusLabel.ForeColor = Color.Green;
+                        this.Invoke(
+                            (MethodInvoker)
+                                delegate
+                                {
+                                    OutputRP2040StatusLabel.Text = $"RP2040 found: {rp2040Path}";
+                                    OutputRP2040StatusLabel.ForeColor = Color.Green;
 
-                            // enable shit
-                            FlashBaseFirmwareButton.Enabled = true;
-                            ExportRP2040Button.Enabled = !string.IsNullOrEmpty(currentImagePath);
-                            if (!lastState)
-                            {
-                                CrappyLogBox.AppendText($"RP2040 connected @ {rp2040Path}\r\n");
-                                lastState = true;
-                            }
-                        });
-
+                                    // enable shit
+                                    FlashBaseFirmwareButton.Enabled = true;
+                                    ExportRP2040Button.Enabled = !string.IsNullOrEmpty(
+                                        currentImagePath
+                                    );
+                                    if (!lastState)
+                                    {
+                                        CrappyLogBox.AppendText(
+                                            $"RP2040 connected @ {rp2040Path}\r\n"
+                                        );
+                                        lastState = true;
+                                    }
+                                }
+                        );
                     }
                     else
                     {
-                        this.Invoke((MethodInvoker)delegate
-                        {
-                            OutputRP2040StatusLabel.Text = "RP2040 not found";
-                            OutputRP2040StatusLabel.ForeColor = Color.Red;
+                        this.Invoke(
+                            (MethodInvoker)
+                                delegate
+                                {
+                                    OutputRP2040StatusLabel.Text = "RP2040 not found";
+                                    OutputRP2040StatusLabel.ForeColor = Color.Red;
 
-                            FlashBaseFirmwareButton.Enabled = false;
-                            ExportRP2040Button.Enabled = false;
-                            if (lastState)
-                            {
-                                CrappyLogBox.AppendText($"RP2040 disconnected...\r\n");
-                                lastState = false;
-                            }
-                        });
+                                    FlashBaseFirmwareButton.Enabled = false;
+                                    ExportRP2040Button.Enabled = false;
+                                    if (lastState)
+                                    {
+                                        CrappyLogBox.AppendText($"RP2040 disconnected...\r\n");
+                                        lastState = false;
+                                    }
+                                }
+                        );
                     }
                     Thread.Sleep(1000);
                 }
@@ -81,7 +87,12 @@ namespace TomodachiDrawer.UI.Windows
                 var img = SKBitmap.Decode(path);
                 if (img.Width > 256 || img.Height > 256)
                 {
-                    MessageBox.Show($"{Path.GetFileName(path)} is too big! Max of 256x256.", "Image too big", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    MessageBox.Show(
+                        $"{Path.GetFileName(path)} is too big! Max of 256x256.",
+                        "Image too big",
+                        MessageBoxButtons.OK,
+                        MessageBoxIcon.Error
+                    );
                     return;
                 }
                 else
@@ -100,7 +111,8 @@ namespace TomodachiDrawer.UI.Windows
 
         private void UpdatePreview()
         {
-            if (!File.Exists(currentImagePath)) {
+            if (!File.Exists(currentImagePath))
+            {
                 Log($"File does not exist, cannot update preview: {currentImagePath}");
                 return;
             }
@@ -115,7 +127,9 @@ namespace TomodachiDrawer.UI.Windows
 
             var previewBitmap = preview.ToBitmap();
             previewPictureBox.Image = previewBitmap;
-            Log($"Updated preview for {Path.GetFileName(currentImagePath)} using {selectedQuantizer}");
+            Log(
+                $"Updated preview for {Path.GetFileName(currentImagePath)} using {selectedQuantizer}"
+            );
         }
 
         private void OpenImageButton_Click(object sender, EventArgs e)
@@ -147,7 +161,13 @@ namespace TomodachiDrawer.UI.Windows
         private void Log(string msg)
         {
             Console.WriteLine(msg);
-            this.BeginInvoke((MethodInvoker)delegate { CrappyLogBox.AppendText(msg + "\r\n"); });
+            this.BeginInvoke(
+                (MethodInvoker)
+                    delegate
+                    {
+                        CrappyLogBox.AppendText(msg + "\r\n");
+                    }
+            );
         }
 
         private async void OutputSaveButton_Click(object sender, EventArgs e)
@@ -228,16 +248,25 @@ namespace TomodachiDrawer.UI.Windows
                         {
                             for (int x = -stampSize / 2; x <= stampSize / 2; x++)
                             {
-                                for (int y = -stampSize / 2 ; y <= stampSize /2; y++)
+                                for (int y = -stampSize / 2; y <= stampSize / 2; y++)
                                 {
                                     int drawX = p.X + x;
                                     int drawY = p.Y + y;
-                                    if (drawX >= 0 && drawX < bitmap.Width && drawY >= 0 && drawY < bitmap.Height)
+                                    if (
+                                        drawX >= 0
+                                        && drawX < bitmap.Width
+                                        && drawY >= 0
+                                        && drawY < bitmap.Height
+                                    )
                                     {
                                         bitmap.SetPixel(
                                             drawX,
                                             drawY,
-                                            new SKColor(layer.Colour.R, layer.Colour.G, layer.Colour.B)
+                                            new SKColor(
+                                                layer.Colour.R,
+                                                layer.Colour.G,
+                                                layer.Colour.B
+                                            )
                                         );
                                     }
                                 }
@@ -247,7 +276,6 @@ namespace TomodachiDrawer.UI.Windows
                     colourLayersDebug[layer.Colour] = bitmap;
                 }
             }
-
 
             debugColourComboBox.Items.Clear();
             foreach (var cld in colourLayersDebug)
@@ -270,7 +298,8 @@ namespace TomodachiDrawer.UI.Windows
 
         private void TSPSolverTimeLimitHelpButton_Click(object sender, EventArgs e)
         {
-            string message = @"TSP Solver Time Limit refers to how much time is alloted to the TSP solver.
+            string message =
+                @"TSP Solver Time Limit refers to how much time is alloted to the TSP solver.
 TSP refers to the Travelling Sales Person problem, which is finding the optimal route among a set of points.
 This is used to find the optimal path for the pen tool to take while drawing to minimize drawing time.
 
@@ -279,7 +308,12 @@ For 64x64, 0.5s is generally fine, anything largest you should consider giving i
 
 This time is how long it is alloted PER colour, so if an image has 30 different colours used, 0.5s will take 15 seconds.
 The TSP solve is not used always, a simpler ""snaking"" algorithm is used if its quicker, or if TSP didnt find anything in time, which it sometimes is, mostly for large continuous areas of colour.";
-            MessageBox.Show(message, "TSP Solver Time Limit", MessageBoxButtons.OK, MessageBoxIcon.Information);
+            MessageBox.Show(
+                message,
+                "TSP Solver Time Limit",
+                MessageBoxButtons.OK,
+                MessageBoxIcon.Information
+            );
         }
 
         private void FlashBaseFirmwareButton_Click(object sender, EventArgs e)
@@ -290,7 +324,11 @@ The TSP solve is not used always, a simpler ""snaking"" algorithm is used if its
             if (File.Exists(firmwareFileName))
             {
                 // Begin the very complicated process
-                File.Copy(firmwareFileName, UF2Flasher.FindRP2040Drive() + "TomodachiDrawer.Firmware.uf2", true);
+                File.Copy(
+                    firmwareFileName,
+                    UF2Flasher.FindRP2040Drive() + "TomodachiDrawer.Firmware.uf2",
+                    true
+                );
                 // thats it lol
                 // wait until it dismounts and reboots itself
                 var timeout = DateTime.Now.AddSeconds(5);
@@ -298,23 +336,37 @@ The TSP solve is not used always, a simpler ""snaking"" algorithm is used if its
                 {
                     if (DateTime.Now > timeout)
                     {
-                        MessageBox.Show("Wrote file but expected it to reset itself by now, maybe try doing it manually..?", "Error flashing base firmware", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                        MessageBox.Show(
+                            "Wrote file but expected it to reset itself by now, maybe try doing it manually..?",
+                            "Error flashing base firmware",
+                            MessageBoxButtons.OK,
+                            MessageBoxIcon.Error
+                        );
                         return;
                     }
                     Thread.Sleep(500);
                 }
-                MessageBox.Show("Base firmware flashed! You can now use the standard output button to output your images to it!\nIf this is your first time, its likely flashing red. Simply hold BOOT and plug it back in, or hold BOOT and press reset if you have it.");
+                MessageBox.Show(
+                    "Base firmware flashed! You can now use the standard output button to output your images to it!\nIf this is your first time, its likely flashing red. Simply hold BOOT and plug it back in, or hold BOOT and press reset if you have it."
+                );
                 CrappyLogBox.AppendText("Flashed base firmware to RP2040\r\n");
             }
             else
             {
-                MessageBox.Show("For some reason could not locate TomodachiDrawer.Firmware.uf2", "Error flashing base firmware", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                MessageBox.Show(
+                    "For some reason could not locate TomodachiDrawer.Firmware.uf2",
+                    "Error flashing base firmware",
+                    MessageBoxButtons.OK,
+                    MessageBoxIcon.Error
+                );
             }
         }
 
         private void OutputExplanationButton_Click(object sender, EventArgs e)
         {
-            MessageBox.Show("Your RP2040-Zero (or similar) needs two things in its memory (it's flash):\r\n- The code that reads the instructions to draw your image and pipe it to the switch\r\n- The instructions to draw your image.\r\n\r\n\r\nTo connect your device for flashing, hold down the \"BOOT\" button and plug it in, or hold \"BOOT\" and press \"RESET\" while it is connected.\r\n\r\nYou only need to flash the code/\"firmware\" once.\r\n\r\nYou then flash the image data onto it for each image, without needing to reflash the firmware.\r\n\r\nWhen you first install the firmware, it'll reset itself, flash yellow 3 times, and then flash red.\r\nFlashing red is expected, as that means it cannot find the image data.\r\nReconnect it using the same \"BOOT\" button steps as described above, load your image, and hit \"Export to RP2040\".\r\n\r\nAgain, it will reboot, but now you can unplug it and plug it into your switch.\r\n\r\nYOU MUST HAVE \"Pro Controller Wired Commmunication\" ENABLED.\r\nGo to system settings -> Controllers & Accessories -> Pro Controller Wired Communication\r\n");
+            MessageBox.Show(
+                "Your RP2040-Zero (or similar) needs two things in its memory (it's flash):\r\n- The code that reads the instructions to draw your image and pipe it to the switch\r\n- The instructions to draw your image.\r\n\r\n\r\nTo connect your device for flashing, hold down the \"BOOT\" button and plug it in, or hold \"BOOT\" and press \"RESET\" while it is connected.\r\n\r\nYou only need to flash the code/\"firmware\" once.\r\n\r\nYou then flash the image data onto it for each image, without needing to reflash the firmware.\r\n\r\nWhen you first install the firmware, it'll reset itself, flash yellow 3 times, and then flash red.\r\nFlashing red is expected, as that means it cannot find the image data.\r\nReconnect it using the same \"BOOT\" button steps as described above, load your image, and hit \"Export to RP2040\".\r\n\r\nAgain, it will reboot, but now you can unplug it and plug it into your switch.\r\n\r\nYOU MUST HAVE \"Pro Controller Wired Commmunication\" ENABLED.\r\nGo to system settings -> Controllers & Accessories -> Pro Controller Wired Communication\r\n"
+            );
         }
 
         private async void ExportRP2040Button_Click(object sender, EventArgs e)
@@ -327,14 +379,22 @@ The TSP solve is not used always, a simpler ""snaking"" algorithm is used if its
 
             await Task.Run(async () =>
             {
-                string tempOutputName = Path.Combine(Path.GetTempPath(), $"rp2040output{new Random().Next(1000000, 9999999)}.tdld");
+                string tempOutputName = Path.Combine(
+                    Path.GetTempPath(),
+                    $"rp2040output{new Random().Next(1000000, 9999999)}.tdld"
+                );
                 Log($"Exporting to RP2040 flash ({Path.GetFileName(tempOutputName)})");
                 //var fileOutput = new FileControllerSink(tempOutputName);
                 var timingSink = new TimingSink();
                 var drawer = new CanvasDrawer(timingSink, Log);
                 drawer.ConnectAndConfirmController();
                 Log("Starting to generate inputs...");
-                await drawer.DrawImage(SKBitmap.Decode(imagePath), quantizer, tspLimit, DebugDisableLargeStamps.Checked);
+                await drawer.DrawImage(
+                    SKBitmap.Decode(imagePath),
+                    quantizer,
+                    tspLimit,
+                    DebugDisableLargeStamps.Checked
+                );
                 //fileOutput.Dispose();
 
                 Log($"True complete overall time is: {timingSink.TotalTime.TotalSeconds}s");
@@ -348,7 +408,9 @@ The TSP solve is not used always, a simpler ""snaking"" algorithm is used if its
                 if (uf2bytes != null && uf2bytes.Length > 0)
                 {
                     File.WriteAllBytes(UF2Flasher.FindRP2040Drive() + "tdld_image.uf2", uf2bytes);
-                    Log("Wrote to RP2040 flash. Unplug the RP2040 and plug it into the switch without holding any button.");
+                    Log(
+                        "Wrote to RP2040 flash. Unplug the RP2040 and plug it into the switch without holding any button."
+                    );
                 }
 
                 if (File.Exists(tempOutputName))
@@ -383,7 +445,11 @@ The TSP solve is not used always, a simpler ""snaking"" algorithm is used if its
 
         private void InGameSetupExplanation_Click(object sender, EventArgs e)
         {
-            MessageBox.Show("Setup in game is fairly straightforward.\r\n- Navigate to the palette house\r\n- Ensure you are on the \"advanced\" drawing UI\r\n- Ensure your top colour is set to Black (it is by default)\r\n- Set your cursor to the TOP LEFT of where you want the drawing to be.\r\n- Ensure the full area of the canvas that will be drawn is on screen.\r\n\r\nIf the canvas is zoomed in, it will cause the cursor to desync as the canvas moves when the cursor gets on the edges. Zooming out fully avoids this.\r\n\r\nIf your image is 256x256, set it all the way in the top left. If your image is smaller, set your cursor to where you want the topleft most pixel of your drawing to be.", "In Game Setup", MessageBoxButtons.OK);
+            MessageBox.Show(
+                "Setup in game is fairly straightforward.\r\n- Navigate to the palette house\r\n- Ensure you are on the \"advanced\" drawing UI\r\n- Ensure your top colour is set to Black (it is by default)\r\n- Set your cursor to the TOP LEFT of where you want the drawing to be.\r\n- Ensure the full area of the canvas that will be drawn is on screen.\r\n\r\nIf the canvas is zoomed in, it will cause the cursor to desync as the canvas moves when the cursor gets on the edges. Zooming out fully avoids this.\r\n\r\nIf your image is 256x256, set it all the way in the top left. If your image is smaller, set your cursor to where you want the topleft most pixel of your drawing to be.",
+                "In Game Setup",
+                MessageBoxButtons.OK
+            );
         }
     }
 }

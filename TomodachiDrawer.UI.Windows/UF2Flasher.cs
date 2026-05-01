@@ -1,8 +1,7 @@
 ﻿using System;
+using System.Buffers.Binary;
 using System.Collections.Generic;
 using System.Text;
-
-using System.Buffers.Binary;
 
 namespace TomodachiDrawer.UI.Windows
 {
@@ -24,9 +23,12 @@ namespace TomodachiDrawer.UI.Windows
                 BinaryPrimitives.WriteUInt32LittleEndian(block[0x000..], 0x0A324655); // Magic 1
                 BinaryPrimitives.WriteUInt32LittleEndian(block[0x004..], 0x9E5D5157); // Magic 2
                 BinaryPrimitives.WriteUInt32LittleEndian(block[0x008..], 0x00002000); // Flags
-                BinaryPrimitives.WriteUInt32LittleEndian(block[0x00C..], TargetBase + (uint)(i * PayloadSize)); // Target addr
+                BinaryPrimitives.WriteUInt32LittleEndian(
+                    block[0x00C..],
+                    TargetBase + (uint)(i * PayloadSize)
+                ); // Target addr
                 BinaryPrimitives.WriteUInt32LittleEndian(block[0x010..], PayloadSize);
-                BinaryPrimitives.WriteUInt32LittleEndian(block[0x014..], (uint)i);          // Block number
+                BinaryPrimitives.WriteUInt32LittleEndian(block[0x014..], (uint)i); // Block number
                 BinaryPrimitives.WriteUInt32LittleEndian(block[0x018..], (uint)blockCount); // Total blocks
                 BinaryPrimitives.WriteUInt32LittleEndian(block[0x01C..], FamilyId);
                 BinaryPrimitives.WriteUInt32LittleEndian(block[0x1FC..], 0x0AB16F30); // Final magic
