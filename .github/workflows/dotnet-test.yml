@@ -13,7 +13,7 @@ jobs:
         configuration: [Debug, Release]
 
     steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v6
     - uses: actions/setup-dotnet@v5
       with:
         dotnet-version: '10.0.x'
@@ -35,7 +35,7 @@ jobs:
         runtime: [win-x64, linux-x64,linux-arm64,osx-x64,osx-arm64]
 
     steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v6
     - uses: actions/setup-dotnet@v5
       with:
         dotnet-version: '10.0.x'
@@ -46,7 +46,7 @@ jobs:
       run: dotnet publish --configuration ${{ matrix.configuration }} -r ${{ matrix.runtime }} --self-contained -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true
     # todo: artifacts, release flow, etc?
     - name: Upload Artifacts
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v7
       with:
         name: TomodachiDrawer-${{ matrix.runtime }}-${{ matrix.configuration }}
         # Point to where dotnet actually puts the files
@@ -59,7 +59,7 @@ jobs:
       matrix:
         configuration: [Release]
     steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v6
     - uses: actions/setup-dotnet@v5
       with:
         dotnet-version: '10.0.x'
@@ -70,7 +70,7 @@ jobs:
       run: dotnet publish --configuration ${{ matrix.configuration }} -r win-x64 --self-contained -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true
 
     - name: Upload Artifacts
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v7
       with:
         name: TomodachiDrawer-WinForms-${{ matrix.configuration }}
         path: TomodachiDrawer.UI.Windows/bin/${{ matrix.configuration }}/net10.0-windows/win-x64/publish/
