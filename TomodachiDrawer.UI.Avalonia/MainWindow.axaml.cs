@@ -12,6 +12,7 @@ using SkiaSharp;
 
 using TomodachiDrawer.Core;
 using TomodachiDrawer.Core.ImageProcessing;
+using TomodachiDrawer.Core.ImageProcessing.Denoising;
 using TomodachiDrawer.Core.OutputSinks;
 
 using Button = Avalonia.Controls.Button; // conflict with the Button enum in SinkEnums
@@ -30,6 +31,13 @@ public partial class MainWindow : Window
 
         ColorMatcherComboBox.ItemsSource = ColourPalette.Quantizers.Keys.ToList();
         ColorMatcherComboBox.SelectedIndex = 0;
+
+        var denoiserSelection = new List<string>();
+        denoiserSelection.Add("None");
+        denoiserSelection.AddRange(ImageDenoiser.Denoisers.Keys);
+
+        DitheringComboBox.ItemsSource = denoiserSelection;
+        DitheringComboBox.SelectedIndex = 0;
 
         DragDrop.SetAllowDrop(this, true);
         AddHandler(DragDrop.DropEvent, OnDrop);
@@ -121,7 +129,8 @@ public partial class MainWindow : Window
         if (quantizer == null) return;
 
         var pal = new ColourPalette(new DummySink());
-        var preview = pal.PreviewColourMapping(SKBitmap.Decode(_currentImagePath), quantizer);
+        var denoiser = DitheringComboBox.SelectedItem?.ToString();
+        var preview = pal.PreviewColourMapping(SKBitmap.Decode(_currentImagePath), quantizer, denoiser);
         PreviewImage.Source = ToAvaloniaBitmap(preview);
         AppendLog($"Updated preview for {Path.GetFileName(_currentImagePath)} using {quantizer}");
     }
@@ -251,7 +260,7 @@ public partial class MainWindow : Window
             var fileOutput = new FileControllerSink(outputPath);
             var drawer = new CanvasDrawer(fileOutput, AppendLog);
             drawer.ConnectAndConfirmController();
-            await drawer.DrawImage(SKBitmap.Decode(imagePath), quantizer, tspLimit);
+            await drawer.DrawImage(SKBitmap.Decode(imagePath), quantizer, null, tspLimit);
             fileOutput.Dispose();
         });
 
@@ -281,7 +290,7 @@ public partial class MainWindow : Window
             var drawer = new CanvasDrawer(timingSink, AppendLog);
             drawer.ConnectAndConfirmController();
             AppendLog("Starting to generate inputs...");
-            await drawer.DrawImage(SKBitmap.Decode(imagePath), quantizer, tspLimit, false);
+            await drawer.DrawImage(SKBitmap.Decode(imagePath), quantizer, null, tspLimit, false);
             AppendLog($"True complete overall time is: {timingSink.TotalTime.TotalSeconds}s");
 
             var fileSink = new FileControllerSink(tempPath);
@@ -344,7 +353,7 @@ public partial class MainWindow : Window
             var drawer = new CanvasDrawer(timingSink, AppendLog);
             drawer.ConnectAndConfirmController();
             AppendLog("Starting to generate inputs...");
-            await drawer.DrawImage(SKBitmap.Decode(imagePath), quantizer, tspLimit, false);
+            await drawer.DrawImage(SKBitmap.Decode(imagePath), quantizer, null, tspLimit, false);
             AppendLog($"True complete overall time is: {timingSink.TotalTime.TotalSeconds}s");
 
             var fileSink = new FileControllerSink(tempPath);

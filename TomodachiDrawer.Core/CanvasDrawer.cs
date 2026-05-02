@@ -4,6 +4,7 @@ using SkiaSharp;
 
 using System.Diagnostics;
 
+using TomodachiDrawer.Core.ImageProcessing.Denoising;
 using TomodachiDrawer.Core.Interfaces;
 using TomodachiDrawer.Core.Models;
 using TomodachiDrawer.Core.OutputSinks;
@@ -34,6 +35,7 @@ namespace TomodachiDrawer.Core
         public async Task DrawImage(
             SKBitmap image,
             string quantizerName,
+            string? denoiserName = null,
             float tspTimeLimit = 1.0f,
             bool disableLargeBrush = false
         )
@@ -59,6 +61,11 @@ namespace TomodachiDrawer.Core
             // travel distance. Need to look at the ai-slop version to try and figure out how that works there.
 
             // Also we need to pass in the quantization method and dithering settings as arguments.
+
+            if (!string.IsNullOrEmpty(denoiserName))
+            {
+                image = ImageDenoiser.DenoiseImage(image, denoiserName);
+            }
 
             // Quantized Map is a 2D array of PaletteColours.
             var quantizedMap = _palette.QuantizeImage(image, quantizerName);

@@ -30,7 +30,7 @@
         {
             previewGroupBox = new GroupBox();
             previewPixelBox = new PixelBox();
-            DitheringComboBox = new ComboBox();
+            DenoiserComboBox = new ComboBox();
             DitheringLabel = new Label();
             ColorMatcherLabel = new Label();
             ColorMatcherComboBox = new ComboBox();
@@ -77,7 +77,7 @@
             // previewGroupBox
             // 
             previewGroupBox.Controls.Add(previewPixelBox);
-            previewGroupBox.Controls.Add(DitheringComboBox);
+            previewGroupBox.Controls.Add(DenoiserComboBox);
             previewGroupBox.Controls.Add(DitheringLabel);
             previewGroupBox.Controls.Add(ColorMatcherLabel);
             previewGroupBox.Controls.Add(ColorMatcherComboBox);
@@ -98,24 +98,22 @@
             previewPixelBox.TabIndex = 6;
             previewPixelBox.TabStop = false;
             // 
-            // DitheringComboBox
+            // DenoiserComboBox
             // 
-            DitheringComboBox.Enabled = false;
-            DitheringComboBox.FormattingEnabled = true;
-            DitheringComboBox.Location = new Point(271, 37);
-            DitheringComboBox.Name = "DitheringComboBox";
-            DitheringComboBox.Size = new Size(247, 23);
-            DitheringComboBox.TabIndex = 5;
-            DitheringComboBox.Text = "TODO";
+            DenoiserComboBox.FormattingEnabled = true;
+            DenoiserComboBox.Location = new Point(271, 37);
+            DenoiserComboBox.Name = "DenoiserComboBox";
+            DenoiserComboBox.Size = new Size(247, 23);
+            DenoiserComboBox.TabIndex = 5;
             // 
             // DitheringLabel
             // 
             DitheringLabel.AutoSize = true;
             DitheringLabel.Location = new Point(271, 19);
             DitheringLabel.Name = "DitheringLabel";
-            DitheringLabel.Size = new Size(59, 15);
+            DitheringLabel.Size = new Size(56, 15);
             DitheringLabel.TabIndex = 3;
-            DitheringLabel.Text = "Dithering:";
+            DitheringLabel.Text = "Denoiser:";
             // 
             // ColorMatcherLabel
             // 
@@ -481,7 +479,7 @@
         private ComboBox debugColourComboBox;
         private Button DebugColourLayerButton;
         private GroupBox debugGroupBox;
-        private ComboBox DitheringComboBox;
+        private ComboBox DenoiserComboBox;
         private NumericUpDown TSPTimeLimitUpDown;
         private Label TSPSolverTimeLimitLabel;
         private GroupBox routingGroupBox;

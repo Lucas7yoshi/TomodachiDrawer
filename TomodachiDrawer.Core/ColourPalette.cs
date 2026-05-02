@@ -1,6 +1,7 @@
 ﻿using SkiaSharp;
 
 using TomodachiDrawer.Core.ImageProcessing;
+using TomodachiDrawer.Core.ImageProcessing.Denoising;
 using TomodachiDrawer.Core.ImageProcessing.Quantizers;
 using TomodachiDrawer.Core.Interfaces;
 using TomodachiDrawer.Core.Models;
@@ -143,19 +144,26 @@ namespace TomodachiDrawer.Core
 
         // Helper function that takes in an image and returns a preview of it
         // ran through the IImageQuantizer of their choosing.
-        public SKBitmap PreviewColourMapping(SKBitmap source, string quantizerName)
+        public SKBitmap PreviewColourMapping(SKBitmap source, string quantizerName, string? denoiserName)
         {
             ArgumentException.ThrowIfNullOrWhiteSpace(quantizerName);
             ArgumentNullException.ThrowIfNull(source);
             var quantizer = Quantizers[quantizerName](Colours);
             var result = new SKBitmap(source.Width, source.Height);
 
-            // TODO: GetPixel is slow
-            for (int x = 0; x < source.Width; x++)
+            var trueSource = source;
+
+            if (!string.IsNullOrEmpty(denoiserName))
             {
-                for (int y = 0; y < source.Height; y++)
+                trueSource = ImageDenoiser.DenoiseImage(source, denoiserName);
+            }
+
+            // TODO: GetPixel is slow
+            for (int x = 0; x < trueSource.Width; x++)
+            {
+                for (int y = 0; y < trueSource.Height; y++)
                 {
-                    var before = source.GetPixel(x, y);
+                    var before = trueSource.GetPixel(x, y);
                     if (before.Alpha < 128)
                     {
                         result.SetPixel(x, y, new SKColor(0, 0, 0, 0));

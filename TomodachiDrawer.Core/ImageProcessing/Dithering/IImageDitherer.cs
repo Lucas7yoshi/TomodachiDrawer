@@ -2,6 +2,6 @@
 {
     public interface IImageDitherer
     {
-
+        // TODO: Figure out how to properly interface this in.
     }
 }

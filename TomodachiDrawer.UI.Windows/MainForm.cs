@@ -5,6 +5,7 @@ using System.ComponentModel;
 
 using TomodachiDrawer.Core;
 using TomodachiDrawer.Core.ImageProcessing;
+using TomodachiDrawer.Core.ImageProcessing.Denoising;
 using TomodachiDrawer.Core.OutputSinks;
 
 namespace TomodachiDrawer.UI.Windows
@@ -20,6 +21,14 @@ namespace TomodachiDrawer.UI.Windows
             ColorMatcherComboBox.Items.AddRange(ColourPalette.Quantizers.Keys.ToArray());
             ColorMatcherComboBox.SelectedIndex = 0;
             ColorMatcherComboBox.SelectedIndexChanged += (s, e) => UpdatePreview();
+
+            DenoiserComboBox.Items.Clear();
+            var denoiserSelection = new List<string>();
+            denoiserSelection.Add("None");
+            denoiserSelection.AddRange(ImageDenoiser.Denoisers.Keys);
+            DenoiserComboBox.Items.AddRange(denoiserSelection.ToArray());
+            DenoiserComboBox.SelectedIndex = 0;
+            DenoiserComboBox.SelectedIndexChanged += (s, e) => UpdatePreview();
 
 #if !DEBUG
             this.Size = new Size(934, 651);
@@ -124,7 +133,8 @@ namespace TomodachiDrawer.UI.Windows
                 return;
             var preview = pal.PreviewColourMapping(
                 SKBitmap.Decode(currentImagePath),
-                selectedQuantizer
+                selectedQuantizer,
+                DenoiserComboBox.SelectedItem?.ToString() ?? null
             );
 
             var previewBitmap = preview.ToBitmap();
@@ -178,7 +188,8 @@ namespace TomodachiDrawer.UI.Windows
             {
                 var outputPath = saveOutputFileDialog.FileName;
                 var imagePath = currentImagePath;
-                var quantizer = ColorMatcherComboBox.SelectedItem!.ToString()!;
+                var quantizer = ColorMatcherComboBox.SelectedItem?.ToString()!;
+                var denoiser = DenoiserComboBox.SelectedItem?.ToString();
                 var tspLimit = (float)TSPTimeLimitUpDown.Value;
 
                 OutputSaveButton.Enabled = false;
@@ -189,7 +200,7 @@ namespace TomodachiDrawer.UI.Windows
                     var fileOutput = new FileControllerSink(outputPath);
                     var drawer = new CanvasDrawer(fileOutput, Log);
                     drawer.ConnectAndConfirmController();
-                    await drawer.DrawImage(SKBitmap.Decode(imagePath), quantizer, tspLimit);
+                    await drawer.DrawImage(SKBitmap.Decode(imagePath), quantizer, denoiser, tspLimit);
                     fileOutput.Dispose();
                 });
 
@@ -375,6 +386,7 @@ The TSP solve is not used always, a simpler ""snaking"" algorithm is used if its
         {
             var imagePath = currentImagePath;
             var quantizer = ColorMatcherComboBox.SelectedItem!.ToString()!;
+            var denoiser = ColorMatcherComboBox.SelectedItem?.ToString();
             var tspLimit = (float)TSPTimeLimitUpDown.Value;
 
             ExportRP2040Button.Enabled = false;
@@ -396,6 +408,7 @@ The TSP solve is not used always, a simpler ""snaking"" algorithm is used if its
                 await drawer.DrawImage(
                     SKBitmap.Decode(imagePath),
                     quantizer,
+                    denoiser,
                     tspLimit,
                     DebugDisableLargeStamps.Checked
                 );
@@ -466,6 +479,7 @@ The TSP solve is not used always, a simpler ""snaking"" algorithm is used if its
         {
             var imagePath = currentImagePath;
             var quantizer = ColorMatcherComboBox.SelectedItem!.ToString()!;
+            var denoiser = ColorMatcherComboBox.SelectedItem?.ToString();
             var tspLimit = (float)TSPTimeLimitUpDown.Value;
 
             double time = 0;
@@ -485,6 +499,7 @@ The TSP solve is not used always, a simpler ""snaking"" algorithm is used if its
                 await drawer.DrawImage(
                     SKBitmap.Decode(imagePath),
                     quantizer,
+                    denoiser,
                     tspLimit,
                     DebugDisableLargeStamps.Checked
                 );

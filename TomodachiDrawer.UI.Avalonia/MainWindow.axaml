@@ -159,7 +159,7 @@
                                Margin="0,0,4,0" />
                     <ComboBox Grid.Column="3"
                               x:Name="DitheringComboBox"
-                              IsEnabled="False"
+                              IsEnabled="True"
                               HorizontalAlignment="Stretch" />
                 </Grid>
                 <Image x:Name="PreviewImage"
