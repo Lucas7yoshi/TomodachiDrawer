@@ -29,13 +29,24 @@ Initial setup requires a few steps, made easier by the windows UI.
 10. Unplug the RP2040 and connect it to your switch (Note: Ensure "Wired Pro Controller Communication" is enabled in your settings!)
     - Note: you must have Palette house open, on "pro" mode, the cursor in the top left of where you want it drawn, zoomed out, and your top colour to be set to black.
 11. Upon completion, the RGB LED on the Pi will go to a rainbow. If you disconnect it and reconnect it, it will draw it again. Connect to your PC to change the image!
-	
+
+## Roadmap
+Things I want to do in roughly the order I want to do them in:
+- Avalonia UI for Mac/Linux users.
+- Further optimizations
+- Use bucket tool to fill the most significant colour
+- Use shape tools for non-square areas of arbitrary size
+- Experiment with input acceleration and analogue input for faster movement
 
 ## Contributing
 
 This project is a recreation of a mess of AI coded nonsense that was unmaintainable by me and too fixated to my setup. Please refrain from using AI irresponsibily if you wish to contribute. As I encountered several times, even just leaning on it to think of a general idea on how to approach a problem can send you down a overly complicated rabbit hole that you really dont need to, so be smart.
 
 This project is split into the TomodachiDrawer.Core which houses all the main pathing logic, the output sinks, and colour palette info, as well as the UI's (which there is just one, the UI.Windows in WinForms)
+
+I intend to recreate the UI in Avalonia for crossplatform support, although I have never used it so it may be a short bit.
+
+The binary format used is .tdld, and is custom made by me for the purposes of controller microcontrollers. Technically speaking, this format is not at all bound to Tomodachi Life as it is just a generic way to represent inputs and delays in a compact form.
 
 Visual Studio 2026 is neccasary as well as the .NET 10 runtime. For the TomodachiDrawer.Firmware, please see the README.md in the folder.
 
