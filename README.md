@@ -12,6 +12,7 @@ Initial setup requires a few steps, made easier by the windows UI.
 
 ### Following the YouTube tutorial is recommended:
 
+Note: flashing lights warning for video, apologies.
 [YouTube Tutorial](https://youtu.be/GIaiw3gzabo)
 
 
