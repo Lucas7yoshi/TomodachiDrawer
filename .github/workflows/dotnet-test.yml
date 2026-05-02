@@ -13,7 +13,7 @@ jobs:
         configuration: [Debug, Release]
 
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
     - uses: actions/setup-dotnet@v5
       with:
         dotnet-version: '10.0.x'
@@ -23,3 +23,20 @@ jobs:
       run: dotnet build --configuration ${{ matrix.configuration }} --no-restore /p:EnableWindowsTargeting=true
     - name: Test
       run: dotnet test --configuration ${{ matrix.configuration }} --no-build --verbosity normal /p:EnableWindowsTargeting=true
+  publish-avalonia:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        configuration: [Release, Debug]
+        runtime: [win-x64, linux-x64,linux-arm64,osx-x64,osx-arm64]
+
+    steps:
+    - uses: actions/checkout@v4
+    - uses: actions/setup-dotnet@v5
+      with:
+        dotnet-version: '10.0.x'
+    - name: cd
+      run: cd TomodachiDrawer.UI.Avalonia
+    - name: Build
+      run: dotnet publish --configuration ${{ matrix.configuration }} -r ${{ matrix.runtime }} --self-contained -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true
+    # todo: artifacts, release flow, etc?
