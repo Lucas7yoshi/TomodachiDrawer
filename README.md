@@ -15,6 +15,15 @@ Initial setup requires a few steps, made easier by the UI.
 Note: flashing lights warning for video, apologies.
 [YouTube Tutorial](https://youtu.be/GIaiw3gzabo)
 
+### Downloads
+Downloads are available in the releases, they come in a few forms
+- TomodachiDrawer.UI.Avalonia.#.#.#.platform.zip
+platform can be win64 for windows, osxarm64 for Mac on ARM cpus, osx64 for Mac on x64 cpus, and linux64 and linuxarm64 for the same on linux.
+Download the one that is right for your computer, for mac users with any recent macbook arm64 should work.
+
+I have been unable to test the Mac build since I... dont have a mac, and cant VM one, but I have confirmed the Linux x64 version works. If there is any issues, make a GitHub issue!
+
+There is also a UI.Windows build which is in WinForms. I will be moving to avalonia completely in time.
 
 ### Or briefly, in text:
 
@@ -45,7 +54,7 @@ This project is a recreation of a mess of AI coded nonsense that was unmaintaina
 
 This project is split into the TomodachiDrawer.Core which houses all the main pathing logic, the output sinks, and colour palette info, as well as the UI's (which there is just one, the UI.Windows in WinForms)
 
-I intend to recreate the UI in Avalonia for crossplatform support, although I have never used it so it may be a short bit.
+I have started on an Avalonia UI, however I am no expert of avalonia so it may be a bit of a mess, the initial implementation was regrettably surrendered to ai (yes i realize the irony after all the above). That was just for the initial version, I have since added a Save .uf2 button on my own and am going to maintain it by hand from now on.
 
 The binary format used is .tdld, and is custom made by me for the purposes of controller microcontrollers. Technically speaking, this format is not at all bound to Tomodachi Life as it is just a generic way to represent inputs and delays in a compact form.
 
