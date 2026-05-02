@@ -29,7 +29,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        configuration: [Release, Debug]
+        configuration: [Release]
         runtime: [win-x64, linux-x64,linux-arm64,osx-x64,osx-arm64]
 
     steps:
@@ -47,3 +47,25 @@ jobs:
         name: TomodachiDrawer-${{ matrix.runtime }}-${{ matrix.configuration }}
         # Point to where dotnet actually puts the files
         path: TomodachiDrawer.UI.Avalonia/bin/${{ matrix.configuration }}/net10.0/${{ matrix.runtime }}/publish/
+  publish-windows:
+    runs-on: windows-latest 
+    needs: build
+    strategy:
+      fail-fast: false
+      matrix:
+        configuration: [Release]
+    steps:
+    - uses: actions/checkout@v4
+    - uses: actions/setup-dotnet@v5
+      with:
+        dotnet-version: '10.0.x'
+        
+    - name: Publish WinForms
+      working-directory: TomodachiDrawer.UI.Windows
+      run: dotnet publish --configuration ${{ matrix.configuration }} -r win-x64 --self-contained -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true
+
+    - name: Upload Artifacts
+      uses: actions/upload-artifact@v4
+      with:
+        name: TomodachiDrawer-WinForms-${{ matrix.configuration }}
+        path: TomodachiDrawer.UI.Windows/bin/${{ matrix.configuration }}/net10.0-windows/win-x64/publish/
