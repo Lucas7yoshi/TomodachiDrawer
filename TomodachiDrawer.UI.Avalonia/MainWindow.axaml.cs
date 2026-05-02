@@ -32,9 +32,9 @@ public partial class MainWindow : Window
         var denoiserSelection = new List<string> { "None" };
         denoiserSelection.AddRange(ImageDenoiser.Denoisers.Keys);
 
-        DitheringComboBox.ItemsSource = denoiserSelection;
-        DitheringComboBox.SelectedIndex = 0;
-        DitheringComboBox.SelectionChanged += (_, _) => UpdatePreview();
+        DenoisingComboBox.ItemsSource = denoiserSelection;
+        DenoisingComboBox.SelectedIndex = 0;
+        DenoisingComboBox.SelectionChanged += (_, _) => UpdatePreview();
 
         DragDrop.SetAllowDrop(this, true);
         AddHandler(DragDrop.DropEvent, OnDrop);
@@ -152,7 +152,7 @@ public partial class MainWindow : Window
             return;
 
         var pal = new ColourPalette(new DummySink());
-        var denoiser = DitheringComboBox.SelectedItem?.ToString();
+        var denoiser = DenoisingComboBox.SelectedItem?.ToString();
         var preview = pal.PreviewColourMapping(
             SKBitmap.Decode(_currentImagePath),
             quantizer,
@@ -286,6 +286,7 @@ public partial class MainWindow : Window
 
         var imagePath = _currentImagePath;
         var quantizer = ColorMatcherComboBox.SelectedItem!.ToString()!;
+        var denoiser = DenoisingComboBox.SelectedItem?.ToString();
         var tspLimit = (float)(TSPTimeLimitUpDown.Value ?? 0.5m);
 
         if (sender is Button btn)
@@ -297,7 +298,7 @@ public partial class MainWindow : Window
             var fileOutput = new FileControllerSink(outputPath);
             var drawer = new CanvasDrawer(fileOutput, AppendLog);
             drawer.ConnectAndConfirmController();
-            await drawer.DrawImage(SKBitmap.Decode(imagePath), quantizer, null, tspLimit);
+            await drawer.DrawImage(SKBitmap.Decode(imagePath), quantizer, denoiser, tspLimit);
             fileOutput.Dispose();
         });
 
@@ -313,6 +314,7 @@ public partial class MainWindow : Window
 
         var imagePath = _currentImagePath;
         var quantizer = ColorMatcherComboBox.SelectedItem!.ToString()!;
+        var denoiser = DenoisingComboBox.SelectedItem?.ToString();
         var tspLimit = (float)(TSPTimeLimitUpDown.Value ?? 0.5m);
 
         ExportRP2040Button.IsEnabled = false;
@@ -330,7 +332,7 @@ public partial class MainWindow : Window
             var drawer = new CanvasDrawer(timingSink, AppendLog);
             drawer.ConnectAndConfirmController();
             AppendLog("Starting to generate inputs...");
-            await drawer.DrawImage(SKBitmap.Decode(imagePath), quantizer, null, tspLimit, false);
+            await drawer.DrawImage(SKBitmap.Decode(imagePath), quantizer, denoiser, tspLimit, false);
             AppendLog($"True complete overall time is: {timingSink.TotalTime.TotalSeconds}s");
 
             var fileSink = new FileControllerSink(tempPath);
@@ -384,6 +386,7 @@ public partial class MainWindow : Window
 
         var imagePath = _currentImagePath;
         var quantizer = ColorMatcherComboBox.SelectedItem!.ToString()!;
+        var denoiser = DenoisingComboBox.SelectedItem?.ToString();
         var tspLimit = (float)(TSPTimeLimitUpDown.Value ?? 0.5m);
 
         ExportUF2Button.IsEnabled = false;
@@ -401,7 +404,7 @@ public partial class MainWindow : Window
             var drawer = new CanvasDrawer(timingSink, AppendLog);
             drawer.ConnectAndConfirmController();
             AppendLog("Starting to generate inputs...");
-            await drawer.DrawImage(SKBitmap.Decode(imagePath), quantizer, null, tspLimit, false);
+            await drawer.DrawImage(SKBitmap.Decode(imagePath), quantizer, denoiser, tspLimit, false);
             AppendLog($"True complete overall time is: {timingSink.TotalTime.TotalSeconds}s");
 
             var fileSink = new FileControllerSink(tempPath);

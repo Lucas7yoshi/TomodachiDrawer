@@ -154,11 +154,11 @@
                               Margin="0,0,8,0"
                               SelectionChanged="ColorMatcherComboBox_SelectionChanged" />
                     <TextBlock Grid.Column="2"
-                               Text="Dithering:"
+                               Text="Denoising:"
                                VerticalAlignment="Center"
                                Margin="0,0,4,0" />
                     <ComboBox Grid.Column="3"
-                              x:Name="DitheringComboBox"
+                              x:Name="DenoisingComboBox"
                               IsEnabled="True"
                               HorizontalAlignment="Stretch" />
                 </Grid>
