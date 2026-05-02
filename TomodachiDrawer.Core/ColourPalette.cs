@@ -45,7 +45,11 @@ namespace TomodachiDrawer.Core
 
         private static PaletteColour C(string name, string hex, int x, int y) =>
             PaletteColour.FromHex(name, hex, x, y);
-
+       
+        // NOTE: This was taken from a screenshot of the OBS preview which was through a capture card
+        // It does not seem to match 1:1 with switch screenshots, however JPGs are JPGs so I am leaning to the side
+        // of the capture card for now. If theres some way to prove its wrong I am more than willing to change it,
+        // make a github issue <3
         public List<PaletteColour> Colours { get; } =
         [
             // ===== Row 0 (y=0) =====
