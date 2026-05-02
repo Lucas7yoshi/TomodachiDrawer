@@ -1,7 +1,4 @@
-﻿using System;
-using System.Buffers.Binary;
-using System.Collections.Generic;
-using System.Text;
+﻿using System.Buffers.Binary;
 
 namespace TomodachiDrawer.UI.Windows
 {

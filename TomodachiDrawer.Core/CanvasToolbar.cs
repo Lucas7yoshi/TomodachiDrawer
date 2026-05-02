@@ -1,5 +1,4 @@
-﻿using System.Runtime.InteropServices.Marshalling;
-using TomodachiDrawer.Core.Interfaces;
+﻿using TomodachiDrawer.Core.Interfaces;
 using TomodachiDrawer.Core.OutputSinks;
 
 namespace TomodachiDrawer.Core

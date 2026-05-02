@@ -1,6 +1,9 @@
-﻿using System.Diagnostics;
-using Google.OrTools.ConstraintSolver;
+﻿using Google.OrTools.ConstraintSolver;
+
 using SkiaSharp;
+
+using System.Diagnostics;
+
 using TomodachiDrawer.Core.Interfaces;
 using TomodachiDrawer.Core.Models;
 using TomodachiDrawer.Core.OutputSinks;
@@ -179,7 +182,7 @@ namespace TomodachiDrawer.Core
             );
         }
 
-        private static readonly int[] LargeBrushSizes =             [27, 19, 13, 7, 3];
+        private static readonly int[] LargeBrushSizes = [27, 19, 13, 7, 3];
         // eviction thresholds are how many of that size there must be for it to commit to doing larger brushes over smaller ones.
         // bigger ones fill more area so they get more slack. 
         // TODO: MORE WORK TWEAKING THESE!!!

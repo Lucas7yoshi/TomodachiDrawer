@@ -1,4 +1,5 @@
 using Avalonia;
+
 using TomodachiDrawer.UI.Avalonia;
 
 AppBuilder.Configure<App>()

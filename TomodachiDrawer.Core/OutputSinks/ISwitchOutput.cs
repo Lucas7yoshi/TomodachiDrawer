@@ -1,5 +1,4 @@
-﻿using System;
-using TomodachiDrawer.Core.OutputSinks;
+﻿using TomodachiDrawer.Core.OutputSinks;
 
 namespace TomodachiDrawer.Core.Interfaces
 {

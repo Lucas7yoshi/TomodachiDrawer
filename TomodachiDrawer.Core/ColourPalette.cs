@@ -1,10 +1,5 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Runtime.InteropServices;
-using System.Runtime.InteropServices.Marshalling;
-using System.Security;
-using System.Text;
-using SkiaSharp;
+﻿using SkiaSharp;
+
 using TomodachiDrawer.Core.ImageProcessing;
 using TomodachiDrawer.Core.ImageProcessing.Quantizers;
 using TomodachiDrawer.Core.Interfaces;
@@ -45,7 +40,7 @@ namespace TomodachiDrawer.Core
 
         private static PaletteColour C(string name, string hex, int x, int y) =>
             PaletteColour.FromHex(name, hex, x, y);
-       
+
         public List<PaletteColour> Colours { get; } =
         [
             // ===== Row 0 (y=0) =====

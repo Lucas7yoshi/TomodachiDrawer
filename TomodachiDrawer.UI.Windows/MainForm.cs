@@ -1,6 +1,8 @@
-using System.ComponentModel;
 using SkiaSharp;
 using SkiaSharp.Views.Desktop;
+
+using System.ComponentModel;
+
 using TomodachiDrawer.Core;
 using TomodachiDrawer.Core.ImageProcessing;
 using TomodachiDrawer.Core.OutputSinks;

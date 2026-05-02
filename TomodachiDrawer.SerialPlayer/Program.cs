@@ -1,4 +1,5 @@
 ﻿using System.Text;
+
 using TomodachiDrawer.Core.OutputSinks;
 
 // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -92,44 +93,44 @@ namespace TomodachiDrawer.SerialPlayer
                             break;
 
                         case FileControllerSink.Opcode.RepeatLast1:
-                        {
-                            if (lastSingleByteRecord is null)
-                                throw new Exception("repeatlast1 hit with no prior opcodes..?");
+                            {
+                                if (lastSingleByteRecord is null)
+                                    throw new Exception("repeatlast1 hit with no prior opcodes..?");
 
-                            int repeats = nibble;
+                                int repeats = nibble;
 #if DEBUG
-                            Console.WriteLine(
-                                "RepeatLast1: Repeating opcode 0x{0:X2} {1} times",
-                                lastSingleByteRecord.Value,
-                                repeats
-                            );
+                                Console.WriteLine(
+                                    "RepeatLast1: Repeating opcode 0x{0:X2} {1} times",
+                                    lastSingleByteRecord.Value,
+                                    repeats
+                                );
 #endif
-                            for (int i = 0; i < repeats; i++)
-                                RunSingleByteOpcode(lastSingleByteRecord.Value);
+                                for (int i = 0; i < repeats; i++)
+                                    RunSingleByteOpcode(lastSingleByteRecord.Value);
 
-                            break;
-                        }
+                                break;
+                            }
 
                         case FileControllerSink.Opcode.RepeatLast2:
-                        {
-                            if (lastSingleByteRecord is null)
-                                throw new Exception("repeatlast2 hit with no prior opcodes..?");
+                            {
+                                if (lastSingleByteRecord is null)
+                                    throw new Exception("repeatlast2 hit with no prior opcodes..?");
 
-                            // RepeatLast2 has 2 bytes, or well, 4 bits and 8 bits for 12 bits of repeat count.
-                            int repeats = (nibble << 8) | reader.ReadByte();
+                                // RepeatLast2 has 2 bytes, or well, 4 bits and 8 bits for 12 bits of repeat count.
+                                int repeats = (nibble << 8) | reader.ReadByte();
 #if DEBUG
-                            Console.WriteLine(
-                                "RepeatLast2: Repeating opcode 0x{0:X2} {1} times",
-                                lastSingleByteRecord.Value,
-                                repeats
-                            );
+                                Console.WriteLine(
+                                    "RepeatLast2: Repeating opcode 0x{0:X2} {1} times",
+                                    lastSingleByteRecord.Value,
+                                    repeats
+                                );
 #endif
 
-                            for (int i = 0; i < repeats; i++)
-                                RunSingleByteOpcode(lastSingleByteRecord.Value);
+                                for (int i = 0; i < repeats; i++)
+                                    RunSingleByteOpcode(lastSingleByteRecord.Value);
 
-                            break;
-                        }
+                                break;
+                            }
 
                         default:
                             RunSingleByteOpcode(raw);

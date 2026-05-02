@@ -1,5 +1,6 @@
-﻿using System.Globalization;
-using SkiaSharp;
+﻿using SkiaSharp;
+
+using System.Globalization;
 
 namespace TomodachiDrawer.Core.ImageProcessing
 {

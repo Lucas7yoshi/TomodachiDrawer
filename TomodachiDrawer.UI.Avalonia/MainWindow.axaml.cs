@@ -1,6 +1,5 @@
 using Avalonia;
 using Avalonia.Controls;
-using Button = Avalonia.Controls.Button; // conflict with the Button enum in SinkEnums
 using Avalonia.Input;
 using Avalonia.Interactivity;
 using Avalonia.Layout;
@@ -8,10 +7,14 @@ using Avalonia.Media;
 using Avalonia.Media.Imaging;
 using Avalonia.Platform.Storage;
 using Avalonia.Threading;
+
 using SkiaSharp;
+
 using TomodachiDrawer.Core;
 using TomodachiDrawer.Core.ImageProcessing;
 using TomodachiDrawer.Core.OutputSinks;
+
+using Button = Avalonia.Controls.Button; // conflict with the Button enum in SinkEnums
 
 namespace TomodachiDrawer.UI.Avalonia;
 
