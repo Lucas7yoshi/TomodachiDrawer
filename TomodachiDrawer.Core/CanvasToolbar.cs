@@ -43,7 +43,7 @@ namespace TomodachiDrawer.Core
             }
 
             output.Tap(Button.X);
-            output.Delay(250);
+            output.Delay(300);
             if (!_toolbarHomed)
             {
                 for (int i = 0; i < ToolbarItemCount; i++)
@@ -55,7 +55,7 @@ namespace TomodachiDrawer.Core
 
             // open submenu
             output.Tap(Button.X);
-            output.Delay(250);
+            output.Delay(300);
 
             int currentColumn = _lastBrushColumn;
             if (currentColumn < 0)
@@ -78,7 +78,7 @@ namespace TomodachiDrawer.Core
 
             // Confirm and return to canvas.
             output.Tap(Button.A);
-            output.Delay(250);
+            output.Delay(300);
             output.Tap(Button.A);
             output.Delay(500);
 
