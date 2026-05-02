@@ -4,11 +4,11 @@ TomodachiDrawer is a collection of firmware and software that generates inputs t
 
 The program splits images into layers matched to colours in the game, and generates optimized routes for the pen to follow to draw your image.
 
-It has a Windows WinForms UI that supports flashing directly to a RP2040-Zero which can then be plugged into the USB port of a Switch or Switch 2 where it will begin to draw.
+It has a Windows WinForms UI and Avalonia UI desktop app that supports flashing directly to a RP2040-Zero which can then be plugged into the USB port of a Switch or Switch 2 where it will begin to draw.
 
 ## How To Use
 
-Initial setup requires a few steps, made easier by the windows UI.
+Initial setup requires a few steps, made easier by the UI.
 
 ### Following the YouTube tutorial is recommended:
 
@@ -18,22 +18,22 @@ Note: flashing lights warning for video, apologies.
 
 ### Or briefly, in text:
 
-1. Download the Windows app here: TODO
-2. Extract the zip folder
-3. Run TomodachiDrawer.UI.Windows.exe
-4. Plug in your RP2040-Zero to your PC while holding the boot button, or while connected hold BOOT and press reset while still holding boot.
-5. The program should recognize it.
-6. Press "Flash Base Firmware", this will install the code that handles sending the inputs.
-7. Repeat the steps to hold the boot button, then open your image by pressing the open button or dragging it in. It must be 256x256 or smaller.
-8. Select the Colour Matcher that looks best, adjust the TSP solver time limit (explained in the ? button)
-9. Select "Export to RP2040" which will write it directly to the RP2040.
-10. Unplug the RP2040 and connect it to your switch (Note: Ensure "Wired Pro Controller Communication" is enabled in your settings!)
+1. Download the Windows app here: https://github.com/Lucas7yoshi/TomodachiDrawer/releases (You can also download the Avalonia UI version for Mac/Linux although its somewhat untested)
+3. Extract the zip folder
+4. Run TomodachiDrawer.UI.Windows.exe (or TomodachiDrawer.UI.Avalonia.exe or TomodachiDrawer.UI.Avalonia)
+5. Plug in your RP2040-Zero to your PC while holding the boot button, or while connected hold BOOT and press reset while still holding boot.
+6. The program should recognize it.
+7. Press "Flash Base Firmware", this will install the code that handles sending the inputs.
+8. Repeat the steps to hold the boot button, then open your image by pressing the open button or dragging it in. It must be 256x256 or smaller.
+9. Select the Colour Matcher that looks best, adjust the TSP solver time limit (explained in the ? button)
+10. Select "Export to RP2040" which will write it directly to the RP2040.
+11. Unplug the RP2040 and connect it to your switch (Note: Ensure "Wired Pro Controller Communication" is enabled in your settings!)
     - Note: you must have Palette house open, on "pro" mode, the cursor in the top left of where you want it drawn, zoomed out, and your top colour to be set to black.
-11. Upon completion, the RGB LED on the Pi will go to a rainbow. If you disconnect it and reconnect it, it will draw it again. Connect to your PC to change the image!
+12. Upon completion, the RGB LED on the Pi will go to a rainbow. If you disconnect it and reconnect it, it will draw it again. Connect to your PC to change the image!
 
 ## Roadmap
 Things I want to do in roughly the order I want to do them in:
-- Avalonia UI for Mac/Linux users.
+- Avalonia UI for Mac/Linux users. (Experimentally implemented)
 - Further optimizations
 - Use bucket tool to fill the most significant colour
 - Use shape tools for non-square areas of arbitrary size
