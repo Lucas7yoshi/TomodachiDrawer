@@ -1,5 +1,4 @@
 ﻿using SkiaSharp;
-
 using TomodachiDrawer.Core.ImageProcessing;
 using TomodachiDrawer.Core.ImageProcessing.Denoising;
 using TomodachiDrawer.Core.ImageProcessing.Quantizers;
@@ -144,7 +143,11 @@ namespace TomodachiDrawer.Core
 
         // Helper function that takes in an image and returns a preview of it
         // ran through the IImageQuantizer of their choosing.
-        public SKBitmap PreviewColourMapping(SKBitmap source, string quantizerName, string? denoiserName)
+        public SKBitmap PreviewColourMapping(
+            SKBitmap source,
+            string quantizerName,
+            string? denoiserName
+        )
         {
             ArgumentException.ThrowIfNullOrWhiteSpace(quantizerName);
             ArgumentNullException.ThrowIfNull(source);

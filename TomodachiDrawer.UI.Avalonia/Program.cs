@@ -1,8 +1,8 @@
 using Avalonia;
-
 using TomodachiDrawer.UI.Avalonia;
 
-AppBuilder.Configure<App>()
+AppBuilder
+    .Configure<App>()
     .UsePlatformDetect()
     .WithInterFont()
     .LogToTrace()

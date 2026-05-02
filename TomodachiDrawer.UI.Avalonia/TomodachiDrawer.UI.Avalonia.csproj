@@ -18,12 +18,15 @@
     <ProjectReference Include="..\TomodachiDrawer.Core\TomodachiDrawer.Core.csproj" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="..\TomodachiDrawer.UI.Windows\TomodachiDrawer.Firmware.uf2" Link="TomodachiDrawer.Firmware.uf2">
+    <None
+      Include="..\TomodachiDrawer.UI.Windows\TomodachiDrawer.Firmware.uf2"
+      Link="TomodachiDrawer.Firmware.uf2"
+    >
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
   </ItemGroup>
   <ItemGroup>
-	  <!-- publish trimming thing-->
+    <!-- publish trimming thing-->
     <TrimmerRootAssembly Include="Avalonia.Themes.Fluent" />
     <TrimmerRootAssembly Include="Avalonia.Controls" />
     <TrimmerRootAssembly Include="Avalonia.Base" />

@@ -1,8 +1,6 @@
+using System.ComponentModel;
 using SkiaSharp;
 using SkiaSharp.Views.Desktop;
-
-using System.ComponentModel;
-
 using TomodachiDrawer.Core;
 using TomodachiDrawer.Core.ImageProcessing;
 using TomodachiDrawer.Core.ImageProcessing.Denoising;
@@ -200,7 +198,12 @@ namespace TomodachiDrawer.UI.Windows
                     var fileOutput = new FileControllerSink(outputPath);
                     var drawer = new CanvasDrawer(fileOutput, Log);
                     drawer.ConnectAndConfirmController();
-                    await drawer.DrawImage(SKBitmap.Decode(imagePath), quantizer, denoiser, tspLimit);
+                    await drawer.DrawImage(
+                        SKBitmap.Decode(imagePath),
+                        quantizer,
+                        denoiser,
+                        tspLimit
+                    );
                     fileOutput.Dispose();
                 });
 

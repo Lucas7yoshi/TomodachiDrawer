@@ -7,7 +7,12 @@ namespace TomodachiDrawer.Core.ImageProcessing.Denoising
     {
         public SKBitmap DenoiseImage(SKBitmap source)
         {
-            var result = new SKBitmap(source.Width, source.Height, source.ColorType, source.AlphaType);
+            var result = new SKBitmap(
+                source.Width,
+                source.Height,
+                source.ColorType,
+                source.AlphaType
+            );
 
             var srcBytes = source.GetPixelSpan();
             var dstBytes = result.GetPixelSpan();
@@ -45,10 +50,16 @@ namespace TomodachiDrawer.Core.ImageProcessing.Denoising
             return result;
         }
 
-
         private static byte GetMedian(
-            ReadOnlySpan<byte> data, int width, int height, int bpp,
-            int cx, int cy, int channel, Span<byte> window)
+            ReadOnlySpan<byte> data,
+            int width,
+            int height,
+            int bpp,
+            int cx,
+            int cy,
+            int channel,
+            Span<byte> window
+        )
         {
             int count = 0;
             for (int dy = -1; dy <= 1; dy++)
@@ -64,6 +75,5 @@ namespace TomodachiDrawer.Core.ImageProcessing.Denoising
             window.Sort();
             return window[4];
         }
-
     }
 }

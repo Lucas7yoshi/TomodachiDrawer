@@ -1,9 +1,6 @@
-﻿using Google.OrTools.ConstraintSolver;
-
+﻿using System.Diagnostics;
+using Google.OrTools.ConstraintSolver;
 using SkiaSharp;
-
-using System.Diagnostics;
-
 using TomodachiDrawer.Core.ImageProcessing.Denoising;
 using TomodachiDrawer.Core.Interfaces;
 using TomodachiDrawer.Core.Models;
@@ -102,7 +99,6 @@ namespace TomodachiDrawer.Core
                 layerNumber++;
                 _palette.SelectColour(l.Colour, 25.0);
 
-
                 // STAMPS
                 if (l.StampsBySize?.Count > 0)
                 {
@@ -190,8 +186,9 @@ namespace TomodachiDrawer.Core
         }
 
         private static readonly int[] LargeBrushSizes = [27, 19, 13, 7, 3];
+
         // eviction thresholds are how many of that size there must be for it to commit to doing larger brushes over smaller ones.
-        // bigger ones fill more area so they get more slack. 
+        // bigger ones fill more area so they get more slack.
         // TODO: MORE WORK TWEAKING THESE!!!
         private static readonly int[] LargeBrushEvictionThreshold = [1, 1, 1, 6, 12];
 
@@ -246,7 +243,9 @@ namespace TomodachiDrawer.Core
                 int indexOfBrushSize = Array.IndexOf(LargeBrushSizes, brushSize);
                 if (largeBrushPoints.Count < LargeBrushEvictionThreshold[indexOfBrushSize])
                 {
-                    _log($"\tEVICTED {largeBrushPoints.Count} areas for size {brushSize}^2 because too few.");
+                    _log(
+                        $"\tEVICTED {largeBrushPoints.Count} areas for size {brushSize}^2 because too few."
+                    );
                     // un-clear the area.
                     foreach (var p in largeBrushPoints)
                     {
@@ -310,6 +309,7 @@ namespace TomodachiDrawer.Core
                 }
             }
         }
+
         private void FineDetailSnake(ISwitchOutput output, ColourLayer l)
         {
             // find the nearest edge.

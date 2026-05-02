@@ -20,7 +20,10 @@ internal static class UF2Flasher
             BinaryPrimitives.WriteUInt32LittleEndian(block[0x000..], 0x0A324655);
             BinaryPrimitives.WriteUInt32LittleEndian(block[0x004..], 0x9E5D5157);
             BinaryPrimitives.WriteUInt32LittleEndian(block[0x008..], 0x00002000);
-            BinaryPrimitives.WriteUInt32LittleEndian(block[0x00C..], TargetBase + (uint)(i * PayloadSize));
+            BinaryPrimitives.WriteUInt32LittleEndian(
+                block[0x00C..],
+                TargetBase + (uint)(i * PayloadSize)
+            );
             BinaryPrimitives.WriteUInt32LittleEndian(block[0x010..], PayloadSize);
             BinaryPrimitives.WriteUInt32LittleEndian(block[0x014..], (uint)i);
             BinaryPrimitives.WriteUInt32LittleEndian(block[0x018..], (uint)blockCount);
@@ -53,7 +56,8 @@ internal static class UF2Flasher
         {
             foreach (var baseDir in new[] { "/media", "/run/media" })
             {
-                if (!Directory.Exists(baseDir)) continue;
+                if (!Directory.Exists(baseDir))
+                    continue;
                 foreach (var userDir in Directory.GetDirectories(baseDir))
                 {
                     var candidate = Path.Combine(userDir, "RPI-RP2");
