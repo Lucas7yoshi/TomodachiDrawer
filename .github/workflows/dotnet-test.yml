@@ -18,6 +18,7 @@ jobs:
       with:
         dotnet-version: '10.0.x'
         cache: true
+        cache-dependency-path: '**/*.csproj'
     - name: Restore dependencies
       run: dotnet restore -v n /p:EnableWindowsTargeting=true
     - name: Build
@@ -39,6 +40,7 @@ jobs:
       with:
         dotnet-version: '10.0.x'
         cache: true
+        cache-dependency-path: '**/*.csproj'
     - name: Build
       working-directory: TomodachiDrawer.UI.Avalonia
       run: dotnet publish --configuration ${{ matrix.configuration }} -r ${{ matrix.runtime }} --self-contained -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true
@@ -62,7 +64,7 @@ jobs:
       with:
         dotnet-version: '10.0.x'
         cache: true
-        
+        cache-dependency-path: '**/*.csproj'
     - name: Publish WinForms
       working-directory: TomodachiDrawer.UI.Windows
       run: dotnet publish --configuration ${{ matrix.configuration }} -r win-x64 --self-contained -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true
