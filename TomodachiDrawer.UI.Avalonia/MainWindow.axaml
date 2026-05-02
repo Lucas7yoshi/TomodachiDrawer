@@ -1,0 +1,171 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        x:Class="TomodachiDrawer.UI.Avalonia.MainWindow"
+        Title="Tomodachi Drawer"
+        Width="1050" Height="660"
+        MinWidth="860" MinHeight="540">
+
+    <Window.Styles>
+        <Style Selector="Border.group">
+            <Setter Property="BorderBrush" Value="#55888888" />
+            <Setter Property="BorderThickness" Value="1" />
+            <Setter Property="CornerRadius" Value="4" />
+            <Setter Property="Padding" Value="8" />
+        </Style>
+        <Style Selector="TextBlock.header">
+            <Setter Property="FontWeight" Value="SemiBold" />
+            <Setter Property="Margin" Value="0,0,0,6" />
+        </Style>
+    </Window.Styles>
+    <Grid Margin="8">
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="375" />
+            <ColumnDefinition Width="*" />
+        </Grid.ColumnDefinitions>
+        <Grid Grid.Column="0" Margin="0,0,6,0">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="*" />
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
+            </Grid.RowDefinitions>
+            <Border Grid.Row="0" Classes="group" Margin="0,0,0,6">
+                <StackPanel Spacing="6">
+                    <TextBlock Classes="header" Text="Input Image" />
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+                        <TextBox Grid.Column="0"
+                                 x:Name="ImagePathBox"
+                                 IsReadOnly="True"
+                                 PlaceholderText="No image loaded…" />
+                        <Button Grid.Column="1"
+                                Content="Open…"
+                                Margin="4,0,0,0"
+                                Click="OpenImageButton_Click" />
+                    </Grid>
+                </StackPanel>
+            </Border>
+            <Border Grid.Row="1" Classes="group" Margin="0,0,0,6">
+                <StackPanel Spacing="6">
+                    <TextBlock Classes="header" Text="Routing" />
+                    <StackPanel Orientation="Horizontal" Spacing="6">
+                        <TextBlock Text="TSP Solver Time Limit"
+                                   VerticalAlignment="Center" />
+                        <NumericUpDown x:Name="TSPTimeLimitUpDown"
+                                       Minimum="0.1" Maximum="30"
+                                       Increment="0.1" Value="0.5"
+                                       FormatString="F1"
+                                       Width="110" />
+                        <TextBlock Text="seconds"
+                                   VerticalAlignment="Center" />
+                        <Button Content="?"
+                                Width="28"
+                                Click="TSPHelpButton_Click" />
+                    </StackPanel>
+                </StackPanel>
+            </Border>
+            <Border Grid.Row="2" Classes="group" Margin="0,0,0,6">
+                <DockPanel>
+                    <TextBlock DockPanel.Dock="Top"
+                               Classes="header"
+                               Text="Log" />
+                    <TextBox x:Name="LogBox"
+                             IsReadOnly="True"
+                             AcceptsReturn="True"
+                             TextWrapping="Wrap"
+                             ScrollViewer.VerticalScrollBarVisibility="Auto" />
+                </DockPanel>
+            </Border>
+            <TextBlock Grid.Row="3"
+                       x:Name="DrawTimeLabel"
+                       Text="Draw Time Estimate: ???"
+                       FontSize="17"
+                       FontWeight="Bold"
+                       Margin="2,0,2,6" />
+            <Border Grid.Row="4" Classes="group">
+                <StackPanel Spacing="5">
+                    <TextBlock Classes="header" Text="RP2040 Output" />
+                    <TextBlock x:Name="RP2040StatusLabel"
+                               Text="RP2040 Status: Not Found" />
+                    <Button Content="Explanation"
+                            HorizontalAlignment="Stretch"
+                            Click="OutputExplanationButton_Click" />
+                    <Button Content="Setup in game explanation"
+                            HorizontalAlignment="Stretch"
+                            Click="InGameSetupButton_Click" />
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="*" />
+                        </Grid.ColumnDefinitions>
+                        <Button Grid.Column="0"
+                                x:Name="FlashFirmwareButton"
+                                IsEnabled="False"
+                                Content="Flash Base Firmware"
+                                HorizontalAlignment="Stretch"
+                                Margin="0,0,2,0"
+                                Click="FlashFirmwareButton_Click" />
+                        <Button Grid.Column="1"
+                                x:Name="ExportRP2040Button"
+                                IsEnabled="False"
+                                Content="Export To RP2040!"
+                                FontWeight="Bold"
+                                HorizontalAlignment="Stretch"
+                                Margin="2,0,0,0"
+                                Click="ExportRP2040Button_Click" />
+
+                    </Grid>
+                                            <Button
+                                x:Name="ExportUF2Button"
+                                IsEnabled="False"
+                                Content="Export to .UF2"
+                                FontWeight="Bold"
+                                HorizontalAlignment="Stretch"
+                                Margin="2,0,0,0"
+                                Click="ExportUF2Button_Click"
+                                />
+
+                </StackPanel>
+            </Border>
+        </Grid>
+        <Border Grid.Column="1" Classes="group" Margin="0,0,6,0">
+            <DockPanel>
+                <TextBlock DockPanel.Dock="Top"
+                           Classes="header"
+                           Text="Preview" />
+                <Grid DockPanel.Dock="Top" Margin="0,0,0,6">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition Width="*" />
+                    </Grid.ColumnDefinitions>
+                    <TextBlock Grid.Column="0"
+                               Text="Color Matcher:"
+                               VerticalAlignment="Center"
+                               Margin="0,0,4,0" />
+                    <ComboBox Grid.Column="1"
+                              x:Name="ColorMatcherComboBox"
+                              HorizontalAlignment="Stretch"
+                              Margin="0,0,8,0"
+                              SelectionChanged="ColorMatcherComboBox_SelectionChanged" />
+                    <TextBlock Grid.Column="2"
+                               Text="Dithering:"
+                               VerticalAlignment="Center"
+                               Margin="0,0,4,0" />
+                    <ComboBox Grid.Column="3"
+                              x:Name="DitheringComboBox"
+                              IsEnabled="False"
+                              HorizontalAlignment="Stretch" />
+                </Grid>
+                <Image x:Name="PreviewImage"
+                       Stretch="Uniform"
+                       RenderOptions.BitmapInterpolationMode="None" />
+            </DockPanel>
+        </Border>
+    </Grid>
+</Window>
