@@ -1,11 +1,6 @@
-using System.Collections.Generic;
-using System.IO;
-using System.Linq;
-using System.Threading;
-using System.Threading.Tasks;
 using Avalonia;
 using Avalonia.Controls;
-using Button = Avalonia.Controls.Button; // pins away from Core.OutputSinks.Button enum
+using Button = Avalonia.Controls.Button; // conflict with the Button enum in SinkEnums
 using Avalonia.Input;
 using Avalonia.Interactivity;
 using Avalonia.Layout;
@@ -58,18 +53,25 @@ public partial class MainWindow : Window
                 var path = UF2Flasher.FindRP2040Drive();
                 await Dispatcher.UIThread.InvokeAsync(() =>
                 {
+                    bool hasImage = !string.IsNullOrEmpty(_currentImagePath);
+
+                    // ExportUF2 only needs an image — no RP2040 required
+                    ExportUF2Button.IsEnabled = hasImage;
+
                     if (path != null)
                     {
                         RP2040StatusLabel.Text = $"RP2040 found: {path}";
                         RP2040StatusLabel.Foreground = Brushes.Green;
+
                         FlashFirmwareButton.IsEnabled = true;
-                        ExportRP2040Button.IsEnabled = !string.IsNullOrEmpty(_currentImagePath);
+                        ExportRP2040Button.IsEnabled = hasImage;
                         if (!lastState) { AppendLog($"RP2040 connected @ {path}"); lastState = true; }
                     }
                     else
                     {
                         RP2040StatusLabel.Text = "RP2040 not found";
                         RP2040StatusLabel.Foreground = Brushes.Red;
+
                         FlashFirmwareButton.IsEnabled = false;
                         ExportRP2040Button.IsEnabled = false;
                         if (lastState) { AppendLog("RP2040 disconnected..."); lastState = false; }
@@ -86,33 +88,39 @@ public partial class MainWindow : Window
 
     private void LoadImage(string path)
     {
-        if (!File.Exists(path)) { AppendLog($"File not found: {path}"); return; }
+        if (!File.Exists(path)) { AppendLog($"File does not exist..? {path}"); return; }
 
         var img = SKBitmap.Decode(path);
         if (img == null) { AppendLog($"Failed to decode image: {path}"); return; }
 
         if (img.Width > 256 || img.Height > 256)
         {
-            _ = ShowMessageAsync("Image too big", $"{Path.GetFileName(path)} is too big! Max 256×256.");
+            _ = ShowMessageAsync("Image too big", $"{Path.GetFileName(path)} is too big! Max of 256x256.");
             return;
         }
 
         _currentImagePath = path;
         ImagePathBox.Text = path;
+        ExportUF2Button.IsEnabled = true;
         UpdatePreview();
-        AppendLog($"Loaded image: {Path.GetFileName(path)} ({img.Width}×{img.Height})");
+        AppendLog($"Loaded image: {Path.GetFileName(path)} ({img.Width}x{img.Height})");
     }
 
     private void UpdatePreview()
     {
-        if (!File.Exists(_currentImagePath)) return;
+        if (!File.Exists(_currentImagePath))
+        {
+            AppendLog($"File does not exist, cannot update preview: {_currentImagePath}");
+            return;
+        }
+
         var quantizer = ColorMatcherComboBox.SelectedItem?.ToString();
         if (quantizer == null) return;
 
         var pal = new ColourPalette(new DummySink());
         var preview = pal.PreviewColourMapping(SKBitmap.Decode(_currentImagePath), quantizer);
         PreviewImage.Source = ToAvaloniaBitmap(preview);
-        AppendLog($"Preview updated — {Path.GetFileName(_currentImagePath)} / {quantizer}");
+        AppendLog($"Updated preview for {Path.GetFileName(_currentImagePath)} using {quantizer}");
     }
 
     private static Bitmap? ToAvaloniaBitmap(SKBitmap skBitmap)
@@ -123,8 +131,6 @@ public partial class MainWindow : Window
         return new Bitmap(stream);
     }
 
-    // ── Logging ───────────────────────────────────────────────────────
-
     private void AppendLog(string msg)
     {
         Dispatcher.UIThread.Post(() =>
@@ -134,8 +140,7 @@ public partial class MainWindow : Window
         });
     }
 
-    // ── Modal dialog ──────────────────────────────────────────────────
-
+    // messagebox replacement
     private async Task ShowMessageAsync(string title, string message)
     {
         var okButton = new Button
@@ -173,8 +178,6 @@ public partial class MainWindow : Window
         await dialog.ShowDialog(this);
     }
 
-    // ── Button handlers ───────────────────────────────────────────────
-
     private async void OpenImageButton_Click(object? sender, RoutedEventArgs e)
     {
         var files = await StorageProvider.OpenFilePickerAsync(new FilePickerOpenOptions
@@ -203,14 +206,16 @@ public partial class MainWindow : Window
 
     private void TSPHelpButton_Click(object? sender, RoutedEventArgs e)
     {
-        _ = ShowMessageAsync("TSP Solver Time Limit",
-            "TSP (Travelling Salesman Problem) is used to find the optimal drawing path " +
-            "to minimise the total time the pen spends moving.\n\n" +
-            "For larger images the solver may need more time. For 64×64, 0.5 s is usually fine; " +
-            "for larger images consider 1–2 s or more.\n\n" +
-            "This limit is per colour — 30 colours at 0.5 s = 15 s total solve time.\n\n" +
-            "A simpler \"snaking\" algorithm is used when it's faster, or when the TSP solver " +
-            "doesn't find a solution in time.");
+        const string message =
+            "TSP Solver Time Limit refers to how much time is alloted to the TSP solver.\n" +
+            "TSP refers to the Travelling Sales Person problem, which is finding the optimal route among a set of points.\n" +
+            "This is used to find the optimal path for the pen tool to take while drawing to minimize drawing time.\n\n" +
+            "For larger images, the TSP solver can take longer to find an optimal route, its also possible it will never even find an optimal route if there is too many points.\n" +
+            "For 64x64, 0.5s is generally fine, anything largest you should consider giving it more time.\n\n" +
+            "This time is how long it is alloted PER colour, so if an image has 30 different colours used, 0.5s will take 15 seconds.\n" +
+            "The TSP solve is not used always, a simpler \"snaking\" algorithm is used if its quicker, or if TSP didnt find anything in time, which it sometimes is, mostly for large continuous areas of colour.";
+
+        _ = ShowMessageAsync("TSP Solver Time Limit", message);
     }
 
     private async void SaveTDLDButton_Click(object? sender, RoutedEventArgs e)
@@ -236,7 +241,7 @@ public partial class MainWindow : Window
         var tspLimit = (float)(TSPTimeLimitUpDown.Value ?? 0.5m);
 
         if (sender is Button btn) btn.IsEnabled = false;
-        AppendLog("Starting export…");
+        AppendLog("Starting export...\r\n");
 
         await Task.Run(async () =>
         {
@@ -248,7 +253,7 @@ public partial class MainWindow : Window
         });
 
         if (sender is Button btn2) btn2.IsEnabled = true;
-        AppendLog("Export complete.");
+        AppendLog("Export complete.\r\n");
     }
 
     private async void ExportRP2040Button_Click(object? sender, RoutedEventArgs e)
@@ -258,23 +263,23 @@ public partial class MainWindow : Window
         var imagePath = _currentImagePath;
         var quantizer = ColorMatcherComboBox.SelectedItem!.ToString()!;
         var tspLimit = (float)(TSPTimeLimitUpDown.Value ?? 0.5m);
-        bool disableStamps = DebugDisableLargeStamps.IsChecked == true;
 
         ExportRP2040Button.IsEnabled = false;
         TimeSpan totalTime = TimeSpan.MaxValue;
 
         await Task.Run(async () =>
         {
-            var tempPath = Path.Combine(
+            string tempPath = Path.Combine(
                 Path.GetTempPath(),
                 $"rp2040output{System.Random.Shared.Next(1000000, 9999999)}.tdld");
 
-            AppendLog($"Generating inputs ({Path.GetFileName(tempPath)})…");
+            AppendLog($"Exporting to RP2040 flash ({Path.GetFileName(tempPath)})");
             var timingSink = new TimingSink();
             var drawer = new CanvasDrawer(timingSink, AppendLog);
             drawer.ConnectAndConfirmController();
-            await drawer.DrawImage(SKBitmap.Decode(imagePath), quantizer, tspLimit, disableStamps);
-            AppendLog($"Total draw time: {timingSink.TotalTime.TotalSeconds:F1} s");
+            AppendLog("Starting to generate inputs...");
+            await drawer.DrawImage(SKBitmap.Decode(imagePath), quantizer, tspLimit, false);
+            AppendLog($"True complete overall time is: {timingSink.TotalTime.TotalSeconds}s");
 
             var fileSink = new FileControllerSink(tempPath);
             timingSink.ReplayTo(fileSink);
@@ -284,10 +289,10 @@ public partial class MainWindow : Window
             var uf2Bytes = UF2Flasher.BuildTDLDUF2(tdldBytes);
             var drivePath = UF2Flasher.FindRP2040Drive();
 
-            if (uf2Bytes is { Length: > 0 } && drivePath != null)
+            if (uf2Bytes != null && uf2Bytes.Length > 0 && drivePath != null)
             {
                 File.WriteAllBytes(Path.Combine(drivePath, "tdld_image.uf2"), uf2Bytes);
-                AppendLog("Written to RP2040. Unplug and connect to the Switch.");
+                AppendLog("Wrote to RP2040 flash. Unplug the RP2040 and plug it into the switch without holding any button.");
             }
 
             if (File.Exists(tempPath)) File.Delete(tempPath);
@@ -295,7 +300,71 @@ public partial class MainWindow : Window
         });
 
         ExportRP2040Button.IsEnabled = true;
-        DrawTimeLabel.Text = $"Draw Time Estimate: {totalTime:h\\hm\\ms\\s}";
+
+        var estimateStr = $"{totalTime:h\\hm\\ms\\s}";
+        DrawTimeLabel.Text = $"Draw Time Estimate: {estimateStr}";
+    }
+
+    private async void ExportUF2Button_Click(object sender, RoutedEventArgs e)
+    {
+        if (string.IsNullOrEmpty(_currentImagePath)) return;
+
+        var file = await StorageProvider.SaveFilePickerAsync(new FilePickerSaveOptions
+        {
+            Title = "Save .UF2",
+            DefaultExtension = "uf2",
+            FileTypeChoices = new[]
+            {
+                new FilePickerFileType("UF2 Firmware Image") { Patterns = new[] { "*.uf2" } },
+                new FilePickerFileType("All Files") { Patterns = new[] { "*.*" } }
+            }
+        });
+
+        var outputPath = file?.TryGetLocalPath();
+        if (outputPath == null) return;
+
+        var imagePath = _currentImagePath;
+        var quantizer = ColorMatcherComboBox.SelectedItem!.ToString()!;
+        var tspLimit = (float)(TSPTimeLimitUpDown.Value ?? 0.5m);
+
+        ExportUF2Button.IsEnabled = false;
+        TimeSpan totalTime = TimeSpan.MaxValue;
+
+        await Task.Run(async () =>
+        {
+            string tempPath = Path.Combine(
+                Path.GetTempPath(),
+                $"rp2040output{System.Random.Shared.Next(1000000, 9999999)}.tdld");
+
+            AppendLog($"Exporting to UF2 ({Path.GetFileName(tempPath)})");
+            var timingSink = new TimingSink();
+            var drawer = new CanvasDrawer(timingSink, AppendLog);
+            drawer.ConnectAndConfirmController();
+            AppendLog("Starting to generate inputs...");
+            await drawer.DrawImage(SKBitmap.Decode(imagePath), quantizer, tspLimit, false);
+            AppendLog($"True complete overall time is: {timingSink.TotalTime.TotalSeconds}s");
+
+            var fileSink = new FileControllerSink(tempPath);
+            timingSink.ReplayTo(fileSink);
+            fileSink.Dispose();
+
+            var tdldBytes = File.ReadAllBytes(tempPath);
+            var uf2Bytes = UF2Flasher.BuildTDLDUF2(tdldBytes);
+
+            if (uf2Bytes != null && uf2Bytes.Length > 0)
+            {
+                File.WriteAllBytes(outputPath, uf2Bytes);
+                AppendLog($"Saved UF2 to {outputPath}");
+            }
+
+            if (File.Exists(tempPath)) File.Delete(tempPath);
+            totalTime = timingSink.TotalTime;
+        });
+
+        ExportUF2Button.IsEnabled = true;
+
+        var estimateStr = $"{totalTime:h\\hm\\ms\\s}";
+        DrawTimeLabel.Text = $"Draw Time Estimate: {estimateStr}";
     }
 
     private void FlashFirmwareButton_Click(object? sender, RoutedEventArgs e)
@@ -305,7 +374,8 @@ public partial class MainWindow : Window
 
         if (!File.Exists(firmwareFile))
         {
-            _ = ShowMessageAsync("Error", "Could not find TomodachiDrawer.Firmware.uf2 next to the executable.");
+            _ = ShowMessageAsync("Error flashing base firmware",
+                "For some reason could not locate TomodachiDrawer.Firmware.uf2");
             return;
         }
         if (drivePath == null)
@@ -316,142 +386,54 @@ public partial class MainWindow : Window
 
         File.Copy(firmwareFile, Path.Combine(drivePath, firmwareFile), overwrite: true);
 
-        var timeout = System.DateTime.Now.AddSeconds(5);
+        var timeout = System.DateTime.Now.AddSeconds(10);
         while (UF2Flasher.FindRP2040Drive() != null)
         {
             if (System.DateTime.Now > timeout)
             {
-                _ = ShowMessageAsync("Warning",
-                    "File written but the device hasn't reset yet — it may need to be reset manually.");
+                _ = ShowMessageAsync("Error flashing base firmware",
+                    "Wrote file but expected it to reset itself by now, maybe try doing it manually..?");
                 return;
             }
             Thread.Sleep(500);
         }
 
-        AppendLog("Base firmware flashed to RP2040.");
-        _ = ShowMessageAsync("Done",
-            "Base firmware flashed!\n\n" +
-            "The device will reboot, flash yellow 3×, then red (no image data yet).\n" +
-            "Hold BOOT, reconnect, load your image, and click Export To RP2040.");
+        _ = ShowMessageAsync("", "Base firmware flashed! You can now use the standard output button to output your images to it!\nIf this is your first time, its likely flashing red. Simply hold BOOT and plug it back in, or hold BOOT and press reset if you have it.");
+        AppendLog("Flashed base firmware to RP2040\r\n");
     }
 
     private void OutputExplanationButton_Click(object? sender, RoutedEventArgs e)
     {
-        _ = ShowMessageAsync("RP2040 Output — How It Works",
-            "Your RP2040-Zero needs two things in its flash:\n" +
-            "  • Firmware — the code that reads the drawing instructions and sends " +
-            "controller inputs to the Switch\n" +
-            "  • Image data — the instructions for your specific image\n\n" +
-            "To enter flashing mode: hold BOOT and plug in (or hold BOOT and press RESET).\n\n" +
-            "You only need to flash the firmware once. After that, just flash a new image " +
-            "each time you want to draw something new.\n\n" +
-            "⚠ REQUIRED: System Settings → Controllers & Accessories → " +
-            "Pro Controller Wired Communication → ON");
+        _ = ShowMessageAsync("",
+            "Your RP2040-Zero (or similar) needs two things in its memory (it's flash):\r\n" +
+            "- The code that reads the instructions to draw your image and pipe it to the switch\r\n" +
+            "- The instructions to draw your image.\r\n\r\n\r\n" +
+            "To connect your device for flashing, hold down the \"BOOT\" button and plug it in, or hold \"BOOT\" and press \"RESET\" while it is connected.\r\n\r\n" +
+            "You only need to flash the code/\"firmware\" once.\r\n\r\n" +
+            "You then flash the image data onto it for each image, without needing to reflash the firmware.\r\n\r\n" +
+            "When you first install the firmware, it'll reset itself, flash yellow 3 times, and then flash red.\r\n" +
+            "Flashing red is expected, as that means it cannot find the image data.\r\n" +
+            "Reconnect it using the same \"BOOT\" button steps as described above, load your image, and hit \"Export to RP2040\".\r\n\r\n" +
+            "Again, it will reboot, but now you can unplug it and plug it into your switch.\r\n\r\n" +
+            "YOU MUST HAVE \"Pro Controller Wired Commmunication\" ENABLED.\r\n" +
+            "Go to system settings -> Controllers & Accessories -> Pro Controller Wired Communication\r\n");
     }
 
     private void InGameSetupButton_Click(object? sender, RoutedEventArgs e)
     {
-        _ = ShowMessageAsync("In-Game Setup",
-            "Before plugging in the RP2040:\n" +
-            "  • Open Palette House and switch to the Advanced drawing UI\n" +
-            "  • Ensure the top colour slot is Black (the default)\n" +
-            "  • Move the cursor to the TOP-LEFT corner of where you want to draw\n" +
-            "  • Zoom OUT fully — if the canvas scrolls as the cursor reaches the edge " +
-            "it will desync\n\n" +
-            "For a 256×256 image, place the cursor at the very top-left of the canvas.\n" +
-            "For smaller images, place it at your desired top-left pixel.");
+        _ = ShowMessageAsync("In Game Setup",
+            "Setup in game is fairly straightforward.\r\n" +
+            "- Navigate to the palette house\r\n" +
+            "- Ensure you are on the \"advanced\" drawing UI\r\n" +
+            "- Ensure your top colour is set to Black (it is by default)\r\n" +
+            "- Set your cursor to the TOP LEFT of where you want the drawing to be.\r\n" +
+            "- Ensure the full area of the canvas that will be drawn is on screen.\r\n\r\n" +
+            "If the canvas is zoomed in, it will cause the cursor to desync as the canvas moves when the cursor gets on the edges. Zooming out fully avoids this.\r\n\r\n" +
+            "If your image is 256x256, set it all the way in the top left. If your image is smaller, set your cursor to where you want the topleft most pixel of your drawing to be.");
     }
 
-    // ── Debug ─────────────────────────────────────────────────────────
-
-    private void DebugColourLayersButton_Click(object? sender, RoutedEventArgs e)
-    {
-        if (string.IsNullOrEmpty(_currentImagePath) || !File.Exists(_currentImagePath)) return;
-
-        var cp = new ColourPalette(new DummySink());
-        var quantized = cp.QuantizeImage(
-            SKBitmap.Decode(_currentImagePath),
-            ColorMatcherComboBox.SelectedItem?.ToString() ?? "Euclidean");
-        var layers = cp.BuildFineLayers(quantized);
-        _colourLayersDebug.Clear();
-
-        bool findUniform = DebugFineTestCheckBox.IsChecked == true;
-        bool showBigger = DebugShowBiggerCheckBox.IsChecked == true;
-
-        if (findUniform)
-        {
-            var cd = new CanvasDrawer(new DummySink(), AppendLog);
-            foreach (var l in layers) cd.DetectUniformAreas(l);
-        }
-
-        foreach (var layer in layers)
-        {
-            var bitmap = new SKBitmap(quantized.GetLength(0), quantized.GetLength(1));
-            if (!showBigger)
-            {
-                foreach (var p in layer.FineDetailPoints)
-                    bitmap.SetPixel(p.X, p.Y, new SKColor(layer.Colour.R, layer.Colour.G, layer.Colour.B));
-            }
-            else
-            {
-                foreach (var kv in layer.StampsBySize)
-                {
-                    int s = kv.Key;
-                    foreach (var p in kv.Value)
-                        for (int dx = -s / 2; dx <= s / 2; dx++)
-                            for (int dy = -s / 2; dy <= s / 2; dy++)
-                            {
-                                int x = p.X + dx, y = p.Y + dy;
-                                if (x >= 0 && x < bitmap.Width && y >= 0 && y < bitmap.Height)
-                                    bitmap.SetPixel(x, y, new SKColor(layer.Colour.R, layer.Colour.G, layer.Colour.B));
-                            }
-                }
-            }
-            _colourLayersDebug[layer.Colour] = bitmap;
-        }
-
-        DebugColourComboBox.ItemsSource = _colourLayersDebug.Keys
-            .Select(c => c.DisplayName)
-            .ToList();
-
-        AppendLog($"Built {_colourLayersDebug.Count} colour layers.");
-    }
-
-    private void DebugColourComboBox_SelectionChanged(object? sender, SelectionChangedEventArgs e)
-    {
-        var idx = DebugColourComboBox.SelectedIndex;
-        if (idx < 0 || _colourLayersDebug.Count == 0) return;
-        var colour = _colourLayersDebug.Keys.ElementAt(idx);
-        PreviewImage.Source = ToAvaloniaBitmap(_colourLayersDebug[colour]);
-    }
-
-    private async void BenchmarkButton_Click(object? sender, RoutedEventArgs e)
-    {
-        if (string.IsNullOrEmpty(_currentImagePath)) return;
-
-        var imagePath = _currentImagePath;
-        var quantizer = ColorMatcherComboBox.SelectedItem!.ToString()!;
-        var tspLimit = (float)(TSPTimeLimitUpDown.Value ?? 0.5m);
-        bool disableStamps = DebugDisableLargeStamps.IsChecked == true;
-
-        if (sender is Button btn) btn.IsEnabled = false;
-        double seconds = 0;
-
-        await Task.Run(async () =>
-        {
-            var timingSink = new TimingSink();
-            var drawer = new CanvasDrawer(timingSink, AppendLog);
-            drawer.ConnectAndConfirmController();
-            await drawer.DrawImage(SKBitmap.Decode(imagePath), quantizer, tspLimit, disableStamps);
-            AppendLog($"Benchmark total: {timingSink.TotalTime.TotalSeconds:F3} s");
-            seconds = timingSink.TotalTime.TotalSeconds;
-        });
-
-        if (sender is Button btn2) btn2.IsEnabled = true;
-        DebugBenchmarkOutput.Text = $"{seconds:F3} s";
-    }
-
-    // ── Drag & drop ───────────────────────────────────────────────────
+    // this doesnt seem to work >:|
+    // atleast on windows.
 
     private static void OnDragOver(object? sender, DragEventArgs e)
     {

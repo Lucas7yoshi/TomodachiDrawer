@@ -4,6 +4,7 @@ namespace TomodachiDrawer.UI.Avalonia;
 
 internal static class UF2Flasher
 {
+    // This is repeated code so i would like to make it shared in .Core later.
     public static byte[] BuildTDLDUF2(byte[] tdldData)
     {
         const uint TargetBase = 0x10100000u;
@@ -36,7 +37,7 @@ internal static class UF2Flasher
 
     public static string? FindRP2040Drive()
     {
-        // Primary: DriveInfo works on all platforms (.NET reads volume labels cross-platform)
+        // this should work crossplatform...
         foreach (var drive in DriveInfo.GetDrives())
         {
             try
