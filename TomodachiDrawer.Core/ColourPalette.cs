@@ -86,7 +86,7 @@ namespace TomodachiDrawer.Core
             C("", "#F7B492", 8, 2),
             C("", "#DF9691", 9, 2),
             C("", "#C7A976", 10, 2),
-            C("Lime", "#FCFF00", 11, 2),
+            C("Lime", "#05FE00", 11, 2),
             // ===== Row 3 (y=3) =====
             C("", "#BCBCBC", 0, 3),
             C("", "#6200C1", 1, 3),
