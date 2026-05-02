@@ -37,6 +37,7 @@ jobs:
     - uses: actions/setup-dotnet@v5
       with:
         dotnet-version: '10.0.x'
+        cache: true
     - name: Build
       working-directory: TomodachiDrawer.UI.Avalonia
       run: dotnet publish --configuration ${{ matrix.configuration }} -r ${{ matrix.runtime }} --self-contained -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true
@@ -59,6 +60,7 @@ jobs:
     - uses: actions/setup-dotnet@v5
       with:
         dotnet-version: '10.0.x'
+        cache: true
         
     - name: Publish WinForms
       working-directory: TomodachiDrawer.UI.Windows
