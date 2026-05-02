@@ -222,7 +222,7 @@ namespace TomodachiDrawer.UI.Windows
             var cp = new ColourPalette(new DummySink());
             var quantized = cp.QuantizeImage(
                 SKBitmap.Decode(currentImagePath),
-                ColorMatcherComboBox.SelectedItem.ToString()
+                ColorMatcherComboBox.SelectedItem!.ToString()!
             );
             var layers = cp.BuildFineLayers(quantized);
             colourLayersDebug.Clear();

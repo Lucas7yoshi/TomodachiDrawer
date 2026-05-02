@@ -146,6 +146,9 @@ namespace TomodachiDrawer.SerialPlayer
             byte opcode = (byte)(raw >> 4);
             byte nibble = (byte)(raw & 0xF);
 
+            if (controller == null)
+                throw new Exception("Conroller is null..?");
+
             switch (opcode)
             {
                 case FileControllerSink.Opcode.PressButton:
