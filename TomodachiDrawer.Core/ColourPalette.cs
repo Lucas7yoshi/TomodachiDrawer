@@ -190,21 +190,15 @@ namespace TomodachiDrawer.Core
                     throw new ArgumentNullException(nameof(quantizerSettings.colourCount), "colourCount must be set for Arbitrary quantizer");
                 SKBitmap quantized = ArbitraryColourQuantizer.Quantize(source, (int)quantizerSettings.colourCount, quantizerSettings.useDithering ?? default);
                 // need to make our palette now.
-                // Find all distinct colours in the image
-                var distinctColours = new HashSet<SKColor>();
-                // this is slightly better than before
-                var span = MemoryMarshal.Cast<byte, SKColor>(quantized.GetPixelSpan());
-                foreach (var pixel in span)
-                {
-                    if (pixel.Alpha > 128)
-                        distinctColours.Add(pixel);
-                }
-                // make the PaletteColour's
-                var skToPalette  = new Dictionary<SKColor, PaletteColour>();
-                foreach (var d in distinctColours)
-                {
-                    skToPalette[d] = new PaletteColour($"({d.Red}, {d.Green}, {d.Blue})", d.Red, d.Green, d.Blue, null, null, d, true);
-                }
+                // Find all distinct colours in the image and make the PaletteColour's
+                var skToPalette = MemoryMarshal.Cast<byte, SKColor>(quantized.GetPixelSpan())
+                    .ToArray()
+                    .Where(c => c.Alpha > 128)
+                    .Distinct()
+                    .ToDictionary(
+                        d => d,
+                        d => new PaletteColour($"({d.Red}, {d.Green}, {d.Blue})", d.Red, d.Green, d.Blue, null, null, d, true)
+                    );
                 var output = new PaletteColour?[source.Width, source.Height];
                 for (int x = 0; x < quantized.Width; x++)
                 {
