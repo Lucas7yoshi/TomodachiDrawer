@@ -136,7 +136,13 @@ namespace TomodachiDrawer.Core
                         // todo TSP routing lol
 
                         var dumbRoute = new List<CanvasPoint>(sbs.Value);
-                        var optimizedRoute = PerformTSP(dumbRoute, 0.5f); // half a sec per stamp size per colour is prob reasonable?
+                        var pointCount = dumbRoute.Count;
+                        float tspTime = 0.5f;
+                        if (pointCount > 100)
+                            tspTime = 1.0f;
+                        else if (pointCount > 200)
+                            tspTime = 1.5f;
+                        var optimizedRoute = PerformTSP(dumbRoute, tspTime); // half a sec per stamp size per colour is prob reasonable?
                         if (optimizedRoute == null)
                             optimizedRoute = dumbRoute;
 
