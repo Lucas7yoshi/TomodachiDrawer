@@ -319,13 +319,14 @@ public partial class MainWindow : Window
         if (sender is Button btn)
             btn.IsEnabled = false;
         AppendLog("Starting export...\r\n");
+        
+        var settings = GetQuantizerSettings();
 
         await Task.Run(async () =>
         {
             var fileOutput = new FileControllerSink(outputPath);
             var drawer = new CanvasDrawer(fileOutput, AppendLog);
             drawer.ConnectAndConfirmController();
-            var settings = GetQuantizerSettings();
             await drawer.DrawImage(SKBitmap.Decode(imagePath), settings, denoiser, tspLimit);
             fileOutput.Dispose();
         });
@@ -346,6 +347,7 @@ public partial class MainWindow : Window
 
         ExportRP2040Button.IsEnabled = false;
         TimeSpan totalTime = TimeSpan.MaxValue;
+        var settings = GetQuantizerSettings();
 
         await Task.Run(async () =>
         {
@@ -359,7 +361,6 @@ public partial class MainWindow : Window
             var drawer = new CanvasDrawer(timingSink, AppendLog);
             drawer.ConnectAndConfirmController();
             AppendLog("Starting to generate inputs...");
-            var settings = GetQuantizerSettings();
             await drawer.DrawImage(SKBitmap.Decode(imagePath), settings, denoiser, tspLimit, false);
             AppendLog($"True complete overall time is: {timingSink.TotalTime.TotalSeconds}s");
 
@@ -418,6 +419,7 @@ public partial class MainWindow : Window
 
         ExportUF2Button.IsEnabled = false;
         TimeSpan totalTime = TimeSpan.MaxValue;
+        var settings = GetQuantizerSettings();
 
         await Task.Run(async () =>
         {
@@ -431,7 +433,6 @@ public partial class MainWindow : Window
             var drawer = new CanvasDrawer(timingSink, AppendLog);
             drawer.ConnectAndConfirmController();
             AppendLog("Starting to generate inputs...");
-            var settings = GetQuantizerSettings();
             await drawer.DrawImage(SKBitmap.Decode(imagePath), settings, denoiser, tspLimit, false);
             AppendLog($"True complete overall time is: {timingSink.TotalTime.TotalSeconds}s");
 

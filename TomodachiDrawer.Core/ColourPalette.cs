@@ -1,5 +1,9 @@
-﻿using System.Runtime.InteropServices;
+﻿using SixLabors.ImageSharp.ColorSpaces;
+
 using SkiaSharp;
+
+using System.Runtime.InteropServices;
+
 using TomodachiDrawer.Core.ImageProcessing;
 using TomodachiDrawer.Core.ImageProcessing.Denoising;
 using TomodachiDrawer.Core.ImageProcessing.Quantizers;
@@ -16,6 +20,13 @@ namespace TomodachiDrawer.Core
         private const int GridHeight = 7;
         private const int HotbarSlots = 9;
         private const int HotbarHeaderRows = 2; // Used for homing.
+
+        // Full colour range.
+        private const int FCR_HUE_SLIDER_STEP_COUNT = 201; // Need to painstakingly count
+                                                           // In the large rectangle area, the X axis is Saturation, the Y axis is Value/Brightness/Whatever
+
+        private const int FCR_SATURATION_STEP_COUNT = 213; // Total positions, including the 0. So 0 to 212 kinda.
+        private const int FCR_VALUE_STEP_COUNT = 112;
 
         // In game stuff, relevant to current draw session.
         // Used to track where our last colour was, so we can minimize inputs to change palette.
@@ -272,6 +283,8 @@ namespace TomodachiDrawer.Core
             return outputLayers;
         }
 
+        private bool _lastWasArbitrary = false;
+
         public void SelectColour(PaletteColour target, double speed)
         {
             _output.Tap(Button.Y, speed, speed);
@@ -317,10 +330,56 @@ namespace TomodachiDrawer.Core
             }
             else
             {
-                // TODO: PICKUP HERE IN MORNING
-                // Ideally this should be able to go back and forth between arbitrary or preset colours but
-                // not needed for initial implementation if its a pain.
-                throw new NotImplementedException();
+                if (!_lastWasArbitrary)
+                {
+                    _output.Tap(Button.R);
+                }
+
+                // Home everything, if we pick black on the bottom right, it goes to the bottom left
+                // the game appears to store the colour as RGB internally, and when you reopen the UI, it re-resolves
+                // it to HSV, which can land somewhere different. Most obvious in black.
+
+                // TODO: Home to the corner closest to the target colour to minimize inputs.
+                // Will need logic below inverted accordingly.
+                _output.SetStick(Stick.LX, 255);
+                _output.SetStick(Stick.LY, 0); // Up Right
+                _output.Press(Button.ZL);
+                _output.Delay(4250);
+                _output.ReleaseAll();
+
+                // Figure out how many taps we need to go for...
+                target.skColor.ToHsv(out float h, out float s, out float v);
+
+                // Referenced off of Kevman323's approximation on GitHub <3
+                //hsv = colorsys.rgb_to_hsv(r / 255, g / 255, b / 255)
+                //hue = round((1 - hsv[0]) * 200) # Reverse hue, and make it fit range 0-200
+                //sat = round(212 - (((1 - hsv[1]) * *(1 / 0.42)) * 212)) # reverse value, exponent it, make it fit range 0-212, and then reverse it again
+                //val = round(111 - ((hsv[2] * *(1 / 0.465)) * 111)) #Reverse Value, exponent it, and make it fit range 0-111
+                // This is pretty damn close but I do want to see if I can get a friend to decompile the exact way the game does it.
+                // For accuracy.
+                var hueInputs = (int)Math.Round((1 - h / 360) * (FCR_HUE_SLIDER_STEP_COUNT - 1));
+                var satInputs = (int)Math.Round(Math.Pow(1 - s / 100, 1.0 / 0.42) * (FCR_SATURATION_STEP_COUNT - 1));
+                var valInputs = (int)Math.Round((FCR_VALUE_STEP_COUNT - 1) - (Math.Pow(v / 100, 1.0 / 0.465) * (FCR_VALUE_STEP_COUNT - 1)));
+
+                // Future improvement: Can do Hue inputs at the same time as Sat or Val.
+                // Can only do sat or val though, not both at the same time. diagonals not supported in this ui
+                for (int i = 0; i < hueInputs; i++)
+                {
+                    _output.Tap(Button.ZR);
+                }
+
+                for (int i = 0; i < satInputs; i++)
+                {
+                    _output.Tap(DPad.LEFT);
+                }
+
+                for (int i = 0; i < valInputs; i++)
+                {
+                    _output.Tap(DPad.DOWN);
+                }
+
+                _output.Tap(Button.A);
+                _output.Delay(300);
             }
         }
     }
