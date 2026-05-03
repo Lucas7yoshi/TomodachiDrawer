@@ -579,11 +579,13 @@ public partial class MainWindow : Window
     {
         _ = ShowMessageAsync(
             "Colour Matchers", 
-            "You have 4 options for colour matchers. Euclidean, Redmean, and CieLab work using the Pro modes default palette." +
-            "\nArbitrary works by using the full colour range, selecting colours is slower but you can achieve much better results." +
+            "You have 4 options for colour matchers." +
+            "\nEuclidean, Redmean, and CieLab work using the Pro modes default palette." +
+            "\n\nArbitrary on the other hands works using the full colour range, selecting colours in-game is slower but you can achieve much better results." +
             "\nYou can tweak the number of colours it has by changing the value to the right of this button." +
             "\nTry and pick the lowest number that looks good to your standards to minimize draw time." +
-            "\nLess colours means quicker drawing, and more opportunities for the solver to find large continous blocks it can draw quickly."
+            "\nLess colours means quicker drawing, and more opportunities for the solver to find large continous blocks it can draw quickly." +
+            "\nIf time is of the essence, you can also enable Denoising which can increase the number of large spots for the larger brushes."
         );
     }
 }
