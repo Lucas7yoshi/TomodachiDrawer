@@ -1,4 +1,5 @@
-﻿using SkiaSharp;
+﻿using System.Runtime.InteropServices;
+using SkiaSharp;
 using TomodachiDrawer.Core.ImageProcessing;
 using TomodachiDrawer.Core.ImageProcessing.Denoising;
 using TomodachiDrawer.Core.ImageProcessing.Quantizers;
@@ -187,19 +188,16 @@ namespace TomodachiDrawer.Core
             {
                 if (quantizerSettings.colourCount == null)
                     throw new ArgumentNullException(nameof(quantizerSettings.colourCount), "colourCount must be set for Arbitrary quantizer");
-                SKBitmap quantized = ArbitraryColourQuantizer.Quantize(source, (int)quantizerSettings.colourCount, quantizerSettings.useDithering ?? default, default);
+                SKBitmap quantized = ArbitraryColourQuantizer.Quantize(source, (int)quantizerSettings.colourCount, quantizerSettings.useDithering ?? default);
                 // need to make our palette now.
                 // Find all distinct colours in the image
                 var distinctColours = new HashSet<SKColor>();
-                // this could be better lol
-                for (int x = 0; x < quantized.Width; x++)
+                // this is slightly better than before
+                var span = MemoryMarshal.Cast<byte, SKColor>(quantized.GetPixelSpan());
+                foreach (var pixel in span)
                 {
-                    for (int y = 0; y < quantized.Height; y++)
-                    {
-                        var pixel = quantized.GetPixel(x, y);
-                        if (pixel.Alpha > 128)
-                            distinctColours.Add(pixel);
-                    }
+                    if (pixel.Alpha > 128)
+                        distinctColours.Add(pixel);
                 }
                 // make the PaletteColour's
                 var skToPalette  = new Dictionary<SKColor, PaletteColour>();
