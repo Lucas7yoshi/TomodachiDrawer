@@ -49,27 +49,3 @@ jobs:
       with:
         name: TomodachiDrawer-Avalonia-${{ matrix.runtime }}-${{ matrix.configuration }}
         path: TomodachiDrawer.UI.Avalonia/bin/${{ matrix.configuration }}/net10.0/${{ matrix.runtime }}/publish/
-  publish-windows:
-    runs-on: windows-latest 
-    needs: build
-    strategy:
-      fail-fast: false
-      matrix:
-        runtime: [win-x64, win-arm64]
-        configuration: [Release]
-    steps:
-    - uses: actions/checkout@v6
-    - uses: actions/setup-dotnet@v5
-      with:
-        dotnet-version: '10.0.x'
-        cache: true
-        cache-dependency-path: '**/*.csproj'
-    - name: Publish WinForms
-      working-directory: TomodachiDrawer.UI.Windows
-      run: dotnet publish --configuration ${{ matrix.configuration }} -r ${{ matrix.runtime }} --self-contained -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true
-
-    - name: Upload Artifacts
-      uses: actions/upload-artifact@v7
-      with:
-        name: TomodachiDrawer-WinForms-${{ matrix.configuration }}-${{ matrix.runtime }}
-        path: TomodachiDrawer.UI.Windows/bin/${{ matrix.configuration }}/net10.0-windows/${{ matrix.runtime }}/publish/

@@ -18,10 +18,7 @@
     <ProjectReference Include="..\TomodachiDrawer.Core\TomodachiDrawer.Core.csproj" />
   </ItemGroup>
   <ItemGroup>
-    <None
-      Include="..\TomodachiDrawer.UI.Windows\TomodachiDrawer.Firmware.uf2"
-      Link="TomodachiDrawer.Firmware.uf2"
-    >
+    <None Include="..\TomodachiDrawer.UI.Windows\TomodachiDrawer.Firmware.uf2" Link="TomodachiDrawer.Firmware.uf2">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
   </ItemGroup>
@@ -31,4 +28,7 @@
     <TrimmerRootAssembly Include="Avalonia.Controls" />
     <TrimmerRootAssembly Include="Avalonia.Base" />
   </ItemGroup>
+<ItemGroup>
+  <AvaloniaResource Include="Assets\**" />
+</ItemGroup>
 </Project>

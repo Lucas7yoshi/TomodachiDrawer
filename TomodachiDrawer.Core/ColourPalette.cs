@@ -145,65 +145,100 @@ namespace TomodachiDrawer.Core
         // ran through the IImageQuantizer of their choosing.
         public SKBitmap PreviewColourMapping(
             SKBitmap source,
-            string quantizerName,
+            QuantizerSettings quantizerSettings,
             string? denoiserName
         )
         {
-            ArgumentException.ThrowIfNullOrWhiteSpace(quantizerName);
+            ArgumentException.ThrowIfNullOrWhiteSpace(quantizerSettings.quantizerName);
             ArgumentNullException.ThrowIfNull(source);
-            var quantizer = Quantizers[quantizerName](Colours);
-            var result = new SKBitmap(source.Width, source.Height);
 
-            var trueSource = source;
+            var quantized = QuantizeImage(source, quantizerSettings);
 
-            if (!string.IsNullOrEmpty(denoiserName))
+            // make a bitmap out of it
+            var output = new SKBitmap(source.Width, source.Height);
+            for (int x = 0; x < quantized.GetLength(0); x++)
             {
-                trueSource = ImageDenoiser.DenoiseImage(source, denoiserName);
-            }
-
-            // TODO: GetPixel is slow
-            for (int x = 0; x < trueSource.Width; x++)
-            {
-                for (int y = 0; y < trueSource.Height; y++)
+                for (int y = 0; y < quantized.GetLength(1); y++)
                 {
-                    var before = trueSource.GetPixel(x, y);
-                    if (before.Alpha < 128)
+                    var paletteColour = quantized[x, y];
+                    if (paletteColour != null)
                     {
-                        result.SetPixel(x, y, new SKColor(0, 0, 0, 0));
-                        continue;
+                        output.SetPixel(x, y, paletteColour.skColor);
                     }
-                    var after = quantizer.FindClosestColour(before.Red, before.Green, before.Blue);
-                    result.SetPixel(x, y, after.skColor);
                 }
             }
-            return result;
+
+            return output;
         }
+
+
 
         /// <summary>Map an image to PaletteColours</summary>
         /// <returns>2D array of PaletteColour? [x, y] of the appropriate colours.</returns>
-        public PaletteColour?[,] QuantizeImage(SKBitmap source, string quantizerName)
+        public PaletteColour?[,] QuantizeImage(SKBitmap source, QuantizerSettings quantizerSettings)
         {
-            var quantizer = Quantizers[quantizerName](Colours);
-            var result = new PaletteColour?[source.Width, source.Height];
-
-            // TODO: GetPixel is slow
-            for (int x = 0; x < source.Width; x++)
+            if (quantizerSettings.quantizerName == "Arbitrary")
             {
-                for (int y = 0; y < source.Height; y++)
+                if (quantizerSettings.colourCount == null)
+                    throw new ArgumentNullException(nameof(quantizerSettings.colourCount), "colourCount must be set for Arbitrary quantizer");
+                SKBitmap quantized = ArbitraryColourQuantizer.Quantize(source, (int)quantizerSettings.colourCount, quantizerSettings.useDithering ?? default, default);
+                // need to make our palette now.
+                // Find all distinct colours in the image
+                var distinctColours = new HashSet<SKColor>();
+                // this could be better lol
+                for (int x = 0; x < quantized.Width; x++)
                 {
-                    var pixel = source.GetPixel(x, y);
-                    if (pixel.Alpha <= 128)
-                        result[x, y] = null;
-                    else
-                        result[x, y] = quantizer.FindClosestColour(
-                            pixel.Red,
-                            pixel.Green,
-                            pixel.Blue
-                        );
+                    for (int y = 0; y < quantized.Height; y++)
+                    {
+                        var pixel = quantized.GetPixel(x, y);
+                        if (pixel.Alpha > 128)
+                            distinctColours.Add(pixel);
+                    }
                 }
+                // make the PaletteColour's
+                var skToPalette  = new Dictionary<SKColor, PaletteColour>();
+                foreach (var d in distinctColours)
+                {
+                    skToPalette[d] = new PaletteColour($"({d.Red}, {d.Green}, {d.Blue})", d.Red, d.Green, d.Blue, null, null, d, true);
+                }
+                var output = new PaletteColour?[source.Width, source.Height];
+                for (int x = 0; x < quantized.Width; x++)
+                {
+                    for (int y = 0; y < quantized.Height; y++)
+                    {
+                        var pixel = quantized.GetPixel(x, y);
+                        if (pixel.Alpha <= 128)
+                            output[x, y] = null;
+                        else
+                            output[x, y] = skToPalette[pixel];
+                    }
+                }
+                return output;
             }
+            else
+            {
+                var quantizer = Quantizers[quantizerSettings.quantizerName](Colours);
+                var result = new PaletteColour?[source.Width, source.Height];
 
-            return result;
+                // TODO: GetPixel is slow
+                for (int x = 0; x < source.Width; x++)
+                {
+                    for (int y = 0; y < source.Height; y++)
+                    {
+                        var pixel = source.GetPixel(x, y);
+                        if (pixel.Alpha <= 128)
+                            result[x, y] = null;
+                        else
+                            result[x, y] = quantizer.FindClosestColour(
+                                pixel.Red,
+                                pixel.Green,
+                                pixel.Blue
+                            );
+                    }
+                }
+
+                return result;
+            }
         }
 
         /// <summary>Creates the ColourLayers for each colour in a quantized image. Puts all pixels into FineDetailPoints for solving later</summary>
@@ -268,24 +303,33 @@ namespace TomodachiDrawer.Core
             _output.Tap(Button.Y, speed, speed);
             _output.Delay(300);
 
-            // Move to right spot, from the
-            int deltaX = target.GridX - _lastGridX;
-            int deltaY = target.GridY - _lastGridY;
+            // Now in the colour menu. What tab? Shrug!
+            if (!target.IsArbitrary && target.GridX != null && target.GridY != null)
+            {
+                // Move to right spot, from the
+                int deltaX = (int)target.GridX - _lastGridX;
+                int deltaY = (int)target.GridY - _lastGridY;
 
-            // TODO: Optimize with diagonals.
-            DPad YDirection = deltaY > 0 ? DPad.DOWN : DPad.UP;
-            DPad XDirection = deltaX > 0 ? DPad.RIGHT : DPad.LEFT;
-            for (int i = 0; i < Math.Abs(deltaY); i++)
-                _output.Tap(YDirection, speed, speed);
-            for (int i = 0; i < Math.Abs(deltaX); i++)
-                _output.Tap(XDirection, speed, speed);
+                // TODO: Optimize with diagonals.
+                DPad YDirection = deltaY > 0 ? DPad.DOWN : DPad.UP;
+                DPad XDirection = deltaX > 0 ? DPad.RIGHT : DPad.LEFT;
+                for (int i = 0; i < Math.Abs(deltaY); i++)
+                    _output.Tap(YDirection, speed, speed);
+                for (int i = 0; i < Math.Abs(deltaX); i++)
+                    _output.Tap(XDirection, speed, speed);
 
-            // confirm and close out
-            _output.Tap(Button.A, speed, speed);
-            _output.Delay(300);
+                // confirm and close out
+                _output.Tap(Button.A, speed, speed);
+                _output.Delay(300);
 
-            _lastGridX = target.GridX;
-            _lastGridY = target.GridY;
+                _lastGridX = (int)target.GridX;
+                _lastGridY = (int)target.GridY;
+            }
+            else
+            {
+                // TODO
+                throw new NotImplementedException();
+            }
         }
     }
 }

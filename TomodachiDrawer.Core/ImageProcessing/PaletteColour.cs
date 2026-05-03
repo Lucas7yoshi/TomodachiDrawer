@@ -8,9 +8,10 @@ namespace TomodachiDrawer.Core.ImageProcessing
         byte R,
         byte G,
         byte B,
-        int GridX,
-        int GridY,
-        SKColor skColor
+        int? GridX,
+        int? GridY,
+        SKColor skColor,
+        bool IsArbitrary = false
     )
     {
         public string DisplayName => string.IsNullOrEmpty(Name) ? $"({R}, {G}, {B})" : Name;

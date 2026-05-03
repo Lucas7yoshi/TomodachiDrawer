@@ -2,6 +2,7 @@
 using Google.OrTools.ConstraintSolver;
 using SkiaSharp;
 using TomodachiDrawer.Core.ImageProcessing.Denoising;
+using TomodachiDrawer.Core.ImageProcessing.Quantizers;
 using TomodachiDrawer.Core.Interfaces;
 using TomodachiDrawer.Core.Models;
 using TomodachiDrawer.Core.OutputSinks;
@@ -53,7 +54,7 @@ namespace TomodachiDrawer.Core
 
         public async Task DrawImage(
             SKBitmap image,
-            string quantizerName,
+            QuantizerSettings quantizerSettings,
             string? denoiserName = null,
             float tspTimeLimit = 1.0f,
             bool disableLargeBrush = false
@@ -87,7 +88,7 @@ namespace TomodachiDrawer.Core
             }
 
             // Quantized Map is a 2D array of PaletteColours.
-            var quantizedMap = _palette.QuantizeImage(image, quantizerName);
+            var quantizedMap = _palette.QuantizeImage(image, quantizerSettings);
 
             // First off we are just putting all the individual details into the fine detail pass,
             // following passes will start to remove from that and add to the stamp passes.

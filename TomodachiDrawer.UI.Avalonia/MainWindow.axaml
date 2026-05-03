@@ -43,7 +43,7 @@
                                  IsReadOnly="True"
                                  PlaceholderText="No image loaded…" />
                         <Button Grid.Column="1"
-                                Content="Open…"
+                                Content="Open..."
                                 Margin="4,0,0,0"
                                 Click="OpenImageButton_Click" />
                     </Grid>
@@ -143,27 +143,43 @@
                         <ColumnDefinition Width="*" />
                         <ColumnDefinition Width="Auto" />
                         <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition Width="*" />
                     </Grid.ColumnDefinitions>
                     <TextBlock Grid.Column="0"
-                               Text="Color Matcher:"
+                               Text="Colour Matcher:"
                                VerticalAlignment="Center"
                                Margin="0,0,4,0" />
                     <ComboBox Grid.Column="1"
-                              x:Name="ColorMatcherComboBox"
+                              x:Name="ColourMatcherComboBox"
                               HorizontalAlignment="Stretch"
                               Margin="0,0,8,0"
-                              SelectionChanged="ColorMatcherComboBox_SelectionChanged" />
+                              SelectionChanged="ColourMatcherComboBox_SelectionChanged" />
                     <TextBlock Grid.Column="2"
+                               Text="Colour Limit:"
+                               VerticalAlignment="Center"
+                               Margin="0,0,4,0" />
+                    <NumericUpDown Grid.Column="3"
+                                   x:Name="ColourLimitUpDown"
+                                   Minimum="1" Maximum="256"
+                                   Increment="1" Value="16"
+                                   FormatString="F0"
+                                   HorizontalAlignment="Stretch"
+                                   Margin="0,0,8,0"
+                                   IsEnabled="False"
+                                   ValueChanged="ColourLimitUpDown_ValueChanged"/>
+                    <TextBlock Grid.Column="4"
                                Text="Denoising:"
                                VerticalAlignment="Center"
                                Margin="0,0,4,0" />
-                    <ComboBox Grid.Column="3"
+                    <ComboBox Grid.Column="5"
                               x:Name="DenoisingComboBox"
                               IsEnabled="True"
                               HorizontalAlignment="Stretch" />
                 </Grid>
                 <Image x:Name="PreviewImage"
                        Stretch="Uniform"
+                       Source="avares://TomodachiDrawer.UI.Avalonia/Assets/NoImagePlaceholder.png"
                        RenderOptions.BitmapInterpolationMode="None" />
             </DockPanel>
         </Border>

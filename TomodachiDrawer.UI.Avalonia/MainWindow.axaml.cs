@@ -7,11 +7,15 @@ using Avalonia.Media;
 using Avalonia.Media.Imaging;
 using Avalonia.Platform.Storage;
 using Avalonia.Threading;
+
 using SkiaSharp;
+
 using TomodachiDrawer.Core;
 using TomodachiDrawer.Core.ImageProcessing;
 using TomodachiDrawer.Core.ImageProcessing.Denoising;
+using TomodachiDrawer.Core.ImageProcessing.Quantizers;
 using TomodachiDrawer.Core.OutputSinks;
+
 using Button = Avalonia.Controls.Button; // conflict with the Button enum in SinkEnums
 
 namespace TomodachiDrawer.UI.Avalonia;
@@ -26,8 +30,10 @@ public partial class MainWindow : Window
     {
         InitializeComponent();
 
-        ColorMatcherComboBox.ItemsSource = ColourPalette.Quantizers.Keys.ToList();
-        ColorMatcherComboBox.SelectedIndex = 0;
+        var quantizers = ColourPalette.Quantizers.Keys.ToList();
+        quantizers.Add("Arbitrary");
+        ColourMatcherComboBox.ItemsSource = quantizers;
+        ColourMatcherComboBox.SelectedIndex = 0;
 
         var denoiserSelection = new List<string> { "None" };
         denoiserSelection.AddRange(ImageDenoiser.Denoisers.Keys);
@@ -148,19 +154,16 @@ public partial class MainWindow : Window
             return;
         }
 
-        var quantizer = ColorMatcherComboBox.SelectedItem?.ToString();
-        if (quantizer == null)
-            return;
-
         var pal = new ColourPalette(new DummySink());
         var denoiser = DenoisingComboBox.SelectedItem?.ToString();
+        var quantizerSettings = GetQuantizerSettings();
         var preview = pal.PreviewColourMapping(
             SKBitmap.Decode(_currentImagePath),
-            quantizer,
+            quantizerSettings,
             denoiser
         );
         PreviewImage.Source = ToAvaloniaBitmap(preview);
-        AppendLog($"Updated preview for {Path.GetFileName(_currentImagePath)} using {quantizer}");
+        AppendLog($"Updated preview for {Path.GetFileName(_currentImagePath)} using {quantizerSettings.quantizerName}");
     }
 
     private static Bitmap? ToAvaloniaBitmap(SKBitmap skBitmap)
@@ -240,10 +243,11 @@ public partial class MainWindow : Window
             LoadImage(files[0].TryGetLocalPath() ?? "");
     }
 
-    private void ColorMatcherComboBox_SelectionChanged(object? sender, SelectionChangedEventArgs e)
+    private void ColourMatcherComboBox_SelectionChanged(object? sender, SelectionChangedEventArgs e)
     {
         if (!string.IsNullOrEmpty(_currentImagePath))
             UpdatePreview();
+        ColourLimitUpDown.IsEnabled = ColourMatcherComboBox?.SelectedValue?.ToString() == "Arbitrary";
     }
 
     private void TSPHelpButton_Click(object? sender, RoutedEventArgs e)
@@ -258,6 +262,17 @@ public partial class MainWindow : Window
             + "The TSP solve is not used always, a simpler \"snaking\" algorithm is used if its quicker, or if TSP didnt find anything in time, which it sometimes is, mostly for large continuous areas of colour.";
 
         _ = ShowMessageAsync("TSP Solver Time Limit", message);
+    }
+
+    private QuantizerSettings GetQuantizerSettings()
+    {
+        string quantizerName = ColourMatcherComboBox.SelectedItem!.ToString()!;
+        if (quantizerName == "Arbitrary")
+        {
+            var colourCount = (int)(ColourLimitUpDown.Value ?? 32);
+            return new QuantizerSettings(quantizerName, colourCount, default);
+        }
+        return new QuantizerSettings(quantizerName, default, default);
     }
 
     private async void SaveTDLDButton_Click(object? sender, RoutedEventArgs e)
@@ -286,7 +301,6 @@ public partial class MainWindow : Window
             return;
 
         var imagePath = _currentImagePath;
-        var quantizer = ColorMatcherComboBox.SelectedItem!.ToString()!;
         var denoiser = DenoisingComboBox.SelectedItem?.ToString();
         var tspLimit = (float)(TSPTimeLimitUpDown.Value ?? 0.5m);
 
@@ -299,7 +313,8 @@ public partial class MainWindow : Window
             var fileOutput = new FileControllerSink(outputPath);
             var drawer = new CanvasDrawer(fileOutput, AppendLog);
             drawer.ConnectAndConfirmController();
-            await drawer.DrawImage(SKBitmap.Decode(imagePath), quantizer, denoiser, tspLimit);
+            var settings = GetQuantizerSettings();
+            await drawer.DrawImage(SKBitmap.Decode(imagePath), settings, denoiser, tspLimit);
             fileOutput.Dispose();
         });
 
@@ -314,7 +329,6 @@ public partial class MainWindow : Window
             return;
 
         var imagePath = _currentImagePath;
-        var quantizer = ColorMatcherComboBox.SelectedItem!.ToString()!;
         var denoiser = DenoisingComboBox.SelectedItem?.ToString();
         var tspLimit = (float)(TSPTimeLimitUpDown.Value ?? 0.5m);
 
@@ -333,7 +347,8 @@ public partial class MainWindow : Window
             var drawer = new CanvasDrawer(timingSink, AppendLog);
             drawer.ConnectAndConfirmController();
             AppendLog("Starting to generate inputs...");
-            await drawer.DrawImage(SKBitmap.Decode(imagePath), quantizer, denoiser, tspLimit, false);
+            var settings = GetQuantizerSettings();
+            await drawer.DrawImage(SKBitmap.Decode(imagePath), settings, denoiser, tspLimit, false);
             AppendLog($"True complete overall time is: {timingSink.TotalTime.TotalSeconds}s");
 
             var fileSink = new FileControllerSink(tempPath);
@@ -386,7 +401,6 @@ public partial class MainWindow : Window
             return;
 
         var imagePath = _currentImagePath;
-        var quantizer = ColorMatcherComboBox.SelectedItem!.ToString()!;
         var denoiser = DenoisingComboBox.SelectedItem?.ToString();
         var tspLimit = (float)(TSPTimeLimitUpDown.Value ?? 0.5m);
 
@@ -405,7 +419,8 @@ public partial class MainWindow : Window
             var drawer = new CanvasDrawer(timingSink, AppendLog);
             drawer.ConnectAndConfirmController();
             AppendLog("Starting to generate inputs...");
-            await drawer.DrawImage(SKBitmap.Decode(imagePath), quantizer, denoiser, tspLimit, false);
+            var settings = GetQuantizerSettings();
+            await drawer.DrawImage(SKBitmap.Decode(imagePath), settings, denoiser, tspLimit, false);
             AppendLog($"True complete overall time is: {timingSink.TotalTime.TotalSeconds}s");
 
             var fileSink = new FileControllerSink(tempPath);
@@ -526,4 +541,6 @@ public partial class MainWindow : Window
         if (first != null)
             LoadImage(first.TryGetLocalPath() ?? "");
     }
+
+    private void ColourLimitUpDown_ValueChanged(object? sender, NumericUpDownValueChangedEventArgs e) => UpdatePreview();
 }

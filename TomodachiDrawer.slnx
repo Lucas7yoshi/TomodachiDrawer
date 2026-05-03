@@ -1,9 +1,5 @@
 <Solution>
   <Project Path="TomodachiDrawer.Core/TomodachiDrawer.Core.csproj" />
-  <Project
-    Path="TomodachiDrawer.SerialPlayer/TomodachiDrawer.SerialPlayer.csproj"
-    Id="6b8d11d2-e360-4ff2-8897-0b7a1596ed57"
-  />
-  <Project Path="TomodachiDrawer.UI.Windows/TomodachiDrawer.UI.Windows.csproj" />
+  <Project Path="TomodachiDrawer.SerialPlayer/TomodachiDrawer.SerialPlayer.csproj" Id="6b8d11d2-e360-4ff2-8897-0b7a1596ed57" />
   <Project Path="TomodachiDrawer.UI.Avalonia/TomodachiDrawer.UI.Avalonia.csproj" />
 </Solution>
