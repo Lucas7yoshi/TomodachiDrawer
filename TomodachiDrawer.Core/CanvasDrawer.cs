@@ -33,13 +33,16 @@ namespace TomodachiDrawer.Core
         {
             const int squared64 = 64 * 64;
             const int squared128 = 128 * 128;
+            const int squared192 = 192 * 192;
             const int squared256 = 256 * 256;
 
             int pixels = width * height;
             if (pixels <= squared64)
                 return 0.5f;
             else if (pixels <= squared128)
-                return 1.5f;
+                return 1.25f;
+            else if (pixels <= squared192)
+                return 2.25f;
             else if (pixels <= squared256)
                 return 3.0f;
             else
