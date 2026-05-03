@@ -136,6 +136,7 @@ public partial class MainWindow : Window
         ImagePathBox.Text = path;
         ExportUF2Button.IsEnabled = true;
         UpdatePreview();
+        TSPTimeLimitUpDown.Value = (decimal)CanvasDrawer.GetRecommendedTSPSolveTime(img.Width, img.Height);
         AppendLog($"Loaded image: {Path.GetFileName(path)} ({img.Width}x{img.Height})");
     }
 

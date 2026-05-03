@@ -108,6 +108,7 @@ namespace TomodachiDrawer.UI.Windows
                 {
                     currentImagePath = path;
                     ImagePathBox.Text = path;
+                    TSPTimeLimitUpDown.Value = (decimal)CanvasDrawer.GetRecommendedTSPSolveTime(img.Width, img.Height);
                     UpdatePreview();
                     Log($"Loaded image: {Path.GetFileName(path)} ({img.Width}x{img.Height})");
                 }

@@ -21,5 +21,10 @@
         // 
         // We'll be mapping from RGB anyhow.
 
+        // A note from netux on youtube
+        // "I noticed while working on my own tools that the gradient used by Nintendo differs slightly from a normal/naive HSL gradiet.
+        // I wasn't able to figure out how it works exactly, but I think they at least double the gamma of the colors to reduce the shades of gray"
+
+
     }
 }
