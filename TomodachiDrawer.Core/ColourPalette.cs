@@ -152,7 +152,13 @@ namespace TomodachiDrawer.Core
             ArgumentException.ThrowIfNullOrWhiteSpace(quantizerSettings.quantizerName);
             ArgumentNullException.ThrowIfNull(source);
 
-            var quantized = QuantizeImage(source, quantizerSettings);
+            var trueSource = source;
+            if (!string.IsNullOrEmpty(denoiserName))
+            {
+                trueSource = ImageDenoiser.DenoiseImage(source, denoiserName);
+            }
+
+            var quantized = QuantizeImage(trueSource, quantizerSettings);
 
             // make a bitmap out of it
             var output = new SKBitmap(source.Width, source.Height);
@@ -327,7 +333,9 @@ namespace TomodachiDrawer.Core
             }
             else
             {
-                // TODO
+                // TODO: PICKUP HERE IN MORNING
+                // Ideally this should be able to go back and forth between arbitrary or preset colours but
+                // not needed for initial implementation if its a pain.
                 throw new NotImplementedException();
             }
         }
