@@ -2,7 +2,8 @@
 
 TomodachiDrawer is a collection of firmware and software that generates inputs to control a Nintendo Switch to draw arbitrary images in the Palette House.
 
-<img src="Docs/nurture_preview.webp" width="800" alt="Tomodachi Drawer drawing the Porter Robinson album art for Nurture">
+<img src="Docs/baconator_preview.webp" width="600" alt="Tomodachi Drawer drawing a Baconator">
+<img src="Docs/nurture_preview.webp" width="600" alt="Tomodachi Drawer drawing the Porter Robinson album art for Nurture">
 
 The program splits images into layers matched to colours in the game, and generates optimized routes for the pen to follow to draw your image.
 
