@@ -23,12 +23,12 @@
     <TrimmerRootAssembly Include="Avalonia.Controls" />
     <TrimmerRootAssembly Include="Avalonia.Base" />
   </ItemGroup>
-<ItemGroup>
-  <AvaloniaResource Include="Assets\**" />
-</ItemGroup>
-<ItemGroup>
-  <None Update="TomodachiDrawer.Firmware.uf2">
-    <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-  </None>
-</ItemGroup>
+  <ItemGroup>
+    <AvaloniaResource Include="Assets\**" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Update="TomodachiDrawer.Firmware.uf2">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
 </Project>

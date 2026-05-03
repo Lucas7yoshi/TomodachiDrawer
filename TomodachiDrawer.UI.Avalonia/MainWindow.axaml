@@ -2,8 +2,8 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         x:Class="TomodachiDrawer.UI.Avalonia.MainWindow"
         Title="Tomodachi Drawer"
-        Width="1050" Height="660"
-        MinWidth="860" MinHeight="540">
+        Width="1100" Height="660"
+        MinWidth="1100" MinHeight="660">
 
     <Window.Styles>
         <Style Selector="Border.group">
@@ -190,9 +190,8 @@
                               Margin="0,0,8,0"
                               SelectionChanged="ColourMatcherComboBox_SelectionChanged" />
                     <Button Grid.Column="2" Content="?"
-                                Margin="0,0,6,0"
+                                Margin="0,0,4,0"
                                 Click="ColourMatcherHelpButton_Click" />
-                    <!-- Some sorta divider here would be nice -->
                     <TextBlock Grid.Column="3"
                                Text="Colour Limit:"
                                VerticalAlignment="Center"

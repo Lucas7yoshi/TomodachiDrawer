@@ -1,5 +1,4 @@
 ﻿using System.Text;
-
 using TomodachiDrawer.Core;
 using TomodachiDrawer.Core.OutputSinks;
 
@@ -83,7 +82,9 @@ namespace TomodachiDrawer.SerialPlayer
                     using (controller)
                     {
                         int count = 0;
-                        Console.WriteLine("Press Enter to send one tap. Type a number and Enter to send that many. Type 'q' to quit.");
+                        Console.WriteLine(
+                            "Press Enter to send one tap. Type a number and Enter to send that many. Type 'q' to quit."
+                        );
 
                         while (true)
                         {

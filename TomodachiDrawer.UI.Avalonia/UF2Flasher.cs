@@ -9,7 +9,9 @@ internal static class UF2Flasher
     {
         const int MaxTDLDSize = 1 * 1024 * 1024;
         if (tdldData.Length > MaxTDLDSize)
-            throw new ArgumentException($"TDLD data exceeds maximum size of {MaxTDLDSize} bytes. This will shoot past the end of the RP2040 flash!");
+            throw new ArgumentException(
+                $"TDLD data exceeds maximum size of {MaxTDLDSize} bytes. This will shoot past the end of the RP2040 flash!"
+            );
         const uint TargetBase = 0x10100000u; // 1MB into the 2MB flash, so 1MB limit.
         const uint FamilyId = 0xE48BFF56u;
         const uint PayloadSize = 256u;
@@ -74,7 +76,9 @@ internal static class UF2Flasher
         {
             var candidate = "/Volumes/RPI-RP2";
             if (Directory.Exists(candidate))
-                return candidate.EndsWith(Path.DirectorySeparatorChar) ? candidate : candidate + Path.DirectorySeparatorChar;
+                return candidate.EndsWith(Path.DirectorySeparatorChar)
+                    ? candidate
+                    : candidate + Path.DirectorySeparatorChar;
         }
 
         return null;

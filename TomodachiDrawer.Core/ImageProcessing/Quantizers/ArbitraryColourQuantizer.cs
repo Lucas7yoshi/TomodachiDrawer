@@ -1,24 +1,33 @@
-﻿using SkiaSharp;
-using SixLabors.ImageSharp;
+﻿using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.PixelFormats;
 using SixLabors.ImageSharp.Processing;
 using SixLabors.ImageSharp.Processing.Processors.Quantization;
+using SkiaSharp;
 
 namespace TomodachiDrawer.Core.ImageProcessing.Quantizers
 {
+    /// <summary>
+    /// Arbitrary quantizer for N colours using WuQuantizer. This depends on Full colour range support.
+    /// </summary>
     public class ArbitraryColourQuantizer
     {
         public static SKBitmap Quantize(SKBitmap input, int colourCount, bool useDithering = true)
         {
-            if (colourCount < 1) throw new ArgumentOutOfRangeException(nameof(colourCount), "Colour count must be at least 1.");
+            if (colourCount < 1)
+                throw new ArgumentOutOfRangeException(
+                    nameof(colourCount),
+                    "Colour count must be at least 1."
+                );
 
             using var image = ToImageSharp(input);
 
-            var quantizer = new WuQuantizer(new QuantizerOptions
-            {
-                MaxColors = colourCount,
-                Dither = useDithering ? KnownDitherings.FloydSteinberg : null
-            });
+            var quantizer = new WuQuantizer(
+                new QuantizerOptions
+                {
+                    MaxColors = colourCount,
+                    Dither = useDithering ? KnownDitherings.FloydSteinberg : null,
+                }
+            );
 
             image.Mutate(x => x.Quantize(quantizer));
 
@@ -59,9 +68,8 @@ namespace TomodachiDrawer.Core.ImageProcessing.Quantizers
                     for (int x = 0; x < image.Width; x++)
                     {
                         var p = row[x];
-                        pixels[y * image.Width + x] = p.A < 128
-                            ? SKColors.Transparent
-                            : new SKColor(p.R, p.G, p.B, 255);
+                        pixels[y * image.Width + x] =
+                            p.A < 128 ? SKColors.Transparent : new SKColor(p.R, p.G, p.B, 255);
                     }
                 }
             });

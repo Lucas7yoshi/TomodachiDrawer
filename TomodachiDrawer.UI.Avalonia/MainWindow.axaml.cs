@@ -8,15 +8,12 @@ using Avalonia.Media.Imaging;
 using Avalonia.Platform.Storage;
 using Avalonia.Styling;
 using Avalonia.Threading;
-
 using SkiaSharp;
-
 using TomodachiDrawer.Core;
 using TomodachiDrawer.Core.ImageProcessing;
 using TomodachiDrawer.Core.ImageProcessing.Denoising;
 using TomodachiDrawer.Core.ImageProcessing.Quantizers;
 using TomodachiDrawer.Core.OutputSinks;
-
 using Button = Avalonia.Controls.Button; // conflict with the Button enum in SinkEnums
 
 namespace TomodachiDrawer.UI.Avalonia;
@@ -136,11 +133,17 @@ public partial class MainWindow : Window
             int newWidth = (int)(img.Width * scale);
             int newHeight = (int)(img.Height * scale);
 
-            var resized = img.Resize(new SKImageInfo(newWidth, newHeight), new SKSamplingOptions(SKCubicResampler.CatmullRom));
+            var resized = img.Resize(
+                new SKImageInfo(newWidth, newHeight),
+                new SKSamplingOptions(SKCubicResampler.CatmullRom)
+            );
             img.Dispose();
             img = resized;
 
-            string tempPath = Path.Combine(Path.GetTempPath(), $"tomodachi_{Path.GetFileName(path)}");
+            string tempPath = Path.Combine(
+                Path.GetTempPath(),
+                $"tomodachi_{Path.GetFileName(path)}"
+            );
             using var data = SKImage.FromBitmap(img).Encode(SKEncodedImageFormat.Png, 100);
             using var stream = File.OpenWrite(tempPath);
             data.SaveTo(stream);
@@ -153,7 +156,8 @@ public partial class MainWindow : Window
         ImagePathBox.Text = path;
         ExportUF2Button.IsEnabled = true;
         UpdatePreview();
-        TSPTimeLimitUpDown.Value = (decimal)CanvasDrawer.GetRecommendedTSPSolveTime(img.Width, img.Height);
+        TSPTimeLimitUpDown.Value = (decimal)
+            CanvasDrawer.GetRecommendedTSPSolveTime(img.Width, img.Height);
         AppendLog($"Loaded image: {Path.GetFileName(path)} ({img.Width}x{img.Height})");
         img.Dispose();
     }
@@ -175,7 +179,9 @@ public partial class MainWindow : Window
             denoiser
         );
         PreviewImage.Source = ToAvaloniaBitmap(preview);
-        AppendLog($"Updated preview for {Path.GetFileName(_currentImagePath)} using {quantizerSettings.quantizerName}");
+        AppendLog(
+            $"Updated preview for {Path.GetFileName(_currentImagePath)} using {quantizerSettings.quantizerName}"
+        );
     }
 
     private static Bitmap? ToAvaloniaBitmap(SKBitmap skBitmap)
@@ -259,7 +265,8 @@ public partial class MainWindow : Window
     {
         if (!string.IsNullOrEmpty(_currentImagePath))
             UpdatePreview();
-        ColourLimitUpDown.IsEnabled = ColourMatcherComboBox?.SelectedValue?.ToString() == "Arbitrary";
+        ColourLimitUpDown.IsEnabled =
+            ColourMatcherComboBox?.SelectedValue?.ToString() == "Arbitrary";
     }
 
     private void TSPHelpButton_Click(object? sender, RoutedEventArgs e)
@@ -555,7 +562,10 @@ public partial class MainWindow : Window
             LoadImage(first.TryGetLocalPath() ?? "");
     }
 
-    private void ColourLimitUpDown_ValueChanged(object? sender, NumericUpDownValueChangedEventArgs e) => UpdatePreview();
+    private void ColourLimitUpDown_ValueChanged(
+        object? sender,
+        NumericUpDownValueChangedEventArgs e
+    ) => UpdatePreview();
 
     private void AppThemeComboBox_SelectionChanged(object? sender, SelectionChangedEventArgs e)
     {
@@ -578,14 +588,14 @@ public partial class MainWindow : Window
     private void ColourMatcherHelpButton_Click(object? sender, RoutedEventArgs e)
     {
         _ = ShowMessageAsync(
-            "Colour Matchers", 
-            "You have 4 options for colour matchers." +
-            "\nEuclidean, Redmean, and CieLab work using the Pro modes default palette." +
-            "\n\nArbitrary on the other hands works using the full colour range, selecting colours in-game is slower but you can achieve much better results." +
-            "\nYou can tweak the number of colours it has by changing the value to the right of this button." +
-            "\nTry and pick the lowest number that looks good to your standards to minimize draw time." +
-            "\nLess colours means quicker drawing, and more opportunities for the solver to find large continous blocks it can draw quickly." +
-            "\nIf time is of the essence, you can also enable Denoising which can increase the number of large spots for the larger brushes."
+            "Colour Matchers",
+            "You have 4 options for colour matchers."
+                + "\nEuclidean, Redmean, and CieLab work using the Pro modes default palette."
+                + "\n\nArbitrary on the other hands works using the full colour range, selecting colours in-game is slower but you can achieve much better results."
+                + "\nYou can tweak the number of colours it has by changing the value to the right of this button."
+                + "\nTry and pick the lowest number that looks good to your standards to minimize draw time."
+                + "\nLess colours means quicker drawing, and more opportunities for the solver to find large continous blocks it can draw quickly."
+                + "\nIf time is of the essence, you can also enable Denoising which can increase the number of large spots for the larger brushes."
         );
     }
 }

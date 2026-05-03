@@ -1,9 +1,4 @@
-﻿using SixLabors.ImageSharp.ColorSpaces;
-
-using SkiaSharp;
-
-using System.Runtime.InteropServices;
-
+﻿using SkiaSharp;
 using TomodachiDrawer.Core.ImageProcessing;
 using TomodachiDrawer.Core.ImageProcessing.Denoising;
 using TomodachiDrawer.Core.ImageProcessing.Quantizers;
@@ -22,10 +17,8 @@ namespace TomodachiDrawer.Core
         private const int HotbarHeaderRows = 2; // Used for homing.
 
         // Full colour range.
-        private const int FCR_HUE_SLIDER_STEP_COUNT = 201; // Need to painstakingly count
-                                                           // In the large rectangle area, the X axis is Saturation, the Y axis is Value/Brightness/Whatever
-
-        private const int FCR_SATURATION_STEP_COUNT = 213; // Total positions, including the 0. So 0 to 212 kinda.
+        private const int FCR_HUE_SLIDER_STEP_COUNT = 201;
+        private const int FCR_SATURATION_STEP_COUNT = 213;
         private const int FCR_VALUE_STEP_COUNT = 112;
 
         // In game stuff, relevant to current draw session.
@@ -189,20 +182,26 @@ namespace TomodachiDrawer.Core
             return output;
         }
 
-
-
         /// <summary>Map an image to PaletteColours</summary>
         /// <returns>2D array of PaletteColour? [x, y] of the appropriate colours.</returns>
         public PaletteColour?[,] QuantizeImage(SKBitmap source, QuantizerSettings quantizerSettings)
         {
-            int width = source.Width, height = source.Height;
-            
+            int width = source.Width,
+                height = source.Height;
+
             if (quantizerSettings.quantizerName == "Arbitrary")
             {
                 if (quantizerSettings.colourCount == null)
-                    throw new ArgumentNullException(nameof(quantizerSettings.colourCount), "colourCount must be set for Arbitrary quantizer");
+                    throw new ArgumentNullException(
+                        nameof(quantizerSettings.colourCount),
+                        "colourCount must be set for Arbitrary quantizer"
+                    );
 
-                SKBitmap quantized = ArbitraryColourQuantizer.Quantize(source, (int)quantizerSettings.colourCount, quantizerSettings.useDithering ?? default);
+                SKBitmap quantized = ArbitraryColourQuantizer.Quantize(
+                    source,
+                    (int)quantizerSettings.colourCount,
+                    quantizerSettings.useDithering ?? default
+                );
                 SKColor[] pixels = quantized.Pixels;
 
                 var skToPalette = pixels
@@ -210,7 +209,16 @@ namespace TomodachiDrawer.Core
                     .Distinct()
                     .ToDictionary(
                         d => d,
-                        d => new PaletteColour($"({d.Red}, {d.Green}, {d.Blue})", d.Red, d.Green, d.Blue, null, null, d, true)
+                        d => new PaletteColour(
+                            $"({d.Red}, {d.Green}, {d.Blue})",
+                            d.Red,
+                            d.Green,
+                            d.Blue,
+                            null,
+                            null,
+                            d,
+                            true
+                        )
                     );
 
                 var output = new PaletteColour?[width, height];
@@ -233,9 +241,10 @@ namespace TomodachiDrawer.Core
                 for (int x = 0; x < width; x++)
                 {
                     var pixel = pixels[y * width + x];
-                    result[x, y] = pixel.Alpha > 128
-                        ? quantizer.FindClosestColour(pixel.Red, pixel.Green, pixel.Blue)
-                        : null;
+                    result[x, y] =
+                        pixel.Alpha > 128
+                            ? quantizer.FindClosestColour(pixel.Red, pixel.Green, pixel.Blue)
+                            : null;
                 }
 
                 return result;
@@ -344,7 +353,8 @@ namespace TomodachiDrawer.Core
                 LinearRgbToHsv(linR, linG, linB, out float h, out float s, out float v);
 
                 // Figure out the steps first off
-                int hueSteps = (int)Math.Round((1.0f - h / 360.0f) * (FCR_HUE_SLIDER_STEP_COUNT - 1));
+                int hueSteps = (int)
+                    Math.Round((1.0f - h / 360.0f) * (FCR_HUE_SLIDER_STEP_COUNT - 1));
                 int satSteps = (int)Math.Round((1.0f - s) * (FCR_SATURATION_STEP_COUNT - 1));
                 int valSteps = (int)Math.Round((1.0f - v) * (FCR_VALUE_STEP_COUNT - 1));
 
@@ -374,7 +384,9 @@ namespace TomodachiDrawer.Core
                 int hueInputs = hueHomeLeft ? hueSteps : (FCR_HUE_SLIDER_STEP_COUNT - 1) - hueSteps;
                 Button hueTapDirection = hueHomeLeft ? Button.ZR : Button.ZL;
 
-                int satInputs = satHomeRight ? satSteps : (FCR_SATURATION_STEP_COUNT - 1) - satSteps;
+                int satInputs = satHomeRight
+                    ? satSteps
+                    : (FCR_SATURATION_STEP_COUNT - 1) - satSteps;
                 DPad satDirection = satHomeRight ? DPad.LEFT : DPad.RIGHT;
 
                 int valInputs = valHomeTop ? valSteps : (FCR_VALUE_STEP_COUNT - 1) - valSteps;
@@ -397,11 +409,19 @@ namespace TomodachiDrawer.Core
         private static float ToLinear(byte srgb8)
         {
             float c = srgb8 / 255.0f;
-            if (c <= 0.04045f) return c / 12.92f;
+            if (c <= 0.04045f)
+                return c / 12.92f;
             return MathF.Pow((c + 0.055f) / 1.055f, 2.4f);
         }
 
-        private static void LinearRgbToHsv(float r, float g, float b, out float h, out float s, out float v)
+        private static void LinearRgbToHsv(
+            float r,
+            float g,
+            float b,
+            out float h,
+            out float s,
+            out float v
+        )
         {
             float min = Math.Min(r, Math.Min(g, b));
             float max = Math.Max(r, Math.Max(g, b));
@@ -410,12 +430,17 @@ namespace TomodachiDrawer.Core
             v = max;
             s = max == 0 ? 0 : delta / max;
 
-            if (delta == 0) h = 0;
-            else if (max == r) h = 60 * (((g - b) / delta) % 6);
-            else if (max == g) h = 60 * (((b - r) / delta) + 2);
-            else h = 60 * (((r - g) / delta) + 4);
+            if (delta == 0)
+                h = 0;
+            else if (max == r)
+                h = 60 * (((g - b) / delta) % 6);
+            else if (max == g)
+                h = 60 * (((b - r) / delta) + 2);
+            else
+                h = 60 * (((r - g) / delta) + 4);
 
-            if (h < 0) h += 360;
+            if (h < 0)
+                h += 360;
         }
     }
 }
