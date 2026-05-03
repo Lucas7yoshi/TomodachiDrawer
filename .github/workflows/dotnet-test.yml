@@ -32,7 +32,7 @@ jobs:
       fail-fast: false
       matrix:
         configuration: [Release]
-        runtime: [win-x64, linux-x64,linux-arm64,osx-x64,osx-arm64]
+        runtime: [win-x64, win-arm64, linux-x64, linux-arm64, osx-x64, osx-arm64]
 
     steps:
     - uses: actions/checkout@v6
@@ -44,12 +44,10 @@ jobs:
     - name: Build
       working-directory: TomodachiDrawer.UI.Avalonia
       run: dotnet publish --configuration ${{ matrix.configuration }} -r ${{ matrix.runtime }} --self-contained -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true
-    # todo: artifacts, release flow, etc?
     - name: Upload Artifacts
       uses: actions/upload-artifact@v7
       with:
         name: TomodachiDrawer-${{ matrix.runtime }}-${{ matrix.configuration }}
-        # Point to where dotnet actually puts the files
         path: TomodachiDrawer.UI.Avalonia/bin/${{ matrix.configuration }}/net10.0/${{ matrix.runtime }}/publish/
   publish-windows:
     runs-on: windows-latest 
@@ -57,6 +55,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
+        runtime: [win-x64, win-arm64]
         configuration: [Release]
     steps:
     - uses: actions/checkout@v6
@@ -67,10 +66,10 @@ jobs:
         cache-dependency-path: '**/*.csproj'
     - name: Publish WinForms
       working-directory: TomodachiDrawer.UI.Windows
-      run: dotnet publish --configuration ${{ matrix.configuration }} -r win-x64 --self-contained -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true
+      run: dotnet publish --configuration ${{ matrix.configuration }} -r ${{ matrix.runtime }} --self-contained -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true
 
     - name: Upload Artifacts
       uses: actions/upload-artifact@v7
       with:
-        name: TomodachiDrawer-WinForms-${{ matrix.configuration }}
-        path: TomodachiDrawer.UI.Windows/bin/${{ matrix.configuration }}/net10.0-windows/win-x64/publish/
+        name: TomodachiDrawer-WinForms-${{ matrix.configuration }}-${{ matrix.runtime }}
+        path: TomodachiDrawer.UI.Windows/bin/${{ matrix.configuration }}/net10.0-windows/${{ matrix.runtime }}/publish/
