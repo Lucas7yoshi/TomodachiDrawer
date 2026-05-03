@@ -1,4 +1,4 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <OutputType>WinExe</OutputType>
     <TargetFramework>net10.0</TargetFramework>
@@ -18,11 +18,6 @@
     <ProjectReference Include="..\TomodachiDrawer.Core\TomodachiDrawer.Core.csproj" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="..\TomodachiDrawer.UI.Windows\TomodachiDrawer.Firmware.uf2" Link="TomodachiDrawer.Firmware.uf2">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-  </ItemGroup>
-  <ItemGroup>
     <!-- publish trimming thing-->
     <TrimmerRootAssembly Include="Avalonia.Themes.Fluent" />
     <TrimmerRootAssembly Include="Avalonia.Controls" />
@@ -30,5 +25,10 @@
   </ItemGroup>
 <ItemGroup>
   <AvaloniaResource Include="Assets\**" />
+</ItemGroup>
+<ItemGroup>
+  <None Update="TomodachiDrawer.Firmware.uf2">
+    <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+  </None>
 </ItemGroup>
 </Project>
