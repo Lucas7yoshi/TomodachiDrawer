@@ -1,16 +1,22 @@
 ﻿using SkiaSharp;
 
-using System;
-using System.Collections.Generic;
-using System.Text;
-
 namespace TomodachiDrawer.Core.ImageProcessing.Quantizers
 {
+    /// <summary>
+    /// This pisses me off to write, but this is not my code annoyingly.
+    /// I was trying to find some resources, but they all seemed suboptimal, or were literally 14 years old and probably sucked
+    /// and ran like ass. This was AI generated, and it annoys me. If theres a human made library out there that solves this problem
+    /// I am more than welcome to replacing this with that. For now, this is quarantined in here.
+    /// 
+    /// This particularly annoys me because I wanted .Core to be slop-free bweh
+    /// 
+    /// - Lucas7yoshi
+    /// </summary>
     public class ArbitraryColourQuantizer
     {
-        public static SKBitmap Quantize(SKBitmap input, int colorCount, bool useDithering = true, int maxIterations = 20)
+        public static SKBitmap Quantize(SKBitmap input, int colourCount, bool useDithering = true, int maxIterations = 20)
         {
-            if (colorCount < 1) throw new ArgumentOutOfRangeException(nameof(colorCount), "Color count must be at least 1.");
+            if (colourCount < 1) throw new ArgumentOutOfRangeException(nameof(colourCount), "Colour count must be at least 1.");
 
             SKColor[] pixels = input.Pixels;
 
@@ -22,11 +28,11 @@ namespace TomodachiDrawer.Core.ImageProcessing.Quantizers
             // If the image is entirely transparent, return immediately
             if (visiblePixels.Length == 0) return input.Copy();
 
-            // 2. Adjust target color count to accommodate the reserved Transparent slot
-            int k = hasTransparency ? colorCount - 1 : colorCount;
+            // 2. Adjust target colour count to accommodate the reserved Transparent slot
+            int k = hasTransparency ? colourCount - 1 : colourCount;
 
-            // Edge case: They requested exactly 1 color, and the image has transparency.
-            // We must return a fully transparent image to stay within the 1-color limit.
+            // Edge case: They requested exactly 1 colour, and the image has transparency.
+            // We must return a fully transparent image to stay within the 1-colour limit.
             if (k <= 0)
             {
                 SKBitmap empty = new SKBitmap(input.Info);
@@ -56,7 +62,7 @@ namespace TomodachiDrawer.Core.ImageProcessing.Quantizers
 
                 for (int i = 0; i < visiblePixels.Length; i++)
                 {
-                    int bestIndex = FindNearestColorIndex(visiblePixels[i], palette);
+                    int bestIndex = FindNearestColourIndex(visiblePixels[i], palette);
 
                     if (assignments[i] != bestIndex)
                     {
@@ -90,7 +96,7 @@ namespace TomodachiDrawer.Core.ImageProcessing.Quantizers
             int width = input.Width;
             int height = input.Height;
 
-            float[] rBuf = null, gBuf = null, bBuf = null, aBuf = null;
+            float[]? rBuf = null, gBuf = null, bBuf = null, aBuf = null;
             if (useDithering)
             {
                 rBuf = pixels.Select(p => (float)p.Red).ToArray();
@@ -116,29 +122,31 @@ namespace TomodachiDrawer.Core.ImageProcessing.Quantizers
 
                     if (!useDithering)
                     {
-                        resultPixels[idx] = palette[FindNearestColorIndex(pixels[idx], palette)];
+                        resultPixels[idx] = palette[FindNearestColourIndex(pixels[idx], palette)];
                     }
-                    else
+                    else if (rBuf != null && gBuf != null && bBuf != null && aBuf != null)
                     {
                         float r = Math.Clamp(rBuf[idx], 0f, 255f);
                         float g = Math.Clamp(gBuf[idx], 0f, 255f);
                         float b = Math.Clamp(bBuf[idx], 0f, 255f);
                         float a = Math.Clamp(aBuf[idx], 0f, 255f);
 
-                        int bestIndex = FindNearestColorIndex(r, g, b, a, palette);
-                        SKColor newColor = palette[bestIndex];
-                        resultPixels[idx] = newColor;
+                        int bestIndex = FindNearestColourIndex(r, g, b, a, palette);
+                        SKColor newColour = palette[bestIndex];
+                        resultPixels[idx] = newColour;
 
-                        float errR = r - newColor.Red;
-                        float errG = g - newColor.Green;
-                        float errB = b - newColor.Blue;
-                        float errA = a - newColor.Alpha;
+                        float errR = r - newColour.Red;
+                        float errG = g - newColour.Green;
+                        float errB = b - newColour.Blue;
+                        float errA = a - newColour.Alpha;
 
                         DistributeError(rBuf, gBuf, bBuf, aBuf, x + 1, y, width, height, errR, errG, errB, errA, 7f / 16f);
                         DistributeError(rBuf, gBuf, bBuf, aBuf, x - 1, y + 1, width, height, errR, errG, errB, errA, 3f / 16f);
                         DistributeError(rBuf, gBuf, bBuf, aBuf, x, y + 1, width, height, errR, errG, errB, errA, 5f / 16f);
                         DistributeError(rBuf, gBuf, bBuf, aBuf, x + 1, y + 1, width, height, errR, errG, errB, errA, 1f / 16f);
                     }
+                    else
+                        throw new Exception("This should never be hit, the previous if stuff is to silence some warnings.");
                 }
             }
 
@@ -164,7 +172,7 @@ namespace TomodachiDrawer.Core.ImageProcessing.Quantizers
 
                 for (int p = 0; p < pixels.Length; p++)
                 {
-                    long dist = ColorDistance(pixels[p], lastCentroid);
+                    long dist = ColourDistance(pixels[p], lastCentroid);
                     if (dist < distances[p]) distances[p] = dist;
                     totalDistance += distances[p];
                 }
@@ -186,14 +194,14 @@ namespace TomodachiDrawer.Core.ImageProcessing.Quantizers
             return centroids;
         }
 
-        private static int FindNearestColorIndex(SKColor target, List<SKColor> palette)
+        private static int FindNearestColourIndex(SKColor target, List<SKColor> palette)
         {
             int bestIdx = 0;
             long bestDist = long.MaxValue;
 
             for (int i = 0; i < palette.Count; i++)
             {
-                long dist = ColorDistance(target, palette[i]);
+                long dist = ColourDistance(target, palette[i]);
                 if (dist < bestDist)
                 {
                     bestDist = dist;
@@ -203,7 +211,7 @@ namespace TomodachiDrawer.Core.ImageProcessing.Quantizers
             return bestIdx;
         }
 
-        private static int FindNearestColorIndex(float r, float g, float b, float a, List<SKColor> palette)
+        private static int FindNearestColourIndex(float r, float g, float b, float a, List<SKColor> palette)
         {
             int bestIdx = 0;
             float bestDist = float.MaxValue;
@@ -225,7 +233,7 @@ namespace TomodachiDrawer.Core.ImageProcessing.Quantizers
             return bestIdx;
         }
 
-        private static long ColorDistance(SKColor c1, SKColor c2)
+        private static long ColourDistance(SKColor c1, SKColor c2)
         {
             long dr = c1.Red - c2.Red;
             long dg = c1.Green - c2.Green;
