@@ -184,55 +184,47 @@ namespace TomodachiDrawer.Core
         /// <returns>2D array of PaletteColour? [x, y] of the appropriate colours.</returns>
         public PaletteColour?[,] QuantizeImage(SKBitmap source, QuantizerSettings quantizerSettings)
         {
+            int width = source.Width, height = source.Height;
+            
             if (quantizerSettings.quantizerName == "Arbitrary")
             {
                 if (quantizerSettings.colourCount == null)
                     throw new ArgumentNullException(nameof(quantizerSettings.colourCount), "colourCount must be set for Arbitrary quantizer");
+
                 SKBitmap quantized = ArbitraryColourQuantizer.Quantize(source, (int)quantizerSettings.colourCount, quantizerSettings.useDithering ?? default);
-                // need to make our palette now.
-                // Find all distinct colours in the image and make the PaletteColour's
-                var skToPalette = MemoryMarshal.Cast<byte, SKColor>(quantized.GetPixelSpan())
-                    .ToArray()
+                SKColor[] pixels = quantized.Pixels;
+
+                var skToPalette = pixels
                     .Where(c => c.Alpha > 128)
                     .Distinct()
                     .ToDictionary(
                         d => d,
                         d => new PaletteColour($"({d.Red}, {d.Green}, {d.Blue})", d.Red, d.Green, d.Blue, null, null, d, true)
                     );
-                var output = new PaletteColour?[source.Width, source.Height];
-                for (int x = 0; x < quantized.Width; x++)
+
+                var output = new PaletteColour?[width, height];
+                for (int y = 0; y < height; y++)
+                for (int x = 0; x < width; x++)
                 {
-                    for (int y = 0; y < quantized.Height; y++)
-                    {
-                        var pixel = quantized.GetPixel(x, y);
-                        if (pixel.Alpha <= 128)
-                            output[x, y] = null;
-                        else
-                            output[x, y] = skToPalette[pixel];
-                    }
+                    var pixel = pixels[y * width + x];
+                    output[x, y] = pixel.Alpha > 128 ? skToPalette[pixel] : null;
                 }
+
                 return output;
             }
             else
             {
                 var quantizer = Quantizers[quantizerSettings.quantizerName](Colours);
-                var result = new PaletteColour?[source.Width, source.Height];
+                SKColor[] pixels = source.Pixels;
 
-                // TODO: GetPixel is slow
-                for (int x = 0; x < source.Width; x++)
+                var result = new PaletteColour?[width, height];
+                for (int y = 0; y < height; y++)
+                for (int x = 0; x < width; x++)
                 {
-                    for (int y = 0; y < source.Height; y++)
-                    {
-                        var pixel = source.GetPixel(x, y);
-                        if (pixel.Alpha <= 128)
-                            result[x, y] = null;
-                        else
-                            result[x, y] = quantizer.FindClosestColour(
-                                pixel.Red,
-                                pixel.Green,
-                                pixel.Blue
-                            );
-                    }
+                    var pixel = pixels[y * width + x];
+                    result[x, y] = pixel.Alpha > 128
+                        ? quantizer.FindClosestColour(pixel.Red, pixel.Green, pixel.Blue)
+                        : null;
                 }
 
                 return result;
