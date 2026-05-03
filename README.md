@@ -18,7 +18,8 @@ Initial setup requires a few steps, made easier by the UI.
 Note: flashing lights warning for video, apologies.
 [YouTube Tutorial](https://youtu.be/GIaiw3gzabo)
 
-The above tutorial is mildly out of date, but the fundamentals carry over to the Avalonia UI. An updated tutorial will be made soon.
+An addendum video covering the changes since that was made is available here:
+[Addendum Tutorial](https://youtu.be/9rVLea1-nlY)
 
 ### Downloads
 Downloads are available in the releases, they come in a few forms
