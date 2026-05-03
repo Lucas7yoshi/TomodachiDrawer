@@ -42,12 +42,12 @@ namespace TomodachiDrawer.Core
             else if (pixels <= squared128)
                 return 1.25f;
             else if (pixels <= squared192)
-                return 2.25f;
+                return 2.5f;
             else if (pixels <= squared256)
-                return 3.0f;
+                return 3.5f;
             else
             {
-                return 3.0f; // should ever reach here...
+                return 5.0f; // should ever reach here...
             }
         }
 
