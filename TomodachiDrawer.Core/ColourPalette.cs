@@ -347,22 +347,19 @@ namespace TomodachiDrawer.Core
                 _output.Delay(4250);
                 _output.ReleaseAll();
 
-                // Figure out how many taps we need to go for...
-                target.skColor.ToHsv(out float h, out float s, out float v);
+               
+                // TLDR: The RGB needs to be Linearized from sRGB then turned to HSV.
+                // This seemingly is a 1:1 match.
+                float linR = ToLinear(target.skColor.Red);
+                float linG = ToLinear(target.skColor.Green);
+                float linB = ToLinear(target.skColor.Blue);
 
-                // Referenced off of Kevman323's approximation on GitHub <3
-                //hsv = colorsys.rgb_to_hsv(r / 255, g / 255, b / 255)
-                //hue = round((1 - hsv[0]) * 200) # Reverse hue, and make it fit range 0-200
-                //sat = round(212 - (((1 - hsv[1]) * *(1 / 0.42)) * 212)) # reverse value, exponent it, make it fit range 0-212, and then reverse it again
-                //val = round(111 - ((hsv[2] * *(1 / 0.465)) * 111)) #Reverse Value, exponent it, and make it fit range 0-111
-                // This is pretty damn close but I do want to see if I can get a friend to decompile the exact way the game does it.
-                // For accuracy.
-                var hueInputs = (int)Math.Round((1 - h / 360) * (FCR_HUE_SLIDER_STEP_COUNT - 1));
-                var satInputs = (int)Math.Round(Math.Pow(1 - s / 100, 1.0 / 0.42) * (FCR_SATURATION_STEP_COUNT - 1));
-                var valInputs = (int)Math.Round((FCR_VALUE_STEP_COUNT - 1) - (Math.Pow(v / 100, 1.0 / 0.465) * (FCR_VALUE_STEP_COUNT - 1)));
+                LinearRgbToHsv(linR, linG, linB, out float h, out float s, out float v);
 
-                // Future improvement: Can do Hue inputs at the same time as Sat or Val.
-                // Can only do sat or val though, not both at the same time. diagonals not supported in this ui
+                var hueInputs = (int)Math.Round((1.0f - h / 360.0f) * (FCR_HUE_SLIDER_STEP_COUNT - 1));
+                var satInputs = (int)Math.Round((1.0f - s) * (FCR_SATURATION_STEP_COUNT - 1));
+                var valInputs = (int)Math.Round((1.0f - v) * (FCR_VALUE_STEP_COUNT - 1));
+
                 for (int i = 0; i < hueInputs; i++)
                 {
                     _output.Tap(Button.ZR);
@@ -381,6 +378,30 @@ namespace TomodachiDrawer.Core
                 _output.Tap(Button.A);
                 _output.Delay(300);
             }
+        }
+
+        private float ToLinear(byte srgb8)
+        {
+            float c = srgb8 / 255.0f;
+            if (c <= 0.04045f) return c / 12.92f;
+            return MathF.Pow((c + 0.055f) / 1.055f, 2.4f);
+        }
+
+        private void LinearRgbToHsv(float r, float g, float b, out float h, out float s, out float v)
+        {
+            float min = Math.Min(r, Math.Min(g, b));
+            float max = Math.Max(r, Math.Max(g, b));
+            float delta = max - min;
+
+            v = max;
+            s = max == 0 ? 0 : delta / max;
+
+            if (delta == 0) h = 0;
+            else if (max == r) h = 60 * (((g - b) / delta) % 6);
+            else if (max == g) h = 60 * (((b - r) / delta) + 2);
+            else h = 60 * (((r - g) / delta) + 4);
+
+            if (h < 0) h += 360;
         }
     }
 }
