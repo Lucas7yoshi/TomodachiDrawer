@@ -6,6 +6,7 @@ using Avalonia.Layout;
 using Avalonia.Media;
 using Avalonia.Media.Imaging;
 using Avalonia.Platform.Storage;
+using Avalonia.Styling;
 using Avalonia.Threading;
 
 using SkiaSharp;
@@ -554,4 +555,22 @@ public partial class MainWindow : Window
     }
 
     private void ColourLimitUpDown_ValueChanged(object? sender, NumericUpDownValueChangedEventArgs e) => UpdatePreview();
+
+    private void AppThemeComboBox_SelectionChanged(object? sender, SelectionChangedEventArgs e)
+    {
+        // Why does avalonia call this before AppThemeComboBox exists?? lol
+        if (AppThemeComboBox == null)
+            return;
+        var desiredTheme = AppThemeComboBox.SelectedIndex switch
+        {
+            1 => ThemeVariant.Light,
+            2 => ThemeVariant.Dark,
+            _ => ThemeVariant.Default,
+        };
+
+        if (Application.Current is { } app)
+        {
+            app.RequestedThemeVariant = desiredTheme;
+        }
+    }
 }
