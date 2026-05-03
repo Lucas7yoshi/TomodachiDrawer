@@ -25,6 +25,88 @@ namespace TomodachiDrawer.SerialPlayer
             Console.WriteLine(
                 "If you are running this and your name is not Lucas, then you are most certainly running the wrong thing."
             );
+
+            if (args.Length > 0 && args[0] == "counthelper")
+            {
+                // write out the enums available
+                // Buttons and DPad
+                foreach (var button in Enum.GetValues(typeof(Button)))
+                {
+                    Console.WriteLine($"Button: {button} = {(int)button}");
+                }
+                foreach (var dpad in Enum.GetValues(typeof(DPad)))
+                {
+                    Console.WriteLine($"DPad: {dpad} = {(int)dpad}");
+                }
+
+                Console.WriteLine("Select input to repeat...");
+                var input = Console.ReadLine();
+                // find what it matches, we are taking in the NAME
+                if (input != null)
+                {
+                    // See if its a Dpad or a Button
+                    DPad? dpadButton = null;
+                    Button? faceButton = null;
+
+                    foreach (var button in Enum.GetValues(typeof(Button)))
+                    {
+                        if (button.ToString() == input)
+                        {
+                            faceButton = (Button)button;
+                            break;
+                        }
+                    }
+                    foreach (var dpad in Enum.GetValues(typeof(DPad)))
+                    {
+                        if (dpad.ToString() == input)
+                        {
+                            dpadButton = (DPad)dpad;
+                            break;
+                        }
+                    }
+                    var controller = new SwitchController();
+                    if (!controller.Connect())
+                    {
+                        Console.WriteLine("Failed to connect to controller. Exiting.");
+                        return;
+                    }
+
+                    using (controller)
+                    {
+                        int count = 0;
+                        Console.WriteLine("Press Enter to send one tap. Type a number and Enter to send that many. Type 'q' to quit.");
+
+                        while (true)
+                        {
+                            Console.Write($"[{count} taps sent] > ");
+                            var line = Console.ReadLine()?.Trim();
+
+                            if (line == "q" || line == "quit")
+                            {
+                                Console.WriteLine($"Done. Total taps sent: {count}");
+                                break;
+                            }
+
+                            int taps = 1;
+                            if (!string.IsNullOrEmpty(line))
+                                int.TryParse(line, out taps);
+
+                            for (int i = 0; i < taps; i++)
+                            {
+                                if (dpadButton.HasValue)
+                                    controller.Tap(dpadButton.Value, TapHoldMs, TapReleaseMs);
+                                else if (faceButton.HasValue)
+                                    controller.Tap(faceButton.Value, TapHoldMs, TapReleaseMs);
+                            }
+
+                            count += taps;
+                        }
+                    }
+
+                    return;
+                }
+            }
+
             var inputFilePath = args.Length > 0 ? args[0] : "test.tdld";
             if (!File.Exists(inputFilePath))
             {
