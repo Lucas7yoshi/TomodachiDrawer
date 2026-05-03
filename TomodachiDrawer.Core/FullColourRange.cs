@@ -4,13 +4,13 @@
     {
         // The full colour range works as follows:
         // ZL/ZR move the Hue slider left to right
-        private const int HUE_SLIDER_STEP_COUNT = -1; // Need to painstakingly count
+        private const int HUE_SLIDER_STEP_COUNT = 201; // Need to painstakingly count
         // In the large rectangle area, the X axis is Saturation, the Y axis is Value/Brightness/Whatever
         
         // Left/Right
-        private const int SATURATION_STEP_COUNT = -1; // Need to painstakingly count
+        private const int SATURATION_STEP_COUNT = 213; // Total positions, including the 0. So 0 to 212 kinda.
         // Up/Down
-        private const int VALUE_STEP_COUNT = -1; // Need to painstakingly count
+        private const int VALUE_STEP_COUNT = 112;
 
         // From what I can tell it seems to be the complete range so it should be fairly straight forward once I know
         // how many steps there are.
@@ -25,6 +25,6 @@
         // "I noticed while working on my own tools that the gradient used by Nintendo differs slightly from a normal/naive HSL gradiet.
         // I wasn't able to figure out how it works exactly, but I think they at least double the gamma of the colors to reduce the shades of gray"
 
-
+        // Hue and Value are inverse. // Value has a odd range to it...
     }
 }
