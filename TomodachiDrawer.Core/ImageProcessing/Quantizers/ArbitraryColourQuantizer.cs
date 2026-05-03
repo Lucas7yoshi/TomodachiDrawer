@@ -59,7 +59,9 @@ namespace TomodachiDrawer.Core.ImageProcessing.Quantizers
                     for (int x = 0; x < image.Width; x++)
                     {
                         var p = row[x];
-                        pixels[y * image.Width + x] = new SKColor(p.R, p.G, p.B, p.A);
+                        pixels[y * image.Width + x] = p.A < 128
+                            ? SKColors.Transparent
+                            : new SKColor(p.R, p.G, p.B, 255);
                     }
                 }
             });
