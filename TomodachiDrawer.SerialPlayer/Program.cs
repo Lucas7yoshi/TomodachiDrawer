@@ -1,4 +1,6 @@
 ﻿using System.Text;
+
+using TomodachiDrawer.Core;
 using TomodachiDrawer.Core.OutputSinks;
 
 // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -70,6 +72,13 @@ namespace TomodachiDrawer.SerialPlayer
                         Console.WriteLine("Failed to connect to controller. Exiting.");
                         return;
                     }
+
+                    controller.Tap(Button.A);
+                    controller.PreciseDelay(1000);
+                    controller.Tap(Button.A);
+                    controller.PreciseDelay(500);
+                    controller.Tap(Button.A, 500);
+                    controller.PreciseDelay(1500);
 
                     using (controller)
                     {
