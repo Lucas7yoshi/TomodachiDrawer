@@ -113,12 +113,20 @@
                     <TextBlock Classes="header" Text="RP2040 Output" />
                     <TextBlock x:Name="RP2040StatusLabel"
                                Text="RP2040 Status: Not Found" />
-                    <Button Content="Explanation"
+                    <Grid>
+					        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="*" />
+                        </Grid.ColumnDefinitions>
+                        <Button Grid.Column="0" Content="Setup Explanation"
                             HorizontalAlignment="Stretch"
+                            Margin="2,0,2,0"
                             Click="OutputExplanationButton_Click" />
-                    <Button Content="Setup in game explanation"
+                        <Button Grid.Column="1" Content="In-Game setup Info."
                             HorizontalAlignment="Stretch"
+                            Margin="2,0,2,0"
                             Click="InGameSetupButton_Click" />
+                    </Grid>
                     <Grid>
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="*" />
@@ -129,7 +137,7 @@
                                 IsEnabled="False"
                                 Content="Flash Base Firmware"
                                 HorizontalAlignment="Stretch"
-                                Margin="0,0,2,0"
+                                Margin="2,0,2,0"
                                 Click="FlashFirmwareButton_Click" />
                         <Button Grid.Column="1"
                                 x:Name="ExportRP2040Button"
@@ -137,7 +145,7 @@
                                 Content="Export To RP2040!"
                                 FontWeight="Bold"
                                 HorizontalAlignment="Stretch"
-                                Margin="2,0,0,0"
+                                Margin="2,0,2,0"
                                 Click="ExportRP2040Button_Click" />
 
                     </Grid>
@@ -167,6 +175,7 @@
                         <ColumnDefinition Width="Auto" />
                         <ColumnDefinition Width="*" />
                         <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition Width="Auto" />
                         <ColumnDefinition Width="*" />
                         <ColumnDefinition Width="Auto" />
                         <ColumnDefinition Width="*" />
@@ -180,11 +189,15 @@
                               HorizontalAlignment="Stretch"
                               Margin="0,0,8,0"
                               SelectionChanged="ColourMatcherComboBox_SelectionChanged" />
-                    <TextBlock Grid.Column="2"
+                    <Button Grid.Column="2" Content="?"
+                                Margin="0,0,6,0"
+                                Click="ColourMatcherHelpButton_Click" />
+                    <!-- Some sorta divider here would be nice -->
+                    <TextBlock Grid.Column="3"
                                Text="Colour Limit:"
                                VerticalAlignment="Center"
                                Margin="0,0,4,0" />
-                    <NumericUpDown Grid.Column="3"
+                    <NumericUpDown Grid.Column="4"
                                    x:Name="ColourLimitUpDown"
                                    Minimum="1" Maximum="256"
                                    Increment="1" Value="16"
@@ -193,11 +206,11 @@
                                    Margin="0,0,8,0"
                                    IsEnabled="False"
                                    ValueChanged="ColourLimitUpDown_ValueChanged"/>
-                    <TextBlock Grid.Column="4"
+                    <TextBlock Grid.Column="5"
                                Text="Denoising:"
                                VerticalAlignment="Center"
                                Margin="0,0,4,0" />
-                    <ComboBox Grid.Column="5"
+                    <ComboBox Grid.Column="6"
                               x:Name="DenoisingComboBox"
                               IsEnabled="True"
                               HorizontalAlignment="Stretch" />

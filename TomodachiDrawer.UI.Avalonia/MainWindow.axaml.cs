@@ -32,7 +32,7 @@ public partial class MainWindow : Window
         InitializeComponent();
 
         var quantizers = ColourPalette.Quantizers.Keys.ToList();
-        quantizers.Add("Arbitrary");
+        quantizers.Insert(0, "Arbitrary");
         ColourMatcherComboBox.ItemsSource = quantizers;
         ColourMatcherComboBox.SelectedIndex = 0;
 
@@ -319,7 +319,7 @@ public partial class MainWindow : Window
         if (sender is Button btn)
             btn.IsEnabled = false;
         AppendLog("Starting export...\r\n");
-        
+
         var settings = GetQuantizerSettings();
 
         await Task.Run(async () =>
@@ -573,5 +573,17 @@ public partial class MainWindow : Window
         {
             app.RequestedThemeVariant = desiredTheme;
         }
+    }
+
+    private void ColourMatcherHelpButton_Click(object? sender, RoutedEventArgs e)
+    {
+        _ = ShowMessageAsync(
+            "Colour Matchers", 
+            "You have 4 options for colour matchers. Euclidean, Redmean, and CieLab work using the Pro modes default palette." +
+            "\nArbitrary works by using the full colour range, selecting colours is slower but you can achieve much better results." +
+            "\nYou can tweak the number of colours it has by changing the value to the right of this button." +
+            "\nTry and pick the lowest number that looks good to your standards to minimize draw time." +
+            "\nLess colours means quicker drawing, and more opportunities for the solver to find large continous blocks it can draw quickly."
+        );
     }
 }
