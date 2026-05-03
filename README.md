@@ -7,7 +7,7 @@ TomodachiDrawer is a collection of firmware and software that generates inputs t
 
 The program splits images into layers matched to colours in the game, and generates optimized routes for the pen to follow to draw your image.
 
-It has a Windows WinForms UI and Avalonia UI desktop app that supports flashing directly to a RP2040-Zero which can then be plugged into the USB port of a Switch or Switch 2 where it will begin to draw.
+It has a crossplatform Avalonia UI desktop app that supports flashing directly to a RP2040-Zero which can then be plugged into the USB port of a Switch or Switch 2 where it will begin to draw.
 
 ## How To Use
 
@@ -18,38 +18,45 @@ Initial setup requires a few steps, made easier by the UI.
 Note: flashing lights warning for video, apologies.
 [YouTube Tutorial](https://youtu.be/GIaiw3gzabo)
 
+The above tutorial is mildly out of date, but the fundamentals carry over to the Avalonia UI. An updated tutorial will be made soon.
+
 ### Downloads
 Downloads are available in the releases, they come in a few forms
+
+[Releases](https://github.com/Lucas7yoshi/TomodachiDrawer/releases)
+
 - TomodachiDrawer.UI.Avalonia.#.#.#.platform.zip
 platform can be win64 for windows, osxarm64 for Mac on ARM cpus, osx64 for Mac on x64 cpus, and linux64 and linuxarm64 for the same on linux.
 Download the one that is right for your computer, for mac users with any recent macbook arm64 should work.
 
-I have been unable to test the Mac build since I... dont have a mac, and cant VM one, but I have confirmed the Linux x64 version works. If there is any issues, make a GitHub issue!
-
-There is also a UI.Windows build which is in WinForms. I will be moving to avalonia completely in time.
+For linux and mac users, you may need to run chmod +x binaryNameHere or go into your settings to allow it.
 
 ### Or briefly, in text:
 
-1. Download the Windows app here: https://github.com/Lucas7yoshi/TomodachiDrawer/releases (You can also download the Avalonia UI version for Mac/Linux although its somewhat untested)
+1. Download the Desktop app here, for your platform: https://github.com/Lucas7yoshi/TomodachiDrawer/releases
 3. Extract the zip folder
-4. Run TomodachiDrawer.UI.Windows.exe (or TomodachiDrawer.UI.Avalonia.exe or TomodachiDrawer.UI.Avalonia)
+4. Run TomodachiDrawer.UI.Avalonia.[YourPlatform].exe (or similar for your platform)
 5. Plug in your RP2040-Zero to your PC while holding the boot button, or while connected hold BOOT and press reset while still holding boot.
 6. The program should recognize it.
 7. Press "Flash Base Firmware", this will install the code that handles sending the inputs.
 8. Repeat the steps to hold the boot button, then open your image by pressing the open button or dragging it in. It must be 256x256 or smaller.
-9. Select the Colour Matcher that looks best, adjust the TSP solver time limit (explained in the ? button)
+9. Select the Colour Matcher that looks best (arbitrary uses the full range), adjust the TSP solver time limit (explained in the ? button) as needed.
 10. Select "Export to RP2040" which will write it directly to the RP2040.
 11. Unplug the RP2040 and connect it to your switch (Note: Ensure "Wired Pro Controller Communication" is enabled in your settings!)
     - Note: you must have Palette house open, on "pro" mode, the cursor in the top left of where you want it drawn, zoomed out, and your top colour to be set to black.
 12. Upon completion, the RGB LED on the Pi will go to a rainbow. If you disconnect it and reconnect it, it will draw it again. Connect to your PC to change the image!
 
+#### If the program does not recognize your RP2040
+The logic may be delicate for Linux and Mac platforms as those are ones I cannot test.
+If it does not detect it, you can still drag-and-drop the .uf2 included with the download to your Pi for step 7, and for the image data, select "export .uf2" and save it to a destination, and once done, drag and drop onto the RP2040 drive to flash it manually.
+
+
 ## Roadmap
 Things I want to do in roughly the order I want to do them in:
-- Avalonia UI for Mac/Linux users. (Experimentally implemented)
 - Further optimizations
-- Use bucket tool to fill the most significant colour
+- Use bucket tool to fill the most significant colour (for non transparent images)
 - Use shape tools for non-square areas of arbitrary size
-- Experiment with input acceleration and analogue input for faster movement
+- Experiment with input acceleration and analogue input for faster movement, requires reverse engineering.
 
 ## Contributing
 
