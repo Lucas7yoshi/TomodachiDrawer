@@ -335,19 +335,6 @@ namespace TomodachiDrawer.Core
                     _output.Tap(Button.R);
                 }
 
-                // Home everything, if we pick black on the bottom right, it goes to the bottom left
-                // the game appears to store the colour as RGB internally, and when you reopen the UI, it re-resolves
-                // it to HSV, which can land somewhere different. Most obvious in black.
-
-                // TODO: Home to the corner closest to the target colour to minimize inputs.
-                // Will need logic below inverted accordingly.
-                _output.SetStick(Stick.LX, 255);
-                _output.SetStick(Stick.LY, 0); // Up Right
-                _output.Press(Button.ZL);
-                _output.Delay(4250);
-                _output.ReleaseAll();
-
-               
                 // TLDR: The RGB needs to be Linearized from sRGB then turned to HSV.
                 // This seemingly is a 1:1 match.
                 float linR = ToLinear(target.skColor.Red);
@@ -356,38 +343,65 @@ namespace TomodachiDrawer.Core
 
                 LinearRgbToHsv(linR, linG, linB, out float h, out float s, out float v);
 
-                var hueInputs = (int)Math.Round((1.0f - h / 360.0f) * (FCR_HUE_SLIDER_STEP_COUNT - 1));
-                var satInputs = (int)Math.Round((1.0f - s) * (FCR_SATURATION_STEP_COUNT - 1));
-                var valInputs = (int)Math.Round((1.0f - v) * (FCR_VALUE_STEP_COUNT - 1));
+                // Figure out the steps first off
+                int hueSteps = (int)Math.Round((1.0f - h / 360.0f) * (FCR_HUE_SLIDER_STEP_COUNT - 1));
+                int satSteps = (int)Math.Round((1.0f - s) * (FCR_SATURATION_STEP_COUNT - 1));
+                int valSteps = (int)Math.Round((1.0f - v) * (FCR_VALUE_STEP_COUNT - 1));
+
+                // Determine which way we home for shorter travel.
+                // If we are past the halfway point, use the opposite side.
+                bool hueHomeLeft = hueSteps <= (FCR_HUE_SLIDER_STEP_COUNT - 1) / 2;
+                bool satHomeRight = satSteps <= (FCR_SATURATION_STEP_COUNT - 1) / 2;
+                bool valHomeTop = valSteps <= (FCR_VALUE_STEP_COUNT - 1) / 2;
+
+                // Use stick for quicker homing
+                _output.SetStick(Stick.LX, satHomeRight ? (byte)255 : (byte)0);
+                _output.SetStick(Stick.LY, valHomeTop ? (byte)0 : (byte)255);
+                _output.Press(hueHomeLeft ? Button.ZL : Button.ZR); // Home by holding
+                _output.Delay(4250); // This delay is pretty much as low as it can be for handling the worst case (black)
+                _output.ReleaseAll();
+
+                // TODO: Hue inputs could be entered at the same time as sat/val (although sat/val can only be one of those at a time, no diagonals)
+                // This would require something like
+                // _output.Press(ZR);
+                // _output.Press(DPad.LEFT);
+                // _output.Delay(25);
+                // _output.Release(ZR);
+                // _output.Release(DPad.LEFT);
+                // _output.Delay(25);
+                // to avoid the inherent delays of .Tap, this would negate compression savings of .Tap
+                // but for colour selection it would be fairly insignificant.
+                int hueInputs = hueHomeLeft ? hueSteps : (FCR_HUE_SLIDER_STEP_COUNT - 1) - hueSteps;
+                Button hueTapDirection = hueHomeLeft ? Button.ZR : Button.ZL;
+
+                int satInputs = satHomeRight ? satSteps : (FCR_SATURATION_STEP_COUNT - 1) - satSteps;
+                DPad satDirection = satHomeRight ? DPad.LEFT : DPad.RIGHT;
+
+                int valInputs = valHomeTop ? valSteps : (FCR_VALUE_STEP_COUNT - 1) - valSteps;
+                DPad valDirection = valHomeTop ? DPad.DOWN : DPad.UP;
 
                 for (int i = 0; i < hueInputs; i++)
-                {
-                    _output.Tap(Button.ZR);
-                }
+                    _output.Tap(hueTapDirection);
 
                 for (int i = 0; i < satInputs; i++)
-                {
-                    _output.Tap(DPad.LEFT);
-                }
+                    _output.Tap(satDirection);
 
                 for (int i = 0; i < valInputs; i++)
-                {
-                    _output.Tap(DPad.DOWN);
-                }
+                    _output.Tap(valDirection);
 
                 _output.Tap(Button.A);
-                _output.Delay(300);
+                _output.Delay(300); // wait for ui to close.
             }
         }
 
-        private float ToLinear(byte srgb8)
+        private static float ToLinear(byte srgb8)
         {
             float c = srgb8 / 255.0f;
             if (c <= 0.04045f) return c / 12.92f;
             return MathF.Pow((c + 0.055f) / 1.055f, 2.4f);
         }
 
-        private void LinearRgbToHsv(float r, float g, float b, out float h, out float s, out float v)
+        private static void LinearRgbToHsv(float r, float g, float b, out float h, out float s, out float v)
         {
             float min = Math.Min(r, Math.Min(g, b));
             float max = Math.Max(r, Math.Max(g, b));
