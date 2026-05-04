@@ -697,9 +697,9 @@ namespace TomodachiDrawer.Core
         {
             _realOutput.Tap(Button.A);
             _realOutput.Delay(1750); // raised from 1000ms to 1750 for switch 1
-            _realOutput.Tap(Button.A);
-            _realOutput.Delay(750); // raised from 500ms to 750ms for switch 1
             _realOutput.Tap(Button.A, 500);
+            _realOutput.Delay(750); // raised from 500ms to 750ms for switch 1
+            _realOutput.Tap(Button.A, 750);
             _realOutput.Delay(2000); // raised from 1500 to 2000 for switch 1
         }
     }
