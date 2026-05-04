@@ -44,7 +44,7 @@ jobs:
         cache-dependency-path: '**/*.csproj'
     - name: Build
       working-directory: TomodachiDrawer.UI.Avalonia
-      run: dotnet publish --configuration ${{ matrix.configuration }} -r ${{ matrix.runtime }} --self-contained ${{ matrix.selfcontained} -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true
+      run: dotnet publish --configuration ${{ matrix.configuration }} -r ${{ matrix.runtime }} --self-contained ${{ matrix.selfcontained }} -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true
     - name: Upload Artifacts
       uses: actions/upload-artifact@v7
       with:
