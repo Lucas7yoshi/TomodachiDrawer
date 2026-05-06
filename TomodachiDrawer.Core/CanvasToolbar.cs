@@ -7,6 +7,7 @@ namespace TomodachiDrawer.Core
     {
         // Toolbar/Brush menu
         private const int ToolbarItemCount = 12;
+        private const int ToolbarBucketIndex = 7;
         private const int ToolbarBrushIndex = 8;
         private const int BrushSubmenuColumns = 6;
         private const int BrushSubmenuRows = 2;
@@ -83,6 +84,24 @@ namespace TomodachiDrawer.Core
             output.Delay(600);
 
             return true;
+        }
+
+        public void SelectBucket() => SelectBucket(_output);
+
+        public void SelectBucket(ISwitchOutput output)
+        {
+            // For initial testing just home seperately since bucket will be used... ONCE.
+            _toolbarHomed = false; // we are homing seperately to a seperate target so best to be safe for when we do select a brush
+
+            output.Tap(Button.X);
+            output.Delay(400);
+            for (int i = 0; i < ToolbarItemCount; i++)
+                output.Tap(DPad.LEFT); // Slam to left
+            for (int i = 0; i < ToolbarBucketIndex; i++)
+                output.Tap(DPad.RIGHT); // Go to bucket
+
+            // I want to pick this back up from my laptop so I am pushing this WIP code up lol
+            throw new NotImplementedException("I am not done implementing this, download the release, silly.");
         }
     }
 }

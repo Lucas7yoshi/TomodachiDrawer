@@ -1,6 +1,8 @@
 ﻿using System.Diagnostics;
 using Google.OrTools.ConstraintSolver;
 using SkiaSharp;
+
+using TomodachiDrawer.Core.ImageProcessing;
 using TomodachiDrawer.Core.ImageProcessing.Denoising;
 using TomodachiDrawer.Core.ImageProcessing.Quantizers;
 using TomodachiDrawer.Core.Interfaces;
@@ -95,9 +97,39 @@ namespace TomodachiDrawer.Core
             // TODO: This doesnt really make too much sense to be in the palette class... Maybe move here?
             var layers = _palette.BuildFineLayers(quantizedMap);
 
-            // !!!
-            // TODO: Stamp/Uniform area detection.
-            // !!!
+
+            // If the image is 256x256 and has no transparent pixels at all we can use the bucket tool
+            // for the most prevelant colour to save time.
+            // This is done before the large brush detection to avoid needing to run stuff to count the large brush stuff to find the
+            // biggest.
+            PaletteColour? bucketColour = null;
+            if (image.Width == 256 && image.Height == 256)
+            {
+                bool anyTransparent = false;
+                for (int x = 0; x < image.Width; x++)
+                {
+                    for (int y = 0; y < image.Height; y++)
+                    {
+                        if (image.GetPixel(x, y).Alpha < 128)
+                        {
+                            anyTransparent = true;
+                            break;
+                        }
+                    }
+                    if (anyTransparent)
+                        break;
+                }
+
+                if (!anyTransparent)
+                {
+                    bucketColour = layers.MaxBy(l => l.FineDetailPoints.Count)?.Colour;
+                    // We need to then remove it from the rest of the drawing so it doesnt draw it now.
+                    layers.RemoveAll(l => l.Colour == bucketColour); // is only one but this is easiest.
+                }
+            }
+
+
+            // Stamp/uniform area detection
             _log("Detecting uniform areas for large brushes...");
             if (!disableLargeBrush)
             {
@@ -106,6 +138,8 @@ namespace TomodachiDrawer.Core
                     DetectUniformAreas(l);
                 }
             }
+
+
 
             // NOTE:
             // This doesnt include the SelectColour and SelectBrush stuff, for benchmarking
