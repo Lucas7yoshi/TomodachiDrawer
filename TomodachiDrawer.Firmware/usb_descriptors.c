@@ -29,7 +29,7 @@ uint8_t const desc_device[] = {
 uint8_t const desc_configuration[] = {
     // 1 interface (HID only)
     TUD_CONFIG_DESCRIPTOR(1, 1, 0, (TUD_CONFIG_DESC_LEN + TUD_HID_DESC_LEN), TUSB_DESC_CONFIG_ATT_REMOTE_WAKEUP, 500),
-    TUD_HID_DESCRIPTOR(0, 1, HID_ITF_PROTOCOL_NONE, sizeof(desc_hid_report), EPNUM_HID, 64, 8)
+    TUD_HID_DESCRIPTOR(0, 1, HID_ITF_PROTOCOL_NONE, sizeof(desc_hid_report), EPNUM_HID, 64, 1)
 };
 
 char const* string_desc_arr[] = {

@@ -52,6 +52,10 @@ typedef uint16_t gamepad_button_t;
 // Report layout: [Btn1, Btn2, DPad, LX, LY, RX, RY, Padding]
 static uint8_t current_report[8] = {0x00, 0x00, 0x08, 128, 128, 128, 128, 0x00};
 
+// Defaults produced by UI are 22 & 3 per wigreal's findings.
+static uint16_t tap_hold_polls = 0;
+static uint16_t tap_release_polls = 0;
+
 const uint8_t *flash_contents = (const uint8_t *)(XIP_BASE + FLASH_TARGET_OFFSET);
 
 // mapping C#'s Button enum (A=0, B=1, X=2, Y=3, ...) to report bits
@@ -68,7 +72,7 @@ const uint8_t stick_axis_map[] = {
 
 
 // opcodes are from FileControllerSink.cs, same for version.
-#define TDLD_VERSION 0x03
+#define TDLD_VERSION 0x04
 
 // All opcodes are stored in the upper nibble (4 bits)
 #define OPCODE_INVALID          0x0 // "invalid" to avoid boring 0x00 files in hex editor originally, repurposed for EOF.
@@ -142,6 +146,16 @@ static void delay_ms_usb(uint32_t ms) {
     absolute_time_t end = make_timeout_time_ms(ms);
     while (!time_reached(end)) {
         tud_task();
+    }
+}
+
+
+static void wait_reports(uint16_t count) {
+    for (uint16_t i = 0; i < count; i++) {
+        while (!tud_hid_ready()) {
+            tud_task();
+        }
+        tud_hid_report(0, current_report, sizeof(current_report));
     }
 }
 
@@ -242,11 +256,13 @@ static void run_single_byte_opcode(uint8_t record) {
         // This exists for storage saving, because the alternative is 4 records, which would be 6 bytes (1+2+1+2)
         case OPCODE_TAP_BUTTON:
             hid_press(button_map[nibble]);
-            push_report();
-            delay_ms_usb(25);
+            // push_report();
+            // delay_ms_usb(25);
+            wait_reports(tap_hold_polls);
             hid_release(button_map[nibble]);
-            push_report();
-            delay_ms_usb(25);
+            // push_report();
+            // delay_ms_usb(25);
+            wait_reports(tap_release_polls);
             break;
         case OPCODE_TAP_DPAD:
             hid_set_dpad(nibble);
@@ -298,7 +314,17 @@ int main(void) {
         error_flash(1000); // slow blink = wrong version
         return 0;
     }
-    ptr += 6; // 4-byte magic + 1-byte version + 1-byte padding
+
+    // Load our HOLD and RELEASE poll counts from header.
+    // 16 bits each (probably more than needed)
+    tap_hold_polls = (uint16_t)ptr[5] | ((uint16_t)ptr[6] << 8);
+    tap_release_polls = (uint16_t)ptr[7] | ((uint16_t)ptr[8] << 8);
+
+
+    // 4 byte magic, 1 byte version
+    // 2 byte hold, 2 byte release
+    // + 7 bytes padding
+    ptr += 16; // 9 byte header + 7 bytes padding to get to 16 bytes.
 
     uint8_t last_1byte_record = 0; // for Repeat opcodes.
     bool working = true;

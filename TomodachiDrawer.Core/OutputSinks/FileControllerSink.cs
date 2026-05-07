@@ -41,13 +41,21 @@ namespace TomodachiDrawer.Core.OutputSinks
         private int _pendingRepeats;
         private const int MaxRleCount = 0xFFF; // 4095. Have to flsuh. This should realistically never be hit.
 
-        public FileControllerSink(string filePath)
+#if !DEBUG
+        CHANGE THE BELOW TO BE SET BY UI!!!
+#endif
+        public FileControllerSink(string filePath, ushort tapHoldPolls = 22, ushort tapReleasePolls = 3)
         {
             _writer = new BinaryWriter(File.Open(filePath, FileMode.Create));
 
             _writer.Write(Encoding.ASCII.GetBytes("TDLD")); // magic, because why not
-            _writer.Write((byte)3); // version
-            _writer.Write((byte)0); // padding, keeps header 6 bytes
+            _writer.Write((byte)0x04); // version
+            // These inform the TAP opcode the ideal behaviour.
+            _writer.Write(tapHoldPolls);
+            _writer.Write(tapReleasePolls);
+            // padding to align to 16 bytes, so 4 + 1 + uint16 + uint16 = 9 bytes, so 7 bytes of padding.
+            _writer.Write([0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00]);
+            //_writer.Write((byte)0); // padding, keeps header 6 bytes
         }
 
         public void Press(Button btn) => WriteNibbleRecord(Opcode.PressButton, (byte)btn);
@@ -80,6 +88,10 @@ namespace TomodachiDrawer.Core.OutputSinks
 
         // To avoid 4 records (press+delay+release+delay)
         // 99.99% of the time, we have a dedicated opcode for normal 25ms taps so its 1 byte.
+        
+        // As of TDLD V4, if it is the default we are not doing the exact timing, we are using the tapHoldPolls and tapReleasePolls
+        // values in the header to define the delays. This is a bit messy and a point of ambiguity so probably want to try and rework this.
+        // Default durations are staying at 25ms for now.
 
         void ISwitchOutput.Tap(Button btn, double holdDuration, double releaseDuration)
         {

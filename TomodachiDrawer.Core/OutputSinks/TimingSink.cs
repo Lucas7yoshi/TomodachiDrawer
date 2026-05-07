@@ -18,6 +18,16 @@ namespace TomodachiDrawer.Core.OutputSinks
         public double TotalMilliseconds => _totalMilliseconds;
         public double TotalSeconds => _totalMilliseconds / 1000.0;
 
+        private ushort _tapHoldMs;
+        private ushort _tapReleaseMs;
+
+        public TimingSink(UInt16 tapHoldPolls = 22, UInt16 tapReleasePolls = 3)
+        {
+            // These should be about 1ms each so.
+            _tapHoldMs = tapHoldPolls;
+            _tapReleaseMs = tapReleasePolls;
+        }
+
         public void ReplayTo(ISwitchOutput target)
         {
             foreach (var action in _actions)
@@ -48,7 +58,8 @@ namespace TomodachiDrawer.Core.OutputSinks
             if (holdDuration == 25.0 && releaseDuration == 25.0)
             {
                 //WriteNibbleRecord(Opcode.TapButton, (byte)btn);
-                _totalMilliseconds += holdDuration + releaseDuration;
+                //_totalMilliseconds += holdDuration + releaseDuration;
+                _totalMilliseconds += _tapHoldMs + _tapReleaseMs;
                 _actions.Add(o => o.Tap(btn, holdDuration, releaseDuration));
                 return;
             }
@@ -64,7 +75,8 @@ namespace TomodachiDrawer.Core.OutputSinks
             if (holdDuration == 25.0 && releaseDuration == 25.0)
             {
                 //WriteNibbleRecord(Opcode.TapDPad, (byte)dir);
-                _totalMilliseconds += holdDuration + releaseDuration;
+                //_totalMilliseconds += holdDuration + releaseDuration;
+                _totalMilliseconds += _tapHoldMs + _tapReleaseMs;
                 _actions.Add(o => o.Tap(dir, holdDuration, releaseDuration));
                 return;
             }
