@@ -27,7 +27,10 @@
     <AvaloniaResource Include="Assets\**" />
   </ItemGroup>
   <ItemGroup>
-    <None Update="TomodachiDrawer.Firmware.uf2">
+    <None Update="TomodachiDrawer.Firmware.rp2040.uf2">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="TomodachiDrawer.Firmware.rp2350.uf2">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
   </ItemGroup>

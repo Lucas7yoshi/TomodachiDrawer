@@ -23,6 +23,7 @@ public partial class MainWindow : Window
     private string _currentImagePath = string.Empty;
     private Dictionary<PaletteColour, SKBitmap> _colourLayersDebug = new();
     private readonly CancellationTokenSource _cts = new();
+    private UF2Flasher.BoardType _detectedBoardType = UF2Flasher.BoardType.Unknown;
 
     public MainWindow()
     {
@@ -44,7 +45,7 @@ public partial class MainWindow : Window
         AddHandler(DragDrop.DropEvent, OnDrop);
         AddHandler(DragDrop.DragOverEvent, OnDragOver);
 
-        StartRP2040Polling();
+        StartBoardPolling();
     }
 
     protected override void OnClosed(System.EventArgs e)
@@ -53,46 +54,55 @@ public partial class MainWindow : Window
         base.OnClosed(e);
     }
 
-    // ── RP2040 polling ────────────────────────────────────────────────
+    // ── Board polling ────────────────────────────────────────────────
 
-    private void StartRP2040Polling()
+    private void StartBoardPolling()
     {
         _ = Task.Run(async () =>
         {
             bool lastState = false;
             while (!_cts.Token.IsCancellationRequested)
             {
-                var path = UF2Flasher.FindRP2040Drive();
+                var path = UF2Flasher.FindBoardDrive();
+                var boardType = path != null ? UF2Flasher.DetectBoardType(path) : UF2Flasher.BoardType.Unknown;
                 await Dispatcher.UIThread.InvokeAsync(() =>
                 {
                     bool hasImage = !string.IsNullOrEmpty(_currentImagePath);
 
-                    // ExportUF2 only needs an image — no RP2040 required
+                    // ExportUF2 only needs an image — no board required
                     ExportUF2Button.IsEnabled = hasImage;
 
                     if (path != null)
                     {
-                        RP2040StatusLabel.Text = $"RP2040 found: {path}";
-                        RP2040StatusLabel.Foreground = Brushes.Green;
+                        _detectedBoardType = boardType;
+                        string boardName = boardType switch
+                        {
+                            UF2Flasher.BoardType.RP2040 => "RP2040",
+                            UF2Flasher.BoardType.RP2350 => "RP2350",
+                            _ => "Unknown Board",
+                        };
+                        BoardStatusLabel.Text = $"{boardName} found: {path}";
+                        BoardStatusLabel.Foreground = Brushes.Green;
 
                         FlashFirmwareButton.IsEnabled = true;
-                        ExportRP2040Button.IsEnabled = hasImage;
+                        ExportToBoardButton.IsEnabled = hasImage;
                         if (!lastState)
                         {
-                            AppendLog($"RP2040 connected @ {path}");
+                            AppendLog($"{boardName} connected @ {path}");
                             lastState = true;
                         }
                     }
                     else
                     {
-                        RP2040StatusLabel.Text = "RP2040 not found";
-                        RP2040StatusLabel.Foreground = Brushes.Red;
+                        _detectedBoardType = UF2Flasher.BoardType.Unknown;
+                        BoardStatusLabel.Text = "Board not found";
+                        BoardStatusLabel.Foreground = Brushes.Red;
 
                         FlashFirmwareButton.IsEnabled = false;
-                        ExportRP2040Button.IsEnabled = false;
+                        ExportToBoardButton.IsEnabled = false;
                         if (lastState)
                         {
-                            AppendLog("RP2040 disconnected...");
+                            AppendLog("Board disconnected...");
                             lastState = false;
                         }
                     }
@@ -343,7 +353,7 @@ public partial class MainWindow : Window
         AppendLog("Export complete.\r\n");
     }
 
-    private async void ExportRP2040Button_Click(object? sender, RoutedEventArgs e)
+    private async void ExportToBoardButton_Click(object? sender, RoutedEventArgs e)
     {
         if (string.IsNullOrEmpty(_currentImagePath))
             return;
@@ -351,8 +361,9 @@ public partial class MainWindow : Window
         var imagePath = _currentImagePath;
         var denoiser = DenoisingComboBox.SelectedItem?.ToString();
         var tspLimit = (float)(TSPTimeLimitUpDown.Value ?? 0.5m);
+        var boardType = _detectedBoardType;
 
-        ExportRP2040Button.IsEnabled = false;
+        ExportToBoardButton.IsEnabled = false;
         TimeSpan totalTime = TimeSpan.MaxValue;
         var settings = GetQuantizerSettings();
 
@@ -376,14 +387,14 @@ public partial class MainWindow : Window
             fileSink.Dispose();
 
             var tdldBytes = File.ReadAllBytes(tempPath);
-            var uf2Bytes = UF2Flasher.BuildTDLDUF2(tdldBytes);
-            var drivePath = UF2Flasher.FindRP2040Drive();
+            var uf2Bytes = UF2Flasher.BuildTDLDUF2(tdldBytes, boardType);
+            var drivePath = UF2Flasher.FindBoardDrive();
 
             if (uf2Bytes != null && uf2Bytes.Length > 0 && drivePath != null)
             {
                 File.WriteAllBytes(Path.Combine(drivePath, "tdld_image.uf2"), uf2Bytes);
                 AppendLog(
-                    "Wrote to RP2040 flash. Unplug the RP2040 and plug it into the switch without holding any button."
+                    "Wrote to board's flash. Unplug the board and plug it into your Nintendo Switch without holding any buttons."
                 );
             }
 
@@ -392,7 +403,7 @@ public partial class MainWindow : Window
             totalTime = timingSink.TotalTime;
         });
 
-        ExportRP2040Button.IsEnabled = true;
+        ExportToBoardButton.IsEnabled = true;
 
         var estimateStr = $"{totalTime:h\\hm\\ms\\s}";
         DrawTimeLabel.Text = $"Draw Time Estimate: {estimateStr}";
@@ -448,7 +459,7 @@ public partial class MainWindow : Window
             fileSink.Dispose();
 
             var tdldBytes = File.ReadAllBytes(tempPath);
-            var uf2Bytes = UF2Flasher.BuildTDLDUF2(tdldBytes);
+            var uf2Bytes = UF2Flasher.BuildTDLDUF2(tdldBytes, _detectedBoardType);
 
             if (uf2Bytes != null && uf2Bytes.Length > 0)
             {
@@ -469,27 +480,32 @@ public partial class MainWindow : Window
 
     private void FlashFirmwareButton_Click(object? sender, RoutedEventArgs e)
     {
-        const string firmwareFile = "TomodachiDrawer.Firmware.uf2";
-        var drivePath = UF2Flasher.FindRP2040Drive();
+        string firmwareFile = _detectedBoardType switch
+        {
+            UF2Flasher.BoardType.RP2350 => "TomodachiDrawer.Firmware.rp2350.uf2",
+            // RP2040 is the most common board, even if detection fails.
+            _ => "TomodachiDrawer.Firmware.rp2040.uf2",
+        };
+        var drivePath = UF2Flasher.FindBoardDrive();
 
         if (!File.Exists(firmwareFile))
         {
             _ = ShowMessageAsync(
                 "Error flashing base firmware",
-                "For some reason could not locate TomodachiDrawer.Firmware.uf2"
+                $"For some reason could not locate {firmwareFile}"
             );
             return;
         }
         if (drivePath == null)
         {
-            _ = ShowMessageAsync("Error", "RP2040 not detected. Connect it in BOOT mode first.");
+            _ = ShowMessageAsync("Error", "No board detected. Connect it in BOOT mode first.");
             return;
         }
 
-        File.Copy(firmwareFile, Path.Combine(drivePath, firmwareFile), overwrite: true);
+        File.Copy(firmwareFile, Path.Combine(drivePath, Path.GetFileName(firmwareFile)), overwrite: true);
 
         var timeout = System.DateTime.Now.AddSeconds(10);
-        while (UF2Flasher.FindRP2040Drive() != null)
+        while (UF2Flasher.FindBoardDrive() != null)
         {
             if (System.DateTime.Now > timeout)
             {
@@ -506,7 +522,7 @@ public partial class MainWindow : Window
             "",
             "Base firmware flashed! You can now use the standard output button to output your images to it!\nIf this is your first time, its likely flashing red. Simply hold BOOT and plug it back in, or hold BOOT and press reset if you have it."
         );
-        AppendLog("Flashed base firmware to RP2040\r\n");
+        AppendLog($"Flashed base firmware to board\r\n");
     }
 
     private void OutputExplanationButton_Click(object? sender, RoutedEventArgs e)

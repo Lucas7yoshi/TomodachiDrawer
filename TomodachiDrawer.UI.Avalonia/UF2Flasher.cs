@@ -4,16 +4,26 @@ namespace TomodachiDrawer.UI.Avalonia;
 
 internal static class UF2Flasher
 {
+    public enum BoardType
+    {
+        Unknown,
+        RP2040,
+        RP2350,
+    }
+
+    private const uint FamilyIdRP2040 = 0xE48BFF56u;
+    private const uint FamilyIdRP2350 = 0xE48BFF5Au; // ARM core
+
     // This is repeated code so i would like to make it shared in .Core later.
-    public static byte[] BuildTDLDUF2(byte[] tdldData)
+    public static byte[] BuildTDLDUF2(byte[] tdldData, BoardType boardType)
     {
         const int MaxTDLDSize = 1 * 1024 * 1024;
         if (tdldData.Length > MaxTDLDSize)
             throw new ArgumentException(
-                $"TDLD data exceeds maximum size of {MaxTDLDSize} bytes. This will shoot past the end of the RP2040 flash!"
+                $"TDLD data exceeds maximum size of {MaxTDLDSize} bytes. This will shoot past the end of the board's flash!"
             );
         const uint TargetBase = 0x10100000u; // 1MB into the 2MB flash, so 1MB limit.
-        const uint FamilyId = 0xE48BFF56u;
+        uint familyId = boardType == BoardType.RP2350 ? FamilyIdRP2350 : FamilyIdRP2040;
         const uint PayloadSize = 256u;
 
         int blockCount = (tdldData.Length + (int)PayloadSize - 1) / (int)PayloadSize;
@@ -32,7 +42,7 @@ internal static class UF2Flasher
             BinaryPrimitives.WriteUInt32LittleEndian(block[0x010..], PayloadSize);
             BinaryPrimitives.WriteUInt32LittleEndian(block[0x014..], (uint)i);
             BinaryPrimitives.WriteUInt32LittleEndian(block[0x018..], (uint)blockCount);
-            BinaryPrimitives.WriteUInt32LittleEndian(block[0x01C..], FamilyId);
+            BinaryPrimitives.WriteUInt32LittleEndian(block[0x01C..], familyId);
             BinaryPrimitives.WriteUInt32LittleEndian(block[0x1FC..], 0x0AB16F30);
 
             int srcOffset = i * (int)PayloadSize;
@@ -43,14 +53,30 @@ internal static class UF2Flasher
         return output;
     }
 
-    public static string? FindRP2040Drive()
+    public static BoardType DetectBoardType(string drivePath)
+    {
+        var infoFilePath = Path.Combine(drivePath, "INFO_UF2.TXT");
+
+        if (File.Exists(infoFilePath))
+        {
+            var content = File.ReadAllText(infoFilePath);
+            if (content.Contains("RP2350", StringComparison.OrdinalIgnoreCase))
+                return BoardType.RP2350;
+            else if (content.Contains("RP2040", StringComparison.OrdinalIgnoreCase))
+                return BoardType.RP2040;
+        }
+
+        return BoardType.Unknown;
+    }
+
+    public static string? FindBoardDrive()
     {
         // this should work crossplatform...
         foreach (var drive in DriveInfo.GetDrives())
         {
             try
             {
-                if (drive.IsReady && drive.VolumeLabel == "RPI-RP2")
+                if (drive.IsReady && drive.VolumeLabel == "RPI-RP2" || drive.VolumeLabel == "RP2350")
                     return drive.RootDirectory.FullName;
             }
             catch { }

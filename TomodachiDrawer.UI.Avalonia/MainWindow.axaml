@@ -67,9 +67,9 @@
                             <ComboBoxItem>Match System</ComboBoxItem>
                             <ComboBoxItem>Light</ComboBoxItem>
                             <ComboBoxItem>Dark</ComboBoxItem>
-                        </ComboBox>	
+                        </ComboBox>
                     </StackPanel>
-                </StackPanel>             
+                </StackPanel>
             </Border>
             <Border Grid.Row="2" Classes="group" Margin="0,0,0,6">
                 <StackPanel Spacing="6">
@@ -110,9 +110,9 @@
                        Margin="2,0,2,6" />
             <Border Grid.Row="5" Classes="group">
                 <StackPanel Spacing="5">
-                    <TextBlock Classes="header" Text="RP2040 Output" />
-                    <TextBlock x:Name="RP2040StatusLabel"
-                               Text="RP2040 Status: Not Found" />
+                    <TextBlock Classes="header" Text="RP2040/RP2350 Output" />
+                    <TextBlock x:Name="BoardStatusLabel"
+                                Text="RP2040/RP2350 Status: Not Found" />
                     <Grid>
 					        <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="*" />
@@ -140,13 +140,13 @@
                                 Margin="2,0,2,0"
                                 Click="FlashFirmwareButton_Click" />
                         <Button Grid.Column="1"
-                                x:Name="ExportRP2040Button"
+                                x:Name="ExportToBoardButton"
                                 IsEnabled="False"
-                                Content="Export To RP2040!"
+                                Content="Export To RP2040/RP2350!"
                                 FontWeight="Bold"
                                 HorizontalAlignment="Stretch"
                                 Margin="2,0,2,0"
-                                Click="ExportRP2040Button_Click" />
+                                Click="ExportToBoardButton_Click" />
 
                     </Grid>
                                             <Button
