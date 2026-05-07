@@ -142,6 +142,9 @@ static void delay_ms_usb(uint32_t ms) {
     absolute_time_t end = make_timeout_time_ms(ms);
     while (!time_reached(end)) {
         tud_task();
+        if (tud_hid_ready()) {
+            tud_hid_report(0, current_report, sizeof(current_report));
+        }
     }
 }
 
