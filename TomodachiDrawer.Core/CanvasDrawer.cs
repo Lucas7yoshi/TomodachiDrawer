@@ -159,55 +159,58 @@ namespace TomodachiDrawer.Core
                 // END STAMPS.
 
                 // ============= Fine details
-                _toolbar.SelectBrush(1); // no-op if already selected.
-
-                // Dry run both to get timing, TimingSink stores
-                // the outputs and time taken so it can be replayed without needing to rerun
-                // the tsp solve or snake logic (snake logic is compartively short but it also replays)
-                int savedX = _cursorX;
-                int savedY = _cursorY;
-
-                var snakeSink = new TimingSink();
-                FineDetailSnake(snakeSink, l);
-
-                int afterSnakeX = _cursorX;
-                int afterSnakeY = _cursorY;
-
-                _cursorX = savedX;
-                _cursorY = savedY;
-
-                var tspSink = new TimingSink();
-                FineDetailTsp(tspSink, l, tspTimeLimit);
-
-                int afterTspX = _cursorX;
-                int afterTspY = _cursorY;
-
-                //_cursorX = savedX;
-                //_cursorY = savedY;
-
-                bool tspHasSolution = tspSink.TotalMilliseconds > 0;
-                bool usedSnake =
-                    !tspHasSolution || snakeSink.TotalMilliseconds <= tspSink.TotalMilliseconds;
-                if (usedSnake)
+                if (l.FineDetailPoints.Count > 0)
                 {
-                    snakeSink.ReplayTo(_realOutput);
-                    totalInLayerTime += snakeSink.TotalTime.TotalSeconds;
-                    _cursorX = afterSnakeX;
-                    _cursorY = afterSnakeY;
+                    _toolbar.SelectBrush(1); // no-op if already selected.
+
+                    // Dry run both to get timing, TimingSink stores
+                    // the outputs and time taken so it can be replayed without needing to rerun
+                    // the tsp solve or snake logic (snake logic is compartively short but it also replays)
+                    int savedX = _cursorX;
+                    int savedY = _cursorY;
+
+                    var snakeSink = new TimingSink();
+                    FineDetailSnake(snakeSink, l);
+
+                    int afterSnakeX = _cursorX;
+                    int afterSnakeY = _cursorY;
+
+                    _cursorX = savedX;
+                    _cursorY = savedY;
+
+                    var tspSink = new TimingSink();
+                    FineDetailTsp(tspSink, l, tspTimeLimit);
+
+                    int afterTspX = _cursorX;
+                    int afterTspY = _cursorY;
+
+                    //_cursorX = savedX;
+                    //_cursorY = savedY;
+
+                    bool tspHasSolution = tspSink.TotalMilliseconds > 0;
+                    bool usedSnake =
+                        !tspHasSolution || snakeSink.TotalMilliseconds <= tspSink.TotalMilliseconds;
+                    if (usedSnake)
+                    {
+                        snakeSink.ReplayTo(_realOutput);
+                        totalInLayerTime += snakeSink.TotalTime.TotalSeconds;
+                        _cursorX = afterSnakeX;
+                        _cursorY = afterSnakeY;
+                    }
+                    else
+                    {
+                        tspSink.ReplayTo(_realOutput);
+                        totalInLayerTime += tspSink.TotalTime.TotalSeconds;
+                        _cursorX = afterTspX;
+                        _cursorY = afterTspY;
+                    }
+                    string tspPart = tspHasSolution
+                        ? $"{tspSink.TotalTime.TotalSeconds:F3}s"
+                        : "no solution";
+                    _log(
+                        $"[{layerNumber}/{totalLayers}] {l.Colour.DisplayName}: snake={snakeSink.TotalTime.TotalSeconds:F3}s, tsp={tspPart} -> {(usedSnake ? "snake" : "tsp")}"
+                    );
                 }
-                else
-                {
-                    tspSink.ReplayTo(_realOutput);
-                    totalInLayerTime += tspSink.TotalTime.TotalSeconds;
-                    _cursorX = afterTspX;
-                    _cursorY = afterTspY;
-                }
-                string tspPart = tspHasSolution
-                    ? $"{tspSink.TotalTime.TotalSeconds:F3}s"
-                    : "no solution";
-                _log(
-                    $"[{layerNumber}/{totalLayers}] {l.Colour.DisplayName}: snake={snakeSink.TotalTime.TotalSeconds:F3}s, tsp={tspPart} -> {(usedSnake ? "snake" : "tsp")}"
-                );
             }
             _log(
                 $"Done! Total in layer draw time: {totalInLayerTime:F3}s (Doesnt include colour/brush selection)"
