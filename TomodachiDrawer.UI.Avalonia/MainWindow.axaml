@@ -110,9 +110,19 @@
                        Margin="2,0,2,6" />
             <Border Grid.Row="5" Classes="group">
                 <StackPanel Spacing="5">
-                    <TextBlock Classes="header" Text="RP2040/RP2350 Output" />
+                    <TextBlock Classes="header" Text="Board" />
                     <TextBlock x:Name="BoardStatusLabel"
-                                Text="RP2040/RP2350 Status: Not Found" />
+                               Text="Status: Not Found" />
+                    <ComboBox Grid.Column="1"
+                              x:Name="BoardTypeComboBox"
+                              HorizontalAlignment="Stretch"
+                              Margin="4,0,4,0"
+                              SelectedIndex="0"
+                              SelectionChanged="BoardTypeComboBox_SelectionChanged">
+                        <ComboBoxItem>Unknown Board</ComboBoxItem>
+                        <ComboBoxItem>RP2040</ComboBoxItem>
+                        <ComboBoxItem>RP2350</ComboBoxItem>
+                    </ComboBox>
                     <Grid>
 					        <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="*" />

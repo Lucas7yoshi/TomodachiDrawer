@@ -22,8 +22,12 @@ public partial class MainWindow : Window
 {
     private string _currentImagePath = string.Empty;
     private Dictionary<PaletteColour, SKBitmap> _colourLayersDebug = new();
+    private bool _isBoardDetected = false;
     private readonly CancellationTokenSource _cts = new();
-    private UF2Flasher.BoardType _detectedBoardType = UF2Flasher.BoardType.Unknown;
+
+    private UF2Flasher.BoardType _selectedBoardType => BoardTypeComboBox != null
+        ? (UF2Flasher.BoardType)(BoardTypeComboBox.SelectedIndex)
+        : UF2Flasher.BoardType.Unknown;
 
     public MainWindow()
     {
@@ -45,6 +49,8 @@ public partial class MainWindow : Window
         AddHandler(DragDrop.DropEvent, OnDrop);
         AddHandler(DragDrop.DragOverEvent, OnDragOver);
 
+        UpdateFirmwareButtons();
+
         StartBoardPolling();
     }
 
@@ -64,18 +70,18 @@ public partial class MainWindow : Window
             while (!_cts.Token.IsCancellationRequested)
             {
                 var path = UF2Flasher.FindBoardDrive();
-                var boardType = path != null ? UF2Flasher.DetectBoardType(path) : UF2Flasher.BoardType.Unknown;
+                var detectedBoardType = path != null ? UF2Flasher.DetectBoardType(path) : UF2Flasher.BoardType.Unknown;
                 await Dispatcher.UIThread.InvokeAsync(() =>
                 {
                     bool hasImage = !string.IsNullOrEmpty(_currentImagePath);
+                    bool isBoardSupported = detectedBoardType != UF2Flasher.BoardType.Unknown;
 
                     // ExportUF2 only needs an image — no board required
                     ExportUF2Button.IsEnabled = hasImage;
 
                     if (path != null)
                     {
-                        _detectedBoardType = boardType;
-                        string boardName = boardType switch
+                        string boardName = detectedBoardType switch
                         {
                             UF2Flasher.BoardType.RP2040 => "RP2040",
                             UF2Flasher.BoardType.RP2350 => "RP2350",
@@ -84,28 +90,33 @@ public partial class MainWindow : Window
                         BoardStatusLabel.Text = $"{boardName} found: {path}";
                         BoardStatusLabel.Foreground = Brushes.Green;
 
-                        FlashFirmwareButton.IsEnabled = true;
-                        ExportToBoardButton.IsEnabled = hasImage;
+                        _isBoardDetected = true;
+
                         if (!lastState)
                         {
+                            BoardTypeComboBox.SelectedIndex = (int)(detectedBoardType);
+
                             AppendLog($"{boardName} connected @ {path}");
                             lastState = true;
                         }
                     }
                     else
                     {
-                        _detectedBoardType = UF2Flasher.BoardType.Unknown;
                         BoardStatusLabel.Text = "Board not found";
                         BoardStatusLabel.Foreground = Brushes.Red;
 
-                        FlashFirmwareButton.IsEnabled = false;
-                        ExportToBoardButton.IsEnabled = false;
+                        _isBoardDetected = false;
+
                         if (lastState)
                         {
+                            BoardTypeComboBox.SelectedIndex = (int)(UF2Flasher.BoardType.Unknown);
+
                             AppendLog("Board disconnected...");
                             lastState = false;
                         }
                     }
+
+                    UpdateFirmwareButtons();
                 });
 
                 try
@@ -209,6 +220,15 @@ public partial class MainWindow : Window
             LogBox.Text = (LogBox.Text ?? "") + msg + "\n";
             LogBox.CaretIndex = LogBox.Text?.Length ?? 0;
         });
+    }
+
+    private void UpdateFirmwareButtons()
+    {
+        bool hasImage = !string.IsNullOrEmpty(_currentImagePath);
+        bool isBoardSupported = _selectedBoardType != UF2Flasher.BoardType.Unknown;
+
+        FlashFirmwareButton?.IsEnabled = _isBoardDetected && isBoardSupported;
+        ExportToBoardButton?.IsEnabled = _isBoardDetected && isBoardSupported && hasImage;
     }
 
     // messagebox replacement
@@ -361,7 +381,7 @@ public partial class MainWindow : Window
         var imagePath = _currentImagePath;
         var denoiser = DenoisingComboBox.SelectedItem?.ToString();
         var tspLimit = (float)(TSPTimeLimitUpDown.Value ?? 0.5m);
-        var boardType = _detectedBoardType;
+        var boardType = _selectedBoardType;
 
         ExportToBoardButton.IsEnabled = false;
         TimeSpan totalTime = TimeSpan.MaxValue;
@@ -459,7 +479,7 @@ public partial class MainWindow : Window
             fileSink.Dispose();
 
             var tdldBytes = File.ReadAllBytes(tempPath);
-            var uf2Bytes = UF2Flasher.BuildTDLDUF2(tdldBytes, _detectedBoardType);
+            var uf2Bytes = UF2Flasher.BuildTDLDUF2(tdldBytes, _selectedBoardType);
 
             if (uf2Bytes != null && uf2Bytes.Length > 0)
             {
@@ -478,9 +498,14 @@ public partial class MainWindow : Window
         DrawTimeLabel.Text = $"Draw Time Estimate: {estimateStr}";
     }
 
+    private void BoardTypeComboBox_SelectionChanged(object? sender, SelectionChangedEventArgs e)
+    {
+        UpdateFirmwareButtons();
+    }
+
     private void FlashFirmwareButton_Click(object? sender, RoutedEventArgs e)
     {
-        string firmwareFile = _detectedBoardType switch
+        string firmwareFile = _selectedBoardType switch
         {
             UF2Flasher.BoardType.RP2350 => "TomodachiDrawer.Firmware.rp2350.uf2",
             // RP2040 is the most common board, even if detection fails.
