@@ -62,7 +62,7 @@ internal static class UF2Flasher
             var content = File.ReadAllText(infoFilePath);
             if (content.Contains("RP2350", StringComparison.OrdinalIgnoreCase))
                 return BoardType.RP2350;
-            else if (content.Contains("RP2040", StringComparison.OrdinalIgnoreCase))
+            else if (content.Contains("RPI-RP2", StringComparison.OrdinalIgnoreCase))
                 return BoardType.RP2040;
         }
 
