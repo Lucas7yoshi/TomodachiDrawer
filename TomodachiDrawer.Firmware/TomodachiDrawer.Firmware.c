@@ -4,8 +4,8 @@
 #include "hardware/pio.h"
 #include "ws2812.pio.h"
 
-// Waveshare RP2040 Zero onboard NeoPixel
-#define NEOPIXEL_PIN 16
+// Waveshare RP2040/RP2350 Zero onboard NeoPixel (GPIO 16 on both boards)
+#define NEOPIXEL_PIN PICO_DEFAULT_WS2812_PIN
 #define NEOPIXEL_PIO pio0
 #define NEOPIXEL_SM  0
 
@@ -125,15 +125,21 @@ static void neopixel_set_rgb(uint8_t r, uint8_t g, uint8_t b) {
     pio_sm_put_blocking(NEOPIXEL_PIO, NEOPIXEL_SM, grb);
 }
 
+// Onboard LED (only on boards that define PICO_DEFAULT_LED_PIN, e.g. Pico, Pico 2).
+// Waveshare Zero boards don't have one, so these become no-ops.
+#ifdef PICO_DEFAULT_LED_PIN
 static void boringpixel_init(void) {
-    gpio_init(25);
-    gpio_set_dir(25, GPIO_OUT);
+    gpio_init(PICO_DEFAULT_LED_PIN);
+    gpio_set_dir(PICO_DEFAULT_LED_PIN, GPIO_OUT);
 }
 
-static void boringpixel_set(bool on)
-{
-    gpio_put(25, on);
+static void boringpixel_set(bool on) {
+    gpio_put(PICO_DEFAULT_LED_PIN, on);
 }
+#else
+#define boringpixel_init()  ((void)0)
+#define boringpixel_set(x)  ((void)0)
+#endif
 
 // delays precisely but while running tud_task so the usb is active.
 // this is the alternative to running a multicore architecture which i tried
