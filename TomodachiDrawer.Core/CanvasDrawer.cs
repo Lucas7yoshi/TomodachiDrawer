@@ -1,6 +1,8 @@
 ﻿using System.Diagnostics;
 using Google.OrTools.ConstraintSolver;
 using SkiaSharp;
+
+using TomodachiDrawer.Core.ImageProcessing;
 using TomodachiDrawer.Core.ImageProcessing.Denoising;
 using TomodachiDrawer.Core.ImageProcessing.Quantizers;
 using TomodachiDrawer.Core.Interfaces;
@@ -9,7 +11,7 @@ using TomodachiDrawer.Core.OutputSinks;
 
 namespace TomodachiDrawer.Core
 {
-    public class CanvasDrawer
+    public class CanvasDrawer(ISwitchOutput outputSink, Action<string>? logger = null)
     {
         public const int CanvasWidth = 256;
         public const int CanvasHeight = 256;
@@ -17,18 +19,10 @@ namespace TomodachiDrawer.Core
         private int _cursorX = 0;
         private int _cursorY = 0;
 
-        private ISwitchOutput _realOutput;
-        private ColourPalette _palette;
-        private CanvasToolbar _toolbar;
-        private readonly Action<string> _log;
-
-        public CanvasDrawer(ISwitchOutput outputSink, Action<string>? logger = null)
-        {
-            _realOutput = outputSink;
-            _palette = new ColourPalette(outputSink);
-            _toolbar = new CanvasToolbar(outputSink);
-            _log = logger ?? Console.WriteLine;
-        }
+        private readonly ISwitchOutput _realOutput = outputSink;
+        private readonly ColourPalette _palette = new(outputSink);
+        private readonly CanvasToolbar _toolbar = new(outputSink);
+        private readonly Action<string> _log = logger ?? Console.WriteLine;
 
         public static float GetRecommendedTSPSolveTime(int width, int height)
         {
@@ -95,9 +89,49 @@ namespace TomodachiDrawer.Core
             // TODO: This doesnt really make too much sense to be in the palette class... Maybe move here?
             var layers = _palette.BuildFineLayers(quantizedMap);
 
-            // !!!
-            // TODO: Stamp/Uniform area detection.
-            // !!!
+
+            // If the image is 256x256 and has no transparent pixels at all we can use the bucket tool
+            // for the most prevelant colour to save time.
+            // This is done before the large brush detection to avoid needing to run stuff to count the large brush stuff to find the
+            // biggest.
+            PaletteColour? bucketColour = null;
+            if (image.Width == 256 && image.Height == 256)
+            {
+                _log("Seeing if we can use the bucket to save time");
+                bool anyTransparent = false;
+                for (int x = 0; x < image.Width; x++)
+                {
+                    for (int y = 0; y < image.Height; y++)
+                    {
+                        if (image.GetPixel(x, y).Alpha < 128)
+                        {
+                            anyTransparent = true;
+                            break;
+                        }
+                    }
+                    if (anyTransparent)
+                        break;
+                }
+
+                if (!anyTransparent)
+                {
+                    bucketColour = layers.MaxBy(l => l.FineDetailPoints.Count)!.Colour;
+                    // We need to then remove it from the rest of the drawing so it doesnt draw it now.
+                    layers.RemoveAll(l => l.Colour == bucketColour); // is only one but this is easiest.
+                    _log($"\tUsing bucket to fill most prevalent colour: {bucketColour.DisplayName}");
+                    _toolbar.SelectBucket();
+                    _palette.SelectColour(bucketColour, 25.0);
+                    _realOutput.Tap(Button.A);
+                    _realOutput.Delay(1000); // This is probably generous but bucket fill seems to cause a short stutter.
+                }
+                else
+                {
+                    _log("\tCan't. Image has transparency.");
+                }
+            }
+
+
+            // Stamp/uniform area detection
             _log("Detecting uniform areas for large brushes...");
             if (!disableLargeBrush)
             {
@@ -106,6 +140,8 @@ namespace TomodachiDrawer.Core
                     DetectUniformAreas(l);
                 }
             }
+
+
 
             // NOTE:
             // This doesnt include the SelectColour and SelectBrush stuff, for benchmarking
@@ -138,13 +174,12 @@ namespace TomodachiDrawer.Core
                         var dumbRoute = new List<CanvasPoint>(sbs.Value);
                         var pointCount = dumbRoute.Count;
                         float tspTime = 0.5f;
-                        if (pointCount > 100)
-                            tspTime = 1.0f;
-                        else if (pointCount > 200)
+                        if (pointCount > 200)
                             tspTime = 1.5f;
+                        else if (pointCount > 100)
+                            tspTime = 1.0f;
                         var optimizedRoute = PerformTSP(dumbRoute, tspTime); // half a sec per stamp size per colour is prob reasonable?
-                        if (optimizedRoute == null)
-                            optimizedRoute = dumbRoute;
+                        optimizedRoute ??= dumbRoute;
 
                         foreach (var point in optimizedRoute)
                         {
@@ -291,7 +326,7 @@ namespace TomodachiDrawer.Core
             }
         }
 
-        private bool IsUniformArea(bool[,] map, int cx, int cy, int brushSize)
+        private static bool IsUniformArea(bool[,] map, int cx, int cy, int brushSize)
         {
             int half = brushSize / 2; // rounds down.
             for (int dy = -half; dy <= half; dy++)
@@ -304,7 +339,7 @@ namespace TomodachiDrawer.Core
             return true;
         }
 
-        private void ClearStampArea(
+        private static void ClearStampArea(
             bool[,] map,
             HashSet<CanvasPoint> points,
             int cx,
@@ -323,7 +358,7 @@ namespace TomodachiDrawer.Core
             }
         }
 
-        private void RefillStampArea(
+        private static void RefillStampArea(
             bool[,] map,
             HashSet<CanvasPoint> points,
             int cx,
@@ -573,11 +608,13 @@ namespace TomodachiDrawer.Core
             var routing = new RoutingModel(manager);
 
             int transitCallbackIndex = routing.RegisterTransitCallback(
-                (long fromIndex, long toIndex) =>
+                (fromIndex, toIndex) =>
                 {
                     var fromNode = manager.IndexToNode(fromIndex);
                     var toNode = manager.IndexToNode(toIndex);
-                    // return Math.Max(Math.Abs(_cursorX - targetX), Math.Abs(_cursorY - targetY));
+                    // A note: during testing I made a change trying to incentivize adjacent things
+                    // since it can just hold A during... but the lowest value this can return is 1
+                    // so there was no gain, it was already trying to do that lol.
                     return Math.Max(
                         Math.Abs(points[fromNode].X - points[toNode].X),
                         Math.Abs(points[fromNode].Y - points[toNode].Y)
@@ -698,11 +735,11 @@ namespace TomodachiDrawer.Core
 
         public void ConnectAndConfirmController()
         {
-            _realOutput.Tap(Button.A);
+            _realOutput.Tap(Button.A, 100, 50);
             _realOutput.Delay(1750); // raised from 1000ms to 1750 for switch 1
-            _realOutput.Tap(Button.A, 500);
+            _realOutput.Tap(Button.A, 500, 50);
             _realOutput.Delay(750); // raised from 500ms to 750ms for switch 1
-            _realOutput.Tap(Button.A, 750);
+            _realOutput.Tap(Button.A, 750, 50);
             _realOutput.Delay(2000); // raised from 1500 to 2000 for switch 1
         }
     }
