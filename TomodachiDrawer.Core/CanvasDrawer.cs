@@ -277,7 +277,10 @@ namespace TomodachiDrawer.Core
 
                     _toolbar.SelectBucket();
                     // tsp solve the points
-                    var optimizedBucketClickRoute = PerformTSP(l.BucketClicks.ToList(), 0.25f);
+                    var bucketClickRouteTimeout = 0.25f;
+                    if (l.BucketClicks.Count > 50)
+                        bucketClickRouteTimeout = 0.5f;
+                    var optimizedBucketClickRoute = PerformTSP(l.BucketClicks.ToList(), bucketClickRouteTimeout);
                     foreach (var click in optimizedBucketClickRoute ?? l.BucketClicks.ToList()) // in case somehow it fails
                     {
                         NavigateTo(_realOutput, click);
@@ -296,9 +299,9 @@ namespace TomodachiDrawer.Core
         // eviction thresholds are how many of that size there must be for it to commit to doing larger brushes over smaller ones.
         // bigger ones fill more area so they get more slack.
         // TODO: MORE WORK TWEAKING THESE!!!
-        private static readonly int[] LargeBrushEvictionThreshold = [1, 1, 1, 6, 12];
+        private static readonly int[] LargeBrushEvictionThreshold = [1, 1, 2, 6, 12];
 
-        public static void DetectBucketZones(ColourLayer l, int width, int height, int minZoneSize = 25)
+        public static void DetectBucketZones(ColourLayer l, int width, int height, int minZoneSize = 30)
         {
             var workingSet = new bool[width, height];
 
