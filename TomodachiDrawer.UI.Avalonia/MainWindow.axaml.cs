@@ -13,6 +13,7 @@ using SkiaSharp;
 
 using System.Reflection;
 using System.Text.Json;
+using System.Text.Json.Serialization;
 
 using TomodachiDrawer.Core;
 using TomodachiDrawer.Core.ImageProcessing;
@@ -27,6 +28,8 @@ namespace TomodachiDrawer.UI.Avalonia;
 
 public partial class MainWindow : Window
 {
+    private const string SettingsFilePath = "settings.json";
+
     private string _currentImagePath = string.Empty;
     private Dictionary<PaletteColour, SKBitmap> _colourLayersDebug = new();
     private readonly CancellationTokenSource _cts = new();
@@ -34,6 +37,7 @@ public partial class MainWindow : Window
 
     private bool BusyExporting = false;
     private SwitchVersion _selectedSwitchVersion = SwitchVersion.None;
+    private int _selectedThemeIndex = 0; // 0 is System.
 
     public MainWindow()
     {
@@ -53,6 +57,8 @@ public partial class MainWindow : Window
 
         GetSettings();
         SwitchVersionComboBox.SelectedIndex = (int)_selectedSwitchVersion - 1;
+        SetTheme(_selectedThemeIndex);
+        AppThemeComboBox.SelectedIndex = _selectedThemeIndex;
 
         // this dont work
         DragDrop.SetAllowDrop(this, true);
@@ -688,7 +694,13 @@ public partial class MainWindow : Window
         // Why does avalonia call this before AppThemeComboBox exists?? lol
         if (AppThemeComboBox == null)
             return;
-        var desiredTheme = AppThemeComboBox.SelectedIndex switch
+
+        SetTheme(AppThemeComboBox.SelectedIndex);
+    }
+
+    private void SetTheme(int index)
+    {
+        var desiredTheme = index switch
         {
             1 => ThemeVariant.Light,
             2 => ThemeVariant.Dark,
@@ -698,6 +710,7 @@ public partial class MainWindow : Window
         if (Application.Current is { } app)
         {
             app.RequestedThemeVariant = desiredTheme;
+            _selectedThemeIndex = index;
         }
     }
 
@@ -717,21 +730,47 @@ public partial class MainWindow : Window
 
     private void SaveSettings()
     {
-        using var bw = new BinaryWriter(File.Open("settings.bin", FileMode.Create));
-        bw.Write((int)_selectedSwitchVersion);
+        var settings = new AppSettings
+        {
+            SelectedSwitchVersion = _selectedSwitchVersion,
+            SelectedThemeIndex = _selectedThemeIndex,
+        };
+
+        var json = JsonSerializer.Serialize(settings);
+        File.WriteAllText(SettingsFilePath, json);
     }
 
     private void GetSettings()
     {
-        if (File.Exists("settings.bin"))
+        if (File.Exists(SettingsFilePath))
         {
-            using var br = new BinaryReader(File.Open("settings.bin", FileMode.Open));
-            _selectedSwitchVersion = (SwitchVersion)br.ReadInt32();
+            try
+            {
+                var json = File.ReadAllText(SettingsFilePath);
+                var settings = JsonSerializer.Deserialize<AppSettings>(json);
+
+                if (settings != null)
+                {
+                    _selectedSwitchVersion = settings.SelectedSwitchVersion;
+                    _selectedThemeIndex = settings.SelectedThemeIndex;
+                    return;
+                }
+            }
+            catch (Exception)
+            {
+                AppendLog("Failed to load settings. Using defaults.");
+            }
         }
-        else
-        {
-            _selectedSwitchVersion = SwitchVersion.None;
-        }
+
+        _selectedSwitchVersion = SwitchVersion.None;
+        _selectedThemeIndex = 0;
+    }
+
+    private class AppSettings
+    {
+        public SwitchVersion SelectedSwitchVersion { get; init; }
+
+        public int SelectedThemeIndex { get; init; }
     }
 
     private void SwitchVersionComboBox_SelectionChanged(object? sender, SelectionChangedEventArgs e)
