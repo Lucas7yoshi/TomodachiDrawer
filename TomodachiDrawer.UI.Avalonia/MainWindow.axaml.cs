@@ -1,6 +1,7 @@
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Input;
+using Avalonia.Input.Platform;
 using Avalonia.Interactivity;
 using Avalonia.Layout;
 using Avalonia.Media;
@@ -31,7 +32,6 @@ public partial class MainWindow : Window
     private const string SettingsFilePath = "settings.json";
 
     private string _currentImagePath = string.Empty;
-    private Dictionary<PaletteColour, SKBitmap> _colourLayersDebug = new();
     private readonly CancellationTokenSource _cts = new();
 
 
@@ -75,7 +75,7 @@ public partial class MainWindow : Window
         _ = PerformAsyncUpdateCheck();
     }
 
-    private string GetVersionString(bool includeCommit)
+    private static string GetVersionString(bool includeCommit)
     {
         var currentVersion = Assembly.GetEntryAssembly()?.GetCustomAttribute<AssemblyInformationalVersionAttribute>()?.InformationalVersion ?? "dev";
         if (currentVersion.StartsWith("1.0.0"))
@@ -118,7 +118,8 @@ public partial class MainWindow : Window
             // 0.0.0 format, no v, no -.
             var releaseVersionTag = responseJsonObject.RootElement.GetProperty("tag_name").GetString() ?? "0.0.0";
 
-            // see if its newer.
+            // see if its newer. TODO: Actually check that, only really effects using the artifacts from the release build before
+            // i've published the release though.
             if (releaseVersionTag != null)
             {
                 if (releaseVersionTag != ourVersion)
@@ -128,7 +129,8 @@ public partial class MainWindow : Window
                         "A new update is available on GitHub." +
                         $"\nCurrent Version: {ourVersion}" +
                         $"\nLatest Version: {releaseVersionTag}" +
-                        $"\n\nDownload at:\nhttps://github.com/Lucas7yoshi/TomodachiDrawer"
+                        $"\n\nDownload at:\nhttps://github.com/Lucas7yoshi/TomodachiDrawer",
+                        new Uri("https://github.com/Lucas7yoshi/TomodachiDrawer/releases"), "Open Releases"
                     );
                 }
                 else
@@ -175,6 +177,7 @@ public partial class MainWindow : Window
 
                         FlashFirmwareButton.IsEnabled = !BusyExporting;
                         ExportRP2040Button.IsEnabled = hasImage && !BusyExporting;
+                        ExportUF2Button.IsEnabled = hasImage && !BusyExporting;
                         if (!lastState)
                         {
                             AppendLog($"RP2040 connected @ {path}");
@@ -188,6 +191,7 @@ public partial class MainWindow : Window
 
                         FlashFirmwareButton.IsEnabled = false;
                         ExportRP2040Button.IsEnabled = false;
+                        ExportUF2Button.IsEnabled = hasImage && !BusyExporting;
                         if (lastState)
                         {
                             AppendLog("RP2040 disconnected...");
@@ -207,9 +211,7 @@ public partial class MainWindow : Window
             }
         });
     }
-
-    // ── Image loading & preview ───────────────────────────────────────
-
+    #region Image/Preview
     private void LoadImage(string path)
     {
         if (!File.Exists(path))
@@ -289,6 +291,7 @@ public partial class MainWindow : Window
         using var stream = new MemoryStream(data.ToArray());
         return new Bitmap(stream);
     }
+    #endregion
 
     private void AppendLog(string msg)
     {
@@ -300,7 +303,7 @@ public partial class MainWindow : Window
     }
 
     // messagebox replacement
-    private async Task ShowMessageAsync(string title, string message)
+    private async Task ShowMessageAsync(string title, string message, Uri? link = null, string? linkButtonText = null)
     {
         var okButton = new Button
         {
@@ -310,6 +313,33 @@ public partial class MainWindow : Window
             MinWidth = 80,
         };
 
+        var stack = new StackPanel()
+        {
+            Margin = new Thickness(16)
+        };
+        stack.Children.Add(okButton);
+
+        Button? linkButton = null;
+
+        if (link != null)
+        {
+            linkButton = new Button
+            {
+                Content = linkButtonText ?? "Open Link",
+                HorizontalAlignment = HorizontalAlignment.Left,
+                Margin = new Thickness(0, 10, 0, 0),
+                MinWidth = 80,
+            };
+            stack.Children.Add(linkButton);
+        }
+
+        stack.Children.Insert(0, new SelectableTextBlock
+        {
+            Text = message,
+            TextWrapping = TextWrapping.Wrap,
+            MaxWidth = 400,
+        });
+
         var dialog = new Window
         {
             Title = title,
@@ -317,23 +347,15 @@ public partial class MainWindow : Window
             CanResize = false,
             Width = 440,
             SizeToContent = SizeToContent.Height,
-            Content = new StackPanel
-            {
-                Margin = new Thickness(16),
-                Children =
-                {
-                    new SelectableTextBlock
-                    {
-                        Text = message,
-                        TextWrapping = TextWrapping.Wrap,
-                        MaxWidth = 400,
-                    },
-                    okButton,
-                },
-            },
+            Content = stack
         };
 
         okButton.Click += (_, _) => dialog.Close();
+        linkButton?.Click += (_, _) =>
+        {
+            // Link button is only non-null if link is non-null so ! to indicate its safe.
+            Launcher.LaunchUriAsync(link!);
+        };
         await dialog.ShowDialog(this);
     }
 
@@ -344,14 +366,14 @@ public partial class MainWindow : Window
             {
                 Title = "Open Image",
                 AllowMultiple = false,
-                FileTypeFilter = new[]
-                {
+                FileTypeFilter =
+                [
                     new FilePickerFileType("Images")
                     {
-                        Patterns = new[] { "*.png", "*.jpg", "*.jpeg", "*.bmp", "*.gif", "*.webp" },
+                        Patterns = ["*.png", "*.jpg", "*.jpeg", "*.bmp", "*.gif", "*.webp"],
                     },
-                    new FilePickerFileType("All Files") { Patterns = new[] { "*.*" } },
-                },
+                    new FilePickerFileType("All Files") { Patterns = ["*.*"] },
+                ],
             }
         );
 
@@ -390,55 +412,6 @@ public partial class MainWindow : Window
             return new QuantizerSettings(quantizerName, colourCount, default);
         }
         return new QuantizerSettings(quantizerName, default, default);
-    }
-
-    private async void SaveTDLDButton_Click(object? sender, RoutedEventArgs e)
-    {
-        if (string.IsNullOrEmpty(_currentImagePath))
-            return;
-
-        var file = await StorageProvider.SaveFilePickerAsync(
-            new FilePickerSaveOptions
-            {
-                Title = "Save .TDLD",
-                DefaultExtension = "tdld",
-                FileTypeChoices = new[]
-                {
-                    new FilePickerFileType("Tomodachi Life Drawer file")
-                    {
-                        Patterns = new[] { "*.tdld" },
-                    },
-                    new FilePickerFileType("All Files") { Patterns = new[] { "*.*" } },
-                },
-            }
-        );
-
-        var outputPath = file?.TryGetLocalPath();
-        if (outputPath == null)
-            return;
-
-        var imagePath = _currentImagePath;
-        var denoiser = DenoisingComboBox.SelectedItem?.ToString();
-        var tspLimit = (float)(TSPTimeLimitUpDown.Value ?? 0.5m);
-
-        if (sender is Button btn)
-            btn.IsEnabled = false;
-        AppendLog("Starting export...\r\n");
-
-        var settings = GetQuantizerSettings();
-
-        await Task.Run(async () =>
-        {
-            var fileOutput = new FileControllerSink(outputPath);
-            var drawer = new CanvasDrawer(fileOutput, _selectedSwitchVersion, AppendLog);
-            drawer.ConnectAndConfirmController();
-            await drawer.DrawImage(SKBitmap.Decode(imagePath), settings, denoiser, tspLimit);
-            fileOutput.Dispose();
-        });
-
-        if (sender is Button btn2)
-            btn2.IsEnabled = true;
-        AppendLog("Export complete.\r\n");
     }
 
     private async void ExportRP2040Button_Click(object? sender, RoutedEventArgs e)
@@ -505,7 +478,12 @@ public partial class MainWindow : Window
         BusyExporting = false;
         ExportRP2040Button.IsEnabled = true;
 
-        var estimateStr = $"{totalTime:h\\hm\\ms\\s}";
+        SetEstimate(totalTime);
+    }
+
+    private void SetEstimate(TimeSpan time)
+    {
+        var estimateStr = $"{time:h\\hm\\ms\\s}";
         DrawTimeLabel.Text = $"Draw Time Estimate: {estimateStr}";
     }
 
@@ -530,11 +508,10 @@ public partial class MainWindow : Window
             {
                 Title = "Save .UF2",
                 DefaultExtension = "uf2",
-                FileTypeChoices = new[]
-                {
-                    new FilePickerFileType("UF2 Firmware Image") { Patterns = new[] { "*.uf2" } },
-                    new FilePickerFileType("All Files") { Patterns = new[] { "*.*" } },
-                },
+                FileTypeChoices = [
+                    new FilePickerFileType("UF2 Firmware Image") { Patterns = ["*.uf2"] },
+                    new FilePickerFileType("All Files") { Patterns = ["*.*"] },
+                ],
             }
         );
 
@@ -547,6 +524,7 @@ public partial class MainWindow : Window
         var tspLimit = (float)(TSPTimeLimitUpDown.Value ?? 0.5m);
 
         ExportUF2Button.IsEnabled = false;
+        BusyExporting = true;
         TimeSpan totalTime = TimeSpan.MaxValue;
         var settings = GetQuantizerSettings();
 
@@ -584,9 +562,9 @@ public partial class MainWindow : Window
         });
 
         ExportUF2Button.IsEnabled = true;
+        BusyExporting = false;
 
-        var estimateStr = $"{totalTime:h\\hm\\ms\\s}";
-        DrawTimeLabel.Text = $"Draw Time Estimate: {estimateStr}";
+        SetEstimate(totalTime);
     }
 
     private void FlashFirmwareButton_Click(object? sender, RoutedEventArgs e)
@@ -727,7 +705,7 @@ public partial class MainWindow : Window
                 + "\nIf time is of the essence, you can also enable Denoising which can increase the number of large spots for the larger brushes."
         );
     }
-
+    #region Settings
     private void SaveSettings()
     {
         var settings = new AppSettings
@@ -781,4 +759,5 @@ public partial class MainWindow : Window
             _selectedSwitchVersion = SwitchVersion.Switch2;
         SaveSettings();
     }
+    #endregion
 }

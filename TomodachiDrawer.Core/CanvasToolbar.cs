@@ -81,14 +81,18 @@ namespace TomodachiDrawer.Core
         {
             int targetColumn = BrushColumnBySize[brushSize];
 
+            // If we are already selected on the brush, and on the right brush size
+            // do nothing.
             if (_lastBrushColumn == targetColumn && _toolbarCurrentIndex == ToolbarBrushIndex)
             {
                 return false;
             }
 
+            // Open toolbar.
             output.Tap(Button.X);
             output.Delay(500);
 
+            // Go to brush.
             GoToToolbarIndex(output, ToolbarBrushIndex);
 
             // open submenu
@@ -96,35 +100,41 @@ namespace TomodachiDrawer.Core
             output.Delay(500);
 
             int currentColumn = _lastBrushColumn;
-            bool hasHomed = false;
-            if (currentColumn < 0)
+
+            bool needsHomed = currentColumn < 0;
+            if (needsHomed)
             {
                 for (int i = 0; i < BrushSubmenuRows; i++)
                     output.Tap(DPad.UP);
                 for (int i = 0; i < BrushSubmenuColumns; i++)
                     output.Tap(DPad.LEFT);
 
+                // Go to the square brush area, at the 1 pixel brush.
                 output.Tap(DPad.DOWN);
                 output.Tap(DPad.DOWN);
                 currentColumn = 0;
-                hasHomed = true;
             }
 
+            // After 
             int deltaX = targetColumn - currentColumn;
             var dir = deltaX > 0 ? DPad.RIGHT : DPad.LEFT;
             for (int i = 0; i < Math.Abs(deltaX); i++)
                 output.Tap(dir);
 
-            bool needsTwoTaps = deltaX != 0 || hasHomed;
+            // We need two taps if we are selecting something
+            // not previously selected, one selects it, one confirms.
+            // Technically we do not know for sure if it needs it after homing, but this is still safest at the moment.
+            bool needsTwoTaps = deltaX != 0 || needsHomed;
 
             _lastBrushColumn = targetColumn;
 
-            // Confirm and return to canvas.
+            // Confirm
             if (needsTwoTaps)
             {
                 output.Tap(Button.A, 50, 25); // Switch 1 seems to want the press to last longer oddly. Hold for 50ms instead of 25.
                 output.Delay(500);
             }
+            // Close
             output.Tap(Button.A, 50, 25);
             output.Delay(600);
 
