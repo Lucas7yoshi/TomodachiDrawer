@@ -1,6 +1,7 @@
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Input;
+using Avalonia.Input.Platform;
 using Avalonia.Interactivity;
 using Avalonia.Layout;
 using Avalonia.Media;
@@ -8,22 +9,36 @@ using Avalonia.Media.Imaging;
 using Avalonia.Platform.Storage;
 using Avalonia.Styling;
 using Avalonia.Threading;
+
 using SkiaSharp;
+
+using System.Reflection;
+using System.Text.Json;
+using System.Text.Json.Serialization;
+
 using TomodachiDrawer.Core;
 using TomodachiDrawer.Core.ImageProcessing;
 using TomodachiDrawer.Core.ImageProcessing.Denoising;
 using TomodachiDrawer.Core.ImageProcessing.Quantizers;
+using TomodachiDrawer.Core.Models;
 using TomodachiDrawer.Core.OutputSinks;
+
 using Button = Avalonia.Controls.Button; // conflict with the Button enum in SinkEnums
 
 namespace TomodachiDrawer.UI.Avalonia;
 
 public partial class MainWindow : Window
 {
+    private const string SettingsFilePath = "settings.json";
+
     private string _currentImagePath = string.Empty;
-    private Dictionary<PaletteColour, SKBitmap> _colourLayersDebug = new();
     private bool _isBoardDetected = false;
     private readonly CancellationTokenSource _cts = new();
+
+
+    private bool BusyExporting = false;
+    private SwitchVersion _selectedSwitchVersion = SwitchVersion.None;
+    private int _selectedThemeIndex = 0; // 0 is System.
 
     private UF2Flasher.BoardType _selectedBoardType => BoardTypeComboBox != null
         ? (UF2Flasher.BoardType)(BoardTypeComboBox.SelectedIndex)
@@ -45,14 +60,99 @@ public partial class MainWindow : Window
         DenoisingComboBox.SelectedIndex = 0;
         DenoisingComboBox.SelectionChanged += (_, _) => UpdatePreview();
 
+        GetSettings();
+        SwitchVersionComboBox.SelectedIndex = (int)_selectedSwitchVersion - 1;
+        SetTheme(_selectedThemeIndex);
+        AppThemeComboBox.SelectedIndex = _selectedThemeIndex;
+
+        // this dont work
         DragDrop.SetAllowDrop(this, true);
         AddHandler(DragDrop.DropEvent, OnDrop);
         AddHandler(DragDrop.DragOverEvent, OnDragOver);
 
-        UpdateFirmwareButtons();
+#if DEBUG
+        this.Title = $"TomodachiDrawer.UI.Avalonia - {GetVersionString(true)}";
+#else
+        this.Title = $"TomodachiDrawer.UI.Avalonia - {GetVersionString(false)}";
+#endif
 
         StartBoardPolling();
+        _ = PerformAsyncUpdateCheck();
+
+        UpdateFirmwareButtons();
     }
+
+    private static string GetVersionString(bool includeCommit)
+    {
+        var currentVersion = Assembly.GetEntryAssembly()?.GetCustomAttribute<AssemblyInformationalVersionAttribute>()?.InformationalVersion ?? "dev";
+        if (currentVersion.StartsWith("1.0.0"))
+        {
+            if (includeCommit)
+            {
+                return "dev-" + currentVersion.Split('+').Last();
+            }
+            else
+            {
+                return "dev";
+            }
+        }
+        if (!includeCommit)
+        {
+            return currentVersion.Split('+').First();
+        }
+        return currentVersion;
+    }
+
+    private async Task PerformAsyncUpdateCheck()
+    {
+        try
+        {
+            var ourVersion = GetVersionString(false);
+            if (ourVersion == "dev")
+            {
+                AppendLog("Skipping update check for dev.");
+                return;
+            }
+            using var http = new HttpClient();
+            http.DefaultRequestHeaders.UserAgent.ParseAdd($"TomodachiDrawer {ourVersion}");
+
+            using var response = await http.GetAsync("https://api.github.com/repos/Lucas7yoshi/TomodachiDrawer/releases/latest");
+            response.EnsureSuccessStatusCode();
+            using var responseStream = await response.Content.ReadAsStreamAsync();
+
+            using var responseJsonObject = JsonDocument.Parse(responseStream);
+
+            // 0.0.0 format, no v, no -.
+            var releaseVersionTag = responseJsonObject.RootElement.GetProperty("tag_name").GetString() ?? "0.0.0";
+
+            // see if its newer. TODO: Actually check that, only really effects using the artifacts from the release build before
+            // i've published the release though.
+            if (releaseVersionTag != null)
+            {
+                if (releaseVersionTag != ourVersion)
+                {
+                    _ = ShowMessageAsync(
+                        "Update available",
+                        "A new update is available on GitHub." +
+                        $"\nCurrent Version: {ourVersion}" +
+                        $"\nLatest Version: {releaseVersionTag}" +
+                        $"\n\nDownload at:\nhttps://github.com/Lucas7yoshi/TomodachiDrawer",
+                        new Uri("https://github.com/Lucas7yoshi/TomodachiDrawer/releases"), "Open Releases"
+                    );
+                }
+                else
+                {
+                    AppendLog($"Up to date! {ourVersion}");
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            AppendLog($"Failed to check for updates: {ex.Message}");
+        }
+
+    }
+
 
     protected override void OnClosed(System.EventArgs e)
     {
@@ -130,9 +230,7 @@ public partial class MainWindow : Window
             }
         });
     }
-
-    // ── Image loading & preview ───────────────────────────────────────
-
+    #region Image/Preview
     private void LoadImage(string path)
     {
         if (!File.Exists(path))
@@ -212,6 +310,7 @@ public partial class MainWindow : Window
         using var stream = new MemoryStream(data.ToArray());
         return new Bitmap(stream);
     }
+    #endregion
 
     private void AppendLog(string msg)
     {
@@ -232,15 +331,48 @@ public partial class MainWindow : Window
     }
 
     // messagebox replacement
-    private async Task ShowMessageAsync(string title, string message)
+    private async Task ShowMessageAsync(string title, string message, Uri? link = null, string? linkButtonText = null)
     {
+        var buttonRow = new StackPanel
+        {
+            Orientation = Orientation.Horizontal,
+            HorizontalAlignment = HorizontalAlignment.Right,
+            Spacing = 8,
+        };
+
         var okButton = new Button
         {
             Content = "OK",
-            HorizontalAlignment = HorizontalAlignment.Right,
             Margin = new Thickness(0, 10, 0, 0),
             MinWidth = 80,
         };
+
+        var stack = new StackPanel()
+        {
+            Margin = new Thickness(16)
+        };
+        buttonRow.Children.Add(okButton);
+
+        Button? linkButton = null;
+
+        if (link != null)
+        {
+            linkButton = new Button
+            {
+                Content = linkButtonText ?? "Open Link",
+                Margin = new Thickness(0, 10, 0, 0),
+                MinWidth = 80,
+            };
+            buttonRow.Children.Add(linkButton);
+        }
+
+        stack.Children.Insert(0, new SelectableTextBlock
+        {
+            Text = message,
+            TextWrapping = TextWrapping.Wrap,
+            MaxWidth = 400,
+        });
+        stack.Children.Add(buttonRow);
 
         var dialog = new Window
         {
@@ -249,23 +381,15 @@ public partial class MainWindow : Window
             CanResize = false,
             Width = 440,
             SizeToContent = SizeToContent.Height,
-            Content = new StackPanel
-            {
-                Margin = new Thickness(16),
-                Children =
-                {
-                    new SelectableTextBlock
-                    {
-                        Text = message,
-                        TextWrapping = TextWrapping.Wrap,
-                        MaxWidth = 400,
-                    },
-                    okButton,
-                },
-            },
+            Content = stack
         };
 
         okButton.Click += (_, _) => dialog.Close();
+        linkButton?.Click += (_, _) =>
+        {
+            // Link button is only non-null if link is non-null so ! to indicate its safe.
+            Launcher.LaunchUriAsync(link!);
+        };
         await dialog.ShowDialog(this);
     }
 
@@ -276,14 +400,14 @@ public partial class MainWindow : Window
             {
                 Title = "Open Image",
                 AllowMultiple = false,
-                FileTypeFilter = new[]
-                {
+                FileTypeFilter =
+                [
                     new FilePickerFileType("Images")
                     {
-                        Patterns = new[] { "*.png", "*.jpg", "*.jpeg", "*.bmp", "*.gif", "*.webp" },
+                        Patterns = ["*.png", "*.jpg", "*.jpeg", "*.bmp", "*.gif", "*.webp"],
                     },
-                    new FilePickerFileType("All Files") { Patterns = new[] { "*.*" } },
-                },
+                    new FilePickerFileType("All Files") { Patterns = ["*.*"] },
+                ],
             }
         );
 
@@ -324,66 +448,30 @@ public partial class MainWindow : Window
         return new QuantizerSettings(quantizerName, default, default);
     }
 
-    private async void SaveTDLDButton_Click(object? sender, RoutedEventArgs e)
-    {
-        if (string.IsNullOrEmpty(_currentImagePath))
-            return;
-
-        var file = await StorageProvider.SaveFilePickerAsync(
-            new FilePickerSaveOptions
-            {
-                Title = "Save .TDLD",
-                DefaultExtension = "tdld",
-                FileTypeChoices = new[]
-                {
-                    new FilePickerFileType("Tomodachi Life Drawer file")
-                    {
-                        Patterns = new[] { "*.tdld" },
-                    },
-                    new FilePickerFileType("All Files") { Patterns = new[] { "*.*" } },
-                },
-            }
-        );
-
-        var outputPath = file?.TryGetLocalPath();
-        if (outputPath == null)
-            return;
-
-        var imagePath = _currentImagePath;
-        var denoiser = DenoisingComboBox.SelectedItem?.ToString();
-        var tspLimit = (float)(TSPTimeLimitUpDown.Value ?? 0.5m);
-
-        if (sender is Button btn)
-            btn.IsEnabled = false;
-        AppendLog("Starting export...\r\n");
-
-        var settings = GetQuantizerSettings();
-
-        await Task.Run(async () =>
-        {
-            var fileOutput = new FileControllerSink(outputPath);
-            var drawer = new CanvasDrawer(fileOutput, AppendLog);
-            drawer.ConnectAndConfirmController();
-            await drawer.DrawImage(SKBitmap.Decode(imagePath), settings, denoiser, tspLimit);
-            fileOutput.Dispose();
-        });
-
-        if (sender is Button btn2)
-            btn2.IsEnabled = true;
-        AppendLog("Export complete.\r\n");
-    }
-
     private async void ExportToBoardButton_Click(object? sender, RoutedEventArgs e)
     {
         if (string.IsNullOrEmpty(_currentImagePath))
             return;
+
+        if (_selectedSwitchVersion == SwitchVersion.None)
+        {
+            _ = ShowMessageAsync(
+                "Select Switch Version",
+                "For compatibility, you must select a switch version in the dropdown." +
+                "\n\nSwitch 1 is more prone to desyncs, so this avoids certain things that are particularly prone to desyncing." +
+                "\nPlease be aware that even with Switch 1 selected, desyncs are unfortunately expected due to inconsistent and unpredictable lag in the drawing UI."
+            );
+            return;
+        }
 
         var imagePath = _currentImagePath;
         var denoiser = DenoisingComboBox.SelectedItem?.ToString();
         var tspLimit = (float)(TSPTimeLimitUpDown.Value ?? 0.5m);
         var boardType = _selectedBoardType;
 
-        ExportToBoardButton.IsEnabled = false;
+        BusyExporting = true;
+        UpdateFirmwareButtons();
+
         TimeSpan totalTime = TimeSpan.MaxValue;
         var settings = GetQuantizerSettings();
 
@@ -396,7 +484,7 @@ public partial class MainWindow : Window
 
             AppendLog($"Exporting to RP2040 flash ({Path.GetFileName(tempPath)})");
             var timingSink = new TimingSink();
-            var drawer = new CanvasDrawer(timingSink, AppendLog);
+            var drawer = new CanvasDrawer(timingSink, _selectedSwitchVersion, AppendLog);
             drawer.ConnectAndConfirmController();
             AppendLog("Starting to generate inputs...");
             await drawer.DrawImage(SKBitmap.Decode(imagePath), settings, denoiser, tspLimit, false);
@@ -423,9 +511,15 @@ public partial class MainWindow : Window
             totalTime = timingSink.TotalTime;
         });
 
-        ExportToBoardButton.IsEnabled = true;
+        BusyExporting = false;
+        UpdateFirmwareButtons();
 
-        var estimateStr = $"{totalTime:h\\hm\\ms\\s}";
+        SetEstimate(totalTime);
+    }
+
+    private void SetEstimate(TimeSpan time)
+    {
+        var estimateStr = $"{time:h\\hm\\ms\\s}";
         DrawTimeLabel.Text = $"Draw Time Estimate: {estimateStr}";
     }
 
@@ -434,16 +528,26 @@ public partial class MainWindow : Window
         if (string.IsNullOrEmpty(_currentImagePath))
             return;
 
+        if (_selectedSwitchVersion == SwitchVersion.None)
+        {
+            _ = ShowMessageAsync(
+                "Select Switch Version",
+                "For compatibility, you must select a switch version in the dropdown." +
+                "\n\nSwitch 1 is more prone to desyncs, so this avoids certain things that are particularly prone to desyncing." +
+                "\nPlease be aware that even with Switch 1 selected, desyncs are unfortunately expected due to inconsistent and unpredictable lag in the drawing UI."
+            );
+            return;
+        }
+
         var file = await StorageProvider.SaveFilePickerAsync(
             new FilePickerSaveOptions
             {
                 Title = "Save .UF2",
                 DefaultExtension = "uf2",
-                FileTypeChoices = new[]
-                {
-                    new FilePickerFileType("UF2 Firmware Image") { Patterns = new[] { "*.uf2" } },
-                    new FilePickerFileType("All Files") { Patterns = new[] { "*.*" } },
-                },
+                FileTypeChoices = [
+                    new FilePickerFileType("UF2 Firmware Image") { Patterns = ["*.uf2"] },
+                    new FilePickerFileType("All Files") { Patterns = ["*.*"] },
+                ],
             }
         );
 
@@ -456,6 +560,7 @@ public partial class MainWindow : Window
         var tspLimit = (float)(TSPTimeLimitUpDown.Value ?? 0.5m);
 
         ExportUF2Button.IsEnabled = false;
+        BusyExporting = true;
         TimeSpan totalTime = TimeSpan.MaxValue;
         var settings = GetQuantizerSettings();
 
@@ -468,7 +573,7 @@ public partial class MainWindow : Window
 
             AppendLog($"Exporting to UF2 ({Path.GetFileName(tempPath)})");
             var timingSink = new TimingSink();
-            var drawer = new CanvasDrawer(timingSink, AppendLog);
+            var drawer = new CanvasDrawer(timingSink, _selectedSwitchVersion, AppendLog);
             drawer.ConnectAndConfirmController();
             AppendLog("Starting to generate inputs...");
             await drawer.DrawImage(SKBitmap.Decode(imagePath), settings, denoiser, tspLimit, false);
@@ -493,9 +598,9 @@ public partial class MainWindow : Window
         });
 
         ExportUF2Button.IsEnabled = true;
+        BusyExporting = false;
 
-        var estimateStr = $"{totalTime:h\\hm\\ms\\s}";
-        DrawTimeLabel.Text = $"Draw Time Estimate: {estimateStr}";
+        SetEstimate(totalTime);
     }
 
     private void BoardTypeComboBox_SelectionChanged(object? sender, SelectionChangedEventArgs e)
@@ -517,7 +622,9 @@ public partial class MainWindow : Window
         {
             _ = ShowMessageAsync(
                 "Error flashing base firmware",
-                $"For some reason could not locate {firmwareFile}"
+                $"For some reason could not locate {firmwareFile}" +
+                $"\nPlease ensure that you extracted the program to a zip folder, and ran the executable from that extracted folder." +
+                $"\nIf you can still not flash with this button, you can manually drag the {firmwareFile} file to the RPI-RP2 or RP2350 drive on your system to flash it."
             );
             return;
         }
@@ -613,7 +720,13 @@ public partial class MainWindow : Window
         // Why does avalonia call this before AppThemeComboBox exists?? lol
         if (AppThemeComboBox == null)
             return;
-        var desiredTheme = AppThemeComboBox.SelectedIndex switch
+
+        SetTheme(AppThemeComboBox.SelectedIndex);
+    }
+
+    private void SetTheme(int index)
+    {
+        var desiredTheme = index switch
         {
             1 => ThemeVariant.Light,
             2 => ThemeVariant.Dark,
@@ -623,6 +736,7 @@ public partial class MainWindow : Window
         if (Application.Current is { } app)
         {
             app.RequestedThemeVariant = desiredTheme;
+            _selectedThemeIndex = index;
         }
     }
 
@@ -639,4 +753,59 @@ public partial class MainWindow : Window
                 + "\nIf time is of the essence, you can also enable Denoising which can increase the number of large spots for the larger brushes."
         );
     }
+    #region Settings
+    private void SaveSettings()
+    {
+        var settings = new AppSettings
+        {
+            SelectedSwitchVersion = _selectedSwitchVersion,
+            SelectedThemeIndex = _selectedThemeIndex,
+        };
+
+        var json = JsonSerializer.Serialize(settings);
+        File.WriteAllText(SettingsFilePath, json);
+    }
+
+    private void GetSettings()
+    {
+        if (File.Exists(SettingsFilePath))
+        {
+            try
+            {
+                var json = File.ReadAllText(SettingsFilePath);
+                var settings = JsonSerializer.Deserialize<AppSettings>(json);
+
+                if (settings != null)
+                {
+                    _selectedSwitchVersion = settings.SelectedSwitchVersion;
+                    _selectedThemeIndex = settings.SelectedThemeIndex;
+                    return;
+                }
+            }
+            catch (Exception)
+            {
+                AppendLog("Failed to load settings. Using defaults.");
+            }
+        }
+
+        _selectedSwitchVersion = SwitchVersion.None;
+        _selectedThemeIndex = 0;
+    }
+
+    private class AppSettings
+    {
+        public SwitchVersion SelectedSwitchVersion { get; init; }
+
+        public int SelectedThemeIndex { get; init; }
+    }
+
+    private void SwitchVersionComboBox_SelectionChanged(object? sender, SelectionChangedEventArgs e)
+    {
+        if (SwitchVersionComboBox.SelectedIndex == 0)
+            _selectedSwitchVersion = SwitchVersion.Switch1;
+        else
+            _selectedSwitchVersion = SwitchVersion.Switch2;
+        SaveSettings();
+    }
+    #endregion
 }

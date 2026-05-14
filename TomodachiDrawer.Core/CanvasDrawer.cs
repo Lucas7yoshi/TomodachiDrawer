@@ -1,6 +1,8 @@
 ﻿using System.Diagnostics;
 using Google.OrTools.ConstraintSolver;
 using SkiaSharp;
+
+using TomodachiDrawer.Core.ImageProcessing;
 using TomodachiDrawer.Core.ImageProcessing.Denoising;
 using TomodachiDrawer.Core.ImageProcessing.Quantizers;
 using TomodachiDrawer.Core.Interfaces;
@@ -17,17 +19,23 @@ namespace TomodachiDrawer.Core
         private int _cursorX = 0;
         private int _cursorY = 0;
 
-        private ISwitchOutput _realOutput;
-        private ColourPalette _palette;
-        private CanvasToolbar _toolbar;
+        private readonly ISwitchOutput _realOutput;
+        private readonly ColourPalette _palette;
+        private readonly CanvasToolbar _toolbar;
         private readonly Action<string> _log;
+        private readonly SwitchVersion _switchVersion;
 
-        public CanvasDrawer(ISwitchOutput outputSink, Action<string>? logger = null)
+        public CanvasDrawer(ISwitchOutput outputSink, SwitchVersion switchVersion, Action<string>? logger = null)
         {
             _realOutput = outputSink;
-            _palette = new ColourPalette(outputSink);
-            _toolbar = new CanvasToolbar(outputSink);
+            _palette = new(outputSink);
+            _toolbar = new(outputSink);
             _log = logger ?? Console.WriteLine;
+
+            if (switchVersion == SwitchVersion.None)
+                throw new ArgumentOutOfRangeException(nameof(switchVersion), "Switch version must be set.");
+
+            _switchVersion = switchVersion;
         }
 
         public static float GetRecommendedTSPSolveTime(int width, int height)
@@ -41,11 +49,11 @@ namespace TomodachiDrawer.Core
             if (pixels <= squared64)
                 return 0.5f;
             else if (pixels <= squared128)
-                return 1.25f;
+                return 1.5f;
             else if (pixels <= squared192)
-                return 2.5f;
+                return 2.75f;
             else if (pixels <= squared256)
-                return 3.5f;
+                return 4.0f;
             else
             {
                 return 5.0f; // should ever reach here...
@@ -95,31 +103,83 @@ namespace TomodachiDrawer.Core
             // TODO: This doesnt really make too much sense to be in the palette class... Maybe move here?
             var layers = _palette.BuildFineLayers(quantizedMap);
 
-            // !!!
-            // TODO: Stamp/Uniform area detection.
-            // !!!
+
+            // If the image is 256x256 and has no transparent pixels at all we can use the bucket tool
+            // for the most prevelant colour to save time.
+            // This is done before the large brush detection to avoid needing to run stuff to count the large brush stuff to find the
+            // biggest.
+            PaletteColour? bucketColour = null;
+            if (_switchVersion == SwitchVersion.Switch2 && image.Width == 256 && image.Height == 256)
+            {
+                _log("Seeing if we can use the bucket to save time");
+                bool anyTransparent = false;
+                for (int x = 0; x < image.Width; x++)
+                {
+                    for (int y = 0; y < image.Height; y++)
+                    {
+                        if (image.GetPixel(x, y).Alpha < 128)
+                        {
+                            anyTransparent = true;
+                            break;
+                        }
+                    }
+                    if (anyTransparent)
+                        break;
+                }
+
+                if (!anyTransparent)
+                {
+                    bucketColour = layers.MaxBy(l => l.FineDetailPoints.Count)!.Colour;
+                    // We need to then remove it from the rest of the drawing so it doesnt draw it now.
+                    layers.RemoveAll(l => l.Colour == bucketColour); // is only one but this is easiest.
+                    _log($"\tUsing bucket to fill most prevalent colour: {bucketColour.Value.DisplayName}");
+                    _toolbar.SelectBucket();
+                    _palette.SelectColour(bucketColour.Value, 25.0);
+                    _realOutput.Tap(Button.A);
+                    _realOutput.Delay(1000); // This is probably generous but bucket fill seems to cause a short stutter.
+                }
+                else
+                {
+                    _log("\tCan't. Image has transparency.");
+                }
+            }
+
+            if (_switchVersion == SwitchVersion.Switch2)
+            {
+                _log("Finding large bucket-fillable zones...");
+                foreach (var l in layers)
+                {
+                    DetectBucketZones(l, image.Width, image.Height);
+                }
+            }
+            else
+            {
+                _log("Can't perform large bucket-fillable search because Switch 1 is laggy :(");
+            }
+
+            // Stamp/uniform area detection
+            // TODO: This not useful with the new bucket-fillable search..? Except unless theres
+            // a large number of small areas that were rejected for being too small during the bucket zone search.
+            // TODO: Figure that out lol
             _log("Detecting uniform areas for large brushes...");
             if (!disableLargeBrush)
             {
                 foreach (var l in layers)
                 {
-                    DetectUniformAreas(l);
+                    DetectUniformAreas(l, image.Width, image.Height);
                 }
             }
 
-            // NOTE:
-            // This doesnt include the SelectColour and SelectBrush stuff, for benchmarking
-            // that is quite important!!! (Especially when i come back to work on larger stamps)
-            // diminishing returns and all that.
+
             double totalInLayerTime = 0.0;
 
             var totalLayers = layers.Count;
             // 80% divided by total layers.
-            var perLayerPercent = 80.0 / totalLayers;
             int layerNumber = 0;
             foreach (var l in layers)
             {
                 layerNumber++;
+
                 _palette.SelectColour(l.Colour, 25.0);
 
                 // STAMPS
@@ -133,18 +193,16 @@ namespace TomodachiDrawer.Core
                         int brushSize = sbs.Key;
 
                         _toolbar.SelectBrush(stampSink, brushSize);
-                        // todo TSP routing lol
 
                         var dumbRoute = new List<CanvasPoint>(sbs.Value);
                         var pointCount = dumbRoute.Count;
                         float tspTime = 0.5f;
-                        if (pointCount > 100)
-                            tspTime = 1.0f;
-                        else if (pointCount > 200)
+                        if (pointCount > 200)
                             tspTime = 1.5f;
+                        else if (pointCount > 100)
+                            tspTime = 1.0f;
                         var optimizedRoute = PerformTSP(dumbRoute, tspTime); // half a sec per stamp size per colour is prob reasonable?
-                        if (optimizedRoute == null)
-                            optimizedRoute = dumbRoute;
+                        optimizedRoute ??= dumbRoute;
 
                         foreach (var point in optimizedRoute)
                         {
@@ -159,55 +217,77 @@ namespace TomodachiDrawer.Core
                 // END STAMPS.
 
                 // ============= Fine details
-                _toolbar.SelectBrush(1); // no-op if already selected.
-
-                // Dry run both to get timing, TimingSink stores
-                // the outputs and time taken so it can be replayed without needing to rerun
-                // the tsp solve or snake logic (snake logic is compartively short but it also replays)
-                int savedX = _cursorX;
-                int savedY = _cursorY;
-
-                var snakeSink = new TimingSink();
-                FineDetailSnake(snakeSink, l);
-
-                int afterSnakeX = _cursorX;
-                int afterSnakeY = _cursorY;
-
-                _cursorX = savedX;
-                _cursorY = savedY;
-
-                var tspSink = new TimingSink();
-                FineDetailTsp(tspSink, l, tspTimeLimit);
-
-                int afterTspX = _cursorX;
-                int afterTspY = _cursorY;
-
-                //_cursorX = savedX;
-                //_cursorY = savedY;
-
-                bool tspHasSolution = tspSink.TotalMilliseconds > 0;
-                bool usedSnake =
-                    !tspHasSolution || snakeSink.TotalMilliseconds <= tspSink.TotalMilliseconds;
-                if (usedSnake)
+                if (l.FineDetailPoints.Count > 0)
                 {
-                    snakeSink.ReplayTo(_realOutput);
-                    totalInLayerTime += snakeSink.TotalTime.TotalSeconds;
-                    _cursorX = afterSnakeX;
-                    _cursorY = afterSnakeY;
+                    _toolbar.SelectBrush(1); // no-op if already selected.
+
+                    // Dry run both to get timing, TimingSink stores
+                    // the outputs and time taken so it can be replayed without needing to rerun
+                    // the tsp solve or snake logic (snake logic is compartively short but it also replays)
+                    int savedX = _cursorX;
+                    int savedY = _cursorY;
+
+                    var snakeSink = new TimingSink();
+                    FineDetailSnake(snakeSink, l);
+
+                    int afterSnakeX = _cursorX;
+                    int afterSnakeY = _cursorY;
+
+                    _cursorX = savedX;
+                    _cursorY = savedY;
+
+                    var tspSink = new TimingSink();
+                    FineDetailTsp(tspSink, l, tspTimeLimit);
+
+                    int afterTspX = _cursorX;
+                    int afterTspY = _cursorY;
+
+                    //_cursorX = savedX;
+                    //_cursorY = savedY;
+
+                    bool tspHasSolution = tspSink.TotalMilliseconds > 0;
+                    bool usedSnake =
+                        !tspHasSolution || snakeSink.TotalMilliseconds <= tspSink.TotalMilliseconds;
+                    if (usedSnake)
+                    {
+                        snakeSink.ReplayTo(_realOutput);
+                        totalInLayerTime += snakeSink.TotalTime.TotalSeconds;
+                        _cursorX = afterSnakeX;
+                        _cursorY = afterSnakeY;
+                    }
+                    else
+                    {
+                        tspSink.ReplayTo(_realOutput);
+                        totalInLayerTime += tspSink.TotalTime.TotalSeconds;
+                        _cursorX = afterTspX;
+                        _cursorY = afterTspY;
+                    }
+                    string tspPart = tspHasSolution
+                        ? $"{tspSink.TotalTime.TotalSeconds:F3}s"
+                        : "no solution";
+                    _log(
+                        $"[{layerNumber}/{totalLayers}] {l.Colour.DisplayName}: snake={snakeSink.TotalTime.TotalSeconds:F3}s, tsp={tspPart} -> {(usedSnake ? "snake" : "tsp")}"
+                    );
                 }
-                else
+
+                // Bucket clicks. (The bucket outlines are merged into FineDetailPoints)
+                if (l.BucketClicks.Count > 0)
                 {
-                    tspSink.ReplayTo(_realOutput);
-                    totalInLayerTime += tspSink.TotalTime.TotalSeconds;
-                    _cursorX = afterTspX;
-                    _cursorY = afterTspY;
+                    _log($"\tPerforming bucket fills: {l.BucketClicks.Count} clicks");
+
+                    _toolbar.SelectBucket();
+                    // tsp solve the points
+                    var bucketClickRouteTimeout = 0.25f;
+                    if (l.BucketClicks.Count > 50)
+                        bucketClickRouteTimeout = 0.5f;
+                    var optimizedBucketClickRoute = PerformTSP(l.BucketClicks.ToList(), bucketClickRouteTimeout);
+                    foreach (var click in optimizedBucketClickRoute ?? l.BucketClicks.ToList()) // in case somehow it fails
+                    {
+                        NavigateTo(_realOutput, click);
+                        _realOutput.Tap(Button.A);
+                        _realOutput.Delay(500); // Bit generous given this is now switch 2 only but justtttt in case the switch struggles with the flood fill :p
+                    }
                 }
-                string tspPart = tspHasSolution
-                    ? $"{tspSink.TotalTime.TotalSeconds:F3}s"
-                    : "no solution";
-                _log(
-                    $"[{layerNumber}/{totalLayers}] {l.Colour.DisplayName}: snake={snakeSink.TotalTime.TotalSeconds:F3}s, tsp={tspPart} -> {(usedSnake ? "snake" : "tsp")}"
-                );
             }
             _log(
                 $"Done! Total in layer draw time: {totalInLayerTime:F3}s (Doesnt include colour/brush selection)"
@@ -219,11 +299,114 @@ namespace TomodachiDrawer.Core
         // eviction thresholds are how many of that size there must be for it to commit to doing larger brushes over smaller ones.
         // bigger ones fill more area so they get more slack.
         // TODO: MORE WORK TWEAKING THESE!!!
-        private static readonly int[] LargeBrushEvictionThreshold = [1, 1, 1, 6, 12];
+        private static readonly int[] LargeBrushEvictionThreshold = [1, 1, 2, 6, 12];
+
+        public static void DetectBucketZones(ColourLayer l, int width, int height, int minZoneSize = 36)
+        {
+            var workingSet = new bool[width, height];
+
+            var outlinePixels = new List<CanvasPoint>();
+            var interiorPixels = new bool[width, height];
+
+            // used for testing neighbours.
+            // the bucket fill in tomodachi life only works on direct neighbours, not diagonals.
+            int[] dx = { 0, 0, -1, 1 };
+            int[] dy = { -1, 1, 0, 0 };
+
+            foreach (var p in l.FineDetailPoints)
+                workingSet[p.X, p.Y] = true;
+
+            for (int x = 0; x < width; x++)
+            {
+                for (int y = 0; y < height; y++)
+                {
+                    if (!workingSet[x, y])
+                        continue;
+
+                    bool isOutlinePixel = false;
+
+                    // check up/down/left/right
+                    for (int i = 0; i < 4; i++)
+                    {
+                        int tx = x + dx[i];
+                        int ty = y + dy[i];
+
+                        // handle edges as outline pixels.
+                        if (tx < 0 || tx >= width || ty < 0 || ty >= height || !workingSet[tx, ty])
+                        {
+                            isOutlinePixel = true;
+                            break;
+                        }
+                    }
+
+                    if (isOutlinePixel)
+                        outlinePixels.Add(new CanvasPoint(x, y));
+                    else
+                        interiorPixels[x, y] = true;
+                }
+            }
+
+            var bucketClicks = new List<CanvasPoint>();
+            var visited = new bool[width, height];
+
+            for (int x = 0; x < width; x++)
+            {
+                for (int y = 0; y < height; y++)
+                {
+                    if (interiorPixels[x, y] && !visited[x, y])
+                    {
+                        // new zone
+                        var currentZone = new List<CanvasPoint>();
+                        var q = new Queue<CanvasPoint>();
+
+                        var startNode = new CanvasPoint(x, y);
+                        q.Enqueue(startNode);
+                        visited[x, y] = true;
+
+                        while (q.Count > 0)
+                        {
+                            var current = q.Dequeue();
+                            currentZone.Add(current);
+
+                            // same dealio
+                            for (int i = 0; i < 4; i++)
+                            {
+                                int tx = current.X + dx[i];
+                                int ty = current.Y + dy[i];
+
+                                if (tx >= 0 && tx < width && ty >= 0 && ty < height && interiorPixels[tx, ty] && !visited[tx, ty])
+                                {
+                                    visited[tx, ty] = true;
+                                    q.Enqueue(new CanvasPoint(tx, ty));
+                                }
+                            }
+                        }
+
+                        // Reject uselessly small ones.
+                        if (currentZone.Count >= minZoneSize)
+                        {
+                            bucketClicks.Add(startNode);
+                        }
+                        else
+                        {
+                            outlinePixels.AddRange(currentZone);
+                        }
+                    }
+                }
+            }
+
+            // outlinePixels also contains the rejects by the end, bit misleading.
+            l.FineDetailPoints.Clear();
+            l.FineDetailPoints.UnionWith(outlinePixels);
+
+
+            l.BucketClicks = new HashSet<CanvasPoint>(bucketClicks);
+        }
+
 
         /// <summary>Takes in a ColourLayer and detects large areas that can be better drawn with stamps.</summary>
         /// <param name="l"></param>
-        public void DetectUniformAreas(ColourLayer l)
+        public void DetectUniformAreas(ColourLayer l, int width, int height)
         {
             // NOTES:
             // 3x3 Brushes seem to be past the point of diminishing returns,
@@ -231,7 +414,7 @@ namespace TomodachiDrawer.Core
             // TODO: That ^
 
             // need to build a more useful 2d array for scanning since l.FineDetailPoints is uh well, just a hashset of points.
-            var points = new bool[256, 256];
+            var points = new bool[width, height];
             foreach (var p in l.FineDetailPoints)
                 points[p.X, p.Y] = true;
 
@@ -248,9 +431,9 @@ namespace TomodachiDrawer.Core
                 int half = brushSize / 2; // rounds down. which is fine.
                 // TODO: Pickup from here.
                 var largeBrushPoints = new List<CanvasPoint>();
-                for (int x = half; x < 256 - half; x++)
+                for (int x = half; x < width - half; x++)
                 {
-                    for (int y = half; y < 256 - half; y++)
+                    for (int y = half; y < height - half; y++)
                     {
                         var isUniform = IsUniformArea(points, x, y, brushSize);
                         if (isUniform)
@@ -288,7 +471,8 @@ namespace TomodachiDrawer.Core
             }
         }
 
-        private bool IsUniformArea(bool[,] map, int cx, int cy, int brushSize)
+
+        private static bool IsUniformArea(bool[,] map, int cx, int cy, int brushSize)
         {
             int half = brushSize / 2; // rounds down.
             for (int dy = -half; dy <= half; dy++)
@@ -301,7 +485,7 @@ namespace TomodachiDrawer.Core
             return true;
         }
 
-        private void ClearStampArea(
+        private static void ClearStampArea(
             bool[,] map,
             HashSet<CanvasPoint> points,
             int cx,
@@ -320,7 +504,7 @@ namespace TomodachiDrawer.Core
             }
         }
 
-        private void RefillStampArea(
+        private static void RefillStampArea(
             bool[,] map,
             HashSet<CanvasPoint> points,
             int cx,
@@ -570,11 +754,13 @@ namespace TomodachiDrawer.Core
             var routing = new RoutingModel(manager);
 
             int transitCallbackIndex = routing.RegisterTransitCallback(
-                (long fromIndex, long toIndex) =>
+                (fromIndex, toIndex) =>
                 {
                     var fromNode = manager.IndexToNode(fromIndex);
                     var toNode = manager.IndexToNode(toIndex);
-                    // return Math.Max(Math.Abs(_cursorX - targetX), Math.Abs(_cursorY - targetY));
+                    // A note: during testing I made a change trying to incentivize adjacent things
+                    // since it can just hold A during... but the lowest value this can return is 1
+                    // so there was no gain, it was already trying to do that lol.
                     return Math.Max(
                         Math.Abs(points[fromNode].X - points[toNode].X),
                         Math.Abs(points[fromNode].Y - points[toNode].Y)
@@ -620,12 +806,6 @@ namespace TomodachiDrawer.Core
 
             return optimizedRoute;
         }
-
-        // Commented out for now to avoid me accidentally not doing it correctly.
-        //private void NavigateTo(int targetX, int targetY) => NavigateTo(_output, targetX, targetY);
-        //private void NavigateX(int targetX) => NavigateX(_output, targetX);
-        //private void NavigateY(int targetY) => NavigateY(_output, targetY);
-        //private void NavigateTo(CanvasPoint p) => NavigateTo(_output, p.X, p.Y);
 
         private void NavigateTo(ISwitchOutput output, CanvasPoint p) =>
             NavigateTo(output, p.X, p.Y);
@@ -695,11 +875,11 @@ namespace TomodachiDrawer.Core
 
         public void ConnectAndConfirmController()
         {
-            _realOutput.Tap(Button.A);
+            _realOutput.Tap(Button.A, 100, 50);
             _realOutput.Delay(1750); // raised from 1000ms to 1750 for switch 1
-            _realOutput.Tap(Button.A, 500);
+            _realOutput.Tap(Button.A, 500, 50);
             _realOutput.Delay(750); // raised from 500ms to 750ms for switch 1
-            _realOutput.Tap(Button.A, 750);
+            _realOutput.Tap(Button.A, 750, 50);
             _realOutput.Delay(2000); // raised from 1500 to 2000 for switch 1
         }
     }

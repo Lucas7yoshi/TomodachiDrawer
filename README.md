@@ -43,7 +43,7 @@ For Linux and Mac users, you may need to run chmod +x binaryNameHere or go into 
 1. Download the Desktop app here, for your platform: https://github.com/Lucas7yoshi/TomodachiDrawer/releases
 3. Extract the zip folder
 4. Run TomodachiDrawer.UI.Avalonia.[YourPlatform].exe (or similar for your platform)
-5. Plug in your RP2040-Zero to your PC while holding the boot button, or while connected hold BOOT and press reset while still holding boot.
+5. Plug in your RP2040-Zero (or Raspberry Pi Pico) to your PC while holding the boot button, or while connected hold BOOT and press reset while still holding boot.
 6. The program should recognize it.
 7. Press "Flash Base Firmware", this will install the code that handles sending the inputs.
 8. Repeat the steps to hold the boot button, then open your image by pressing the open button or dragging it in. It must be 256x256 or smaller.
@@ -62,8 +62,6 @@ If it does not detect it, you can still drag-and-drop the .uf2 included with the
 This project is a recreation of a mess of AI coded nonsense that was unmaintainable by me and too fixated to my setup. Please refrain from using AI irresponsibily if you wish to contribute. As I encountered several times, even just leaning on it to think of a general idea on how to approach a problem can send you down a overly complicated rabbit hole that you really dont need to, so be smart.
 
 This project is split into the TomodachiDrawer.Core which houses all the main pathing logic, the output sinks, and colour palette info, as well as the UI's (which there is just one, the UI.Windows in WinForms)
-
-I have started on an Avalonia UI, however I am no expert of avalonia so it may be a bit of a mess, the initial implementation was regrettably surrendered to ai (yes i realize the irony after all the above). That was just for the initial version, I have since added a Save .uf2 button on my own and am going to maintain it by hand from now on.
 
 The binary format used is .tdld, and is custom made by me for the purposes of controller microcontrollers. Technically speaking, this format is not at all bound to Tomodachi Life as it is just a generic way to represent inputs and delays in a compact form.
 

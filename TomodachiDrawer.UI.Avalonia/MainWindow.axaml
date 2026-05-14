@@ -74,6 +74,19 @@
             <Border Grid.Row="2" Classes="group" Margin="0,0,0,6">
                 <StackPanel Spacing="6">
                     <TextBlock Classes="header" Text="Routing" />
+                    <Grid ColumnDefinitions="Auto,*" ColumnSpacing="6">
+                        <TextBlock Grid.Column="0"
+                                   Text="Switch Compatibility:"
+                                   VerticalAlignment="Center" />
+                        <ComboBox Grid.Column="1"
+                                  x:Name="SwitchVersionComboBox"
+                                  SelectionChanged="SwitchVersionComboBox_SelectionChanged"
+                                  HorizontalAlignment="Stretch"
+                                  PlaceholderText="SELECT YOUR SWITCH!">
+                            <ComboBoxItem>Switch 1/Lite/OLED</ComboBoxItem>
+                            <ComboBoxItem>Switch 2</ComboBoxItem>
+                        </ComboBox>
+                    </Grid>
                     <StackPanel Orientation="Horizontal" Spacing="6">
                         <TextBlock Text="TSP Solver Time Limit"
                                    VerticalAlignment="Center" />
