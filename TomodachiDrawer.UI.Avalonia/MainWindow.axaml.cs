@@ -582,7 +582,9 @@ public partial class MainWindow : Window
         {
             _ = ShowMessageAsync(
                 "Error flashing base firmware",
-                "For some reason could not locate TomodachiDrawer.Firmware.uf2"
+                "For some reason could not locate TomodachiDrawer.Firmware.uf2" +
+                "\nPlease ensure that you extracted the program to a zip folder, and ran the executable from that extracted folder." +
+                "\nIf you can still not flash with this button, you can manually drag the TomodachiDrawer.Firmware.uf2 file to the RPI-RP2 drive on your system to flash it."
             );
             return;
         }
