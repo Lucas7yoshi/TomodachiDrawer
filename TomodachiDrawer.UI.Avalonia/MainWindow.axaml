@@ -165,7 +165,7 @@
                         <Button Grid.Column="1"
                                 x:Name="ExportToBoardButton"
                                 IsEnabled="False"
-                                Content="Export To RP2040/RP2350!"
+                                Content="Export To Board!"
                                 FontWeight="Bold"
                                 HorizontalAlignment="Stretch"
                                 Margin="2,0,2,0"
