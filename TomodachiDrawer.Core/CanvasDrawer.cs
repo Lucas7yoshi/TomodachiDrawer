@@ -114,6 +114,7 @@ namespace TomodachiDrawer.Core
             // The dynamic bucket fill on the other hand is prone to desyncs even on switch 2, thus is classified as experimental.
             if (
                 _switchVersion == SwitchVersion.Switch2
+                && !settings.ReverseLayerOrder
                 && image.Width == 256
                 && image.Height == 256
             )
@@ -192,11 +193,24 @@ namespace TomodachiDrawer.Core
 
             var totalLayers = layers.Count;
             // 80% divided by total layers.
-            int layerNumber = 0;
-            foreach (var l in layers)
-            {
-                layerNumber++;
 
+            if (!settings.ReverseLayerOrder)
+            {
+                for (int layerNumber = 0; layerNumber < layers.Count; layerNumber++)
+                {
+                    DrawLayer(layers[layerNumber], layerNumber);
+                }
+            }
+            else
+            {
+                for (int layerNumber = layers.Count - 1; layerNumber >= 0; layerNumber--)
+                {
+                    DrawLayer(layers[layerNumber], layerNumber);
+                }
+            }
+
+            void DrawLayer(ColourLayer l, int layerNumber)
+            {
                 _palette.SelectColour(l.Colour, 25.0);
 
                 // STAMPS
@@ -309,6 +323,7 @@ namespace TomodachiDrawer.Core
                     }
                 }
             }
+
             _log(
                 $"Done! Total in layer draw time: {totalInLayerTime:F3}s (Doesnt include colour/brush selection)"
             );

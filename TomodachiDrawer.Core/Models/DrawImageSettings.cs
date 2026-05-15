@@ -15,5 +15,8 @@ namespace TomodachiDrawer.Core.Models
 
         /// <summary>Enables stuff that may be prone to desyncs or other instabilities.</summary>
         public bool EnableExperimentalFeatures { get; set; } = false;
+
+        /// <summary>Draw layers in reverse order. Helpful when restarting a drawing that was almost complete.</summary>
+        public bool ReverseLayerOrder { get; set; } = false;
     }
 }

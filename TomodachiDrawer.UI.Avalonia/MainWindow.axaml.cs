@@ -559,6 +559,7 @@ public partial class MainWindow : Window
         BusyExporting = true;
         TimeSpan totalTime = TimeSpan.MaxValue;
         var settings = GetQuantizerSettings();
+        var reverseLayerOrder = ReverseLayerOrderCheckBox.IsChecked ?? false;
         var enableExperimental = EnableExperimentalCheckBox.IsChecked ?? false;
 
         await Task.Run(async () =>
@@ -583,6 +584,7 @@ public partial class MainWindow : Window
                 DenoiserName = denoiser,
                 TSPTimeLimit = tspLimit,
                 DisableLargeBrush = false,
+                ReverseLayerOrder = reverseLayerOrder,
                 EnableExperimentalFeatures = enableExperimental,
             };
             await drawer.DrawImage(SKBitmap.Decode(imagePath), drawSettings);
