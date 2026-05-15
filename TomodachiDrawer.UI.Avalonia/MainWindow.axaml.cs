@@ -32,7 +32,7 @@ public partial class MainWindow : Window
     private const string SettingsFilePath = "settings.json";
 
     private string _currentImagePath = string.Empty;
-    private bool _isBoardDetected = false;
+    private bool _isBoardConnected = false;
     private readonly CancellationTokenSource _cts = new();
 
 
@@ -187,7 +187,7 @@ public partial class MainWindow : Window
                         BoardStatusLabel.Text = $"{boardName} found: {path}";
                         BoardStatusLabel.Foreground = Brushes.Green;
 
-                        _isBoardDetected = true;
+                        _isBoardConnected = true;
 
                         if (!lastState)
                         {
@@ -202,7 +202,7 @@ public partial class MainWindow : Window
                         BoardStatusLabel.Text = "Board not found";
                         BoardStatusLabel.Foreground = Brushes.Red;
 
-                        _isBoardDetected = false;
+                        _isBoardConnected = false;
 
                         if (lastState)
                         {
@@ -323,8 +323,8 @@ public partial class MainWindow : Window
         bool hasImage = !string.IsNullOrEmpty(_currentImagePath);
         bool isBoardSupported = _selectedBoardType != UF2Flasher.BoardType.Unknown;
 
-        FlashFirmwareButton?.IsEnabled = _isBoardDetected && isBoardSupported && !BusyExporting;
-        ExportToBoardButton?.IsEnabled = _isBoardDetected && isBoardSupported && hasImage && !BusyExporting;
+        FlashFirmwareButton?.IsEnabled = _isBoardConnected && isBoardSupported && !BusyExporting;
+        ExportToBoardButton?.IsEnabled = _isBoardConnected && isBoardSupported && hasImage && !BusyExporting;
         ExportUF2Button.IsEnabled = isBoardSupported && hasImage && !BusyExporting;
     }
 
