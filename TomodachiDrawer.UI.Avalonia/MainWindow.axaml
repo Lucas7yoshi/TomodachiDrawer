@@ -118,7 +118,7 @@
 							</ComboBox>
 						</Grid>
 						<CheckBox x:Name="ReverseLayerOrderCheckBox"
-								  Content="Draw Colors In Reverse"
+								  Content="Draw Colours In Reverse"
 								  />
 						<CheckBox x:Name="EnableExperimentalCheckBox"
 								  Content="Enable Experimental (Possibly Desync Prone) Features"
