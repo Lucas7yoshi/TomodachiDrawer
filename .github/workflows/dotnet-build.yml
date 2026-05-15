@@ -71,16 +71,24 @@ jobs:
         merge-multiple: false
     - name: Zip for Release
       run: |
-        mkdir final-zips
+        mkdir final-packages
         for dir in unzipped-artifacts/*/; do
           dirname=$(basename "$dir")
           cd "$dir"
-          echo "${dirname}"
-          zip -r "../../final-zips/${dirname}-${{ github.ref_name }}.zip" .
+          echo "Zipping/Tarring ${dirname}"
+          
+          if [[ "$dirname" == *"linux"* ]] || [[ "$dirname" == *"osx"* ]]; then
+            echo "Linux/Mac .tar.gz"
+            chmod +x TomodachiDrawer.UI.Avalonia
+            tar -czvf "../../final-packages/${dirname}-${{ github.ref_name }}.tar.gz" *
+          else
+            echo "Windows .zip"
+            zip -r "../../final-packages/${dirname}-${{ github.ref_name }}.zip" .
+          fi
           cd ../..
         done
     - name: Create release draft
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       run: |
-        gh release create ${{ github.ref_name}} final-zips/*.zip --draft --generate-notes --title "${{ github.ref_name }} - RELEASENAME_REPLACEME"
+        gh release create ${{ github.ref_name}} final-packages/* --draft --generate-notes --title "${{ github.ref_name }} - RELEASENAME_REPLACEME"
