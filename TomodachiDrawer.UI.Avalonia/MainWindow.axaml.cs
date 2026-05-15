@@ -176,9 +176,6 @@ public partial class MainWindow : Window
                     bool hasImage = !string.IsNullOrEmpty(_currentImagePath);
                     bool isBoardSupported = detectedBoardType != UF2Flasher.BoardType.Unknown;
 
-                    // ExportUF2 only needs an image — no board required
-                    ExportUF2Button.IsEnabled = hasImage;
-
                     if (path != null)
                     {
                         string boardName = detectedBoardType switch
@@ -273,7 +270,7 @@ public partial class MainWindow : Window
 
         _currentImagePath = path;
         ImagePathBox.Text = path;
-        ExportUF2Button.IsEnabled = true;
+        UpdateFirmwareButtons();
         UpdatePreview();
         TSPTimeLimitUpDown.Value = (decimal)
             CanvasDrawer.GetRecommendedTSPSolveTime(img.Width, img.Height);
@@ -326,8 +323,9 @@ public partial class MainWindow : Window
         bool hasImage = !string.IsNullOrEmpty(_currentImagePath);
         bool isBoardSupported = _selectedBoardType != UF2Flasher.BoardType.Unknown;
 
-        FlashFirmwareButton?.IsEnabled = _isBoardDetected && isBoardSupported;
-        ExportToBoardButton?.IsEnabled = _isBoardDetected && isBoardSupported && hasImage;
+        FlashFirmwareButton?.IsEnabled = _isBoardDetected && isBoardSupported && !BusyExporting;
+        ExportToBoardButton?.IsEnabled = _isBoardDetected && isBoardSupported && hasImage && !BusyExporting;
+        ExportUF2Button.IsEnabled = isBoardSupported && hasImage && !BusyExporting;
     }
 
     // messagebox replacement
@@ -559,8 +557,9 @@ public partial class MainWindow : Window
         var denoiser = DenoisingComboBox.SelectedItem?.ToString();
         var tspLimit = (float)(TSPTimeLimitUpDown.Value ?? 0.5m);
 
-        ExportUF2Button.IsEnabled = false;
         BusyExporting = true;
+        UpdateFirmwareButtons();
+
         TimeSpan totalTime = TimeSpan.MaxValue;
         var settings = GetQuantizerSettings();
 
@@ -597,8 +596,8 @@ public partial class MainWindow : Window
             totalTime = timingSink.TotalTime;
         });
 
-        ExportUF2Button.IsEnabled = true;
         BusyExporting = false;
+        UpdateFirmwareButtons();
 
         SetEstimate(totalTime);
     }
