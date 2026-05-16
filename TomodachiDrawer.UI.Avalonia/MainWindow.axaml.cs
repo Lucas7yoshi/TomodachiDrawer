@@ -928,7 +928,7 @@ public partial class MainWindow : Window
         {
             _ = ShowMessageAsync(
                 "ViGEmBus driver not found",
-                "To use this feature, you must install the ViGEmBus driver\n",
+                "To use this feature, you must install the ViGEmBus driver.",
                 new Uri("https://github.com/nefarius/ViGEmBus/releases"),
                 "Download it here"
             );
@@ -955,6 +955,15 @@ public partial class MainWindow : Window
 
     private async void MenuDebugRunInVirtualGamepadButton_Click(object sender, RoutedEventArgs e)
     {
+        if (string.IsNullOrEmpty(_currentImagePath))
+        {
+            _ = ShowMessageAsync(
+                "No image selected",
+                "Select an image first."
+            );
+            return;
+        }
+
         if (_virtualGamepadController == null || !_isVirtualGamepadControllerConnected)
             return;
 
