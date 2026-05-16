@@ -42,16 +42,15 @@
   </PropertyGroup>
   <Target Name="BundleMacOS" AfterTargets="Publish" Condition="'$(BundleMacOSApp)' == 'true' And $(RuntimeIdentifier.StartsWith('osx'))">
     <PropertyGroup>
-      <OutDir>$([System.IO.Path]::Combine('$(PublishDir)', 'bundle'))</OutDir>
-      <AppBundleDir>$([System.IO.Path]::Combine('$(OutDir)', 'TomodachiDrawer.app'))</AppBundleDir>
+      <AppBundleDir>$([System.IO.Path]::Combine('$(PublishDir)', 'TomodachiDrawer.app'))</AppBundleDir>
       <ContentsDir>$([System.IO.Path]::Combine('$(AppBundleDir)', 'Contents'))</ContentsDir>
       <MacOsDir>$([System.IO.Path]::Combine('$(ContentsDir)', 'MacOS'))</MacOsDir>
       <ResourcesDir>$([System.IO.Path]::Combine('$(ContentsDir)', 'Resources'))</ResourcesDir>
     </PropertyGroup>
-    <MakeDir Directories="$(ContentsDir);$(MacOsDir);$(ResourcesDir)" />
     <ItemGroup>
-      <PublishFiles Include="$(PublishDir)**\*.*" Exclude="$(OutDir)\**\*.*" />
+      <PublishFiles Include="$(PublishDir)**\*.*" Exclude="$(AppBundleDir)\**\*.*" />
     </ItemGroup>
+    <MakeDir Directories="$(AppBundleDir);$(ContentsDir);$(MacOsDir);$(ResourcesDir)" />
     <Copy SourceFiles="@(PublishFiles)" DestinationFolder="$(MacOsDir)\%(RecursiveDir)" />
     <Copy SourceFiles="$(ProjectDir)Packaging/macOS/AppIcon.icns" DestinationFolder="$(ResourcesDir)" />
     <PropertyGroup>
