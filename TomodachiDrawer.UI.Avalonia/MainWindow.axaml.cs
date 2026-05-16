@@ -25,7 +25,17 @@ public partial class MainWindow : Window
     private const string SettingsFilePath = "settings.json";
 
     private string _currentImagePath = string.Empty;
+    private string _originalImagePath = string.Empty;
     private readonly CancellationTokenSource _cts = new();
+
+    private readonly (int Width, int Height)[] _presets =
+    [
+        (256, 256), // Square
+        (180, 256), // Poster
+        (256, 131), // TV Screen
+        (256, 144), // Video Game
+        (172, 256), // Interior
+    ];
 
     private bool BusyExporting = false;
 
@@ -219,19 +229,44 @@ public partial class MainWindow : Window
             return;
         }
 
-        var img = SKBitmap.Decode(path);
-        if (img == null)
+        _originalImagePath = path;
+        ImagePathBox.Text = path;
+
+        UpdateProcessedImage();
+    }
+
+    private void UpdateProcessedImage()
+    {
+        if (string.IsNullOrEmpty(_originalImagePath))
+            return;
+
+        if (ImagePresetComboBox == null || ImagePresetComboBox.SelectedIndex < 0)
         {
-            AppendLog($"Failed to decode image: {path}");
+            AppendLog("Cannot process image: No preset selected.");
             return;
         }
 
-        if (img.Width > 256 || img.Height > 256)
+        var img = SKBitmap.Decode(_originalImagePath);
+        if (img == null)
         {
-            float scale = Math.Min(256f / img.Width, 256f / img.Height);
-            int newWidth = (int)(img.Width * scale);
-            int newHeight = (int)(img.Height * scale);
+            AppendLog($"Failed to decode image: {_originalImagePath}");
+            return;
+        }
 
+        var presetIndex = ImagePresetComboBox.SelectedIndex;
+        if (presetIndex < 0 || presetIndex >= _presets.Length)
+        {
+            AppendLog($"Invalid preset index: {presetIndex}");
+            img.Dispose();
+            return;
+        }
+
+        var preset = _presets[presetIndex];
+        int newWidth = preset.Width;
+        int newHeight = preset.Height;
+
+        try
+        {
             var resized = img.Resize(
                 new SKImageInfo(newWidth, newHeight),
                 new SKSamplingOptions(SKCubicResampler.CatmullRom)
@@ -241,23 +276,32 @@ public partial class MainWindow : Window
 
             string tempPath = Path.Combine(
                 Path.GetTempPath(),
-                $"tomodachi_{Path.GetFileName(path)}"
+                $"tomodachi_{Guid.NewGuid()}.png"
             );
             using var data = SKImage.FromBitmap(img).Encode(SKEncodedImageFormat.Png, 100);
-            using var stream = File.OpenWrite(tempPath);
+            using var stream = File.Create(tempPath);
             data.SaveTo(stream);
 
-            path = tempPath;
-            AppendLog($"Image resized to {newWidth}x{newHeight}, saved to temp: {tempPath}");
+            _currentImagePath = tempPath;
+            AppendLog($"Image processed to {newWidth}x{newHeight}");
+        }
+        catch (Exception ex)
+        {
+            AppendLog($"Error during image processing: {ex.Message}");
+            img.Dispose();
+            return;
         }
 
-        _currentImagePath = path;
-        ImagePathBox.Text = path;
+        if (ImageDimensionsLabel != null)
+            ImageDimensionsLabel.Text = $"{img.Width}x{img.Height}";
+
         ExportUF2Button.IsEnabled = true;
         UpdatePreview();
-        TSPTimeLimitUpDown.Value = (decimal)
-            CanvasDrawer.GetRecommendedTSPSolveTime(img.Width, img.Height);
-        AppendLog($"Loaded image: {Path.GetFileName(path)} ({img.Width}x{img.Height})");
+        
+        if (TSPTimeLimitUpDown != null)
+            TSPTimeLimitUpDown.Value = (decimal)
+                CanvasDrawer.GetRecommendedTSPSolveTime(img.Width, img.Height);
+        
         img.Dispose();
     }
 
@@ -709,6 +753,18 @@ public partial class MainWindow : Window
             LoadImage(first.TryGetLocalPath() ?? "");
     }
 
+    private void ImagePresetComboBox_SelectionChanged(object? sender, SelectionChangedEventArgs e)
+    {
+        if (ImagePresetComboBox == null)
+            return;
+        _currentSettings.SelectedPresetIndex = ImagePresetComboBox.SelectedIndex;
+        SaveSettings();
+        if (!string.IsNullOrEmpty(_originalImagePath))
+        {
+            UpdateProcessedImage();
+        }
+    }
+
     private void ColourLimitUpDown_ValueChanged(
         object? sender,
         NumericUpDownValueChangedEventArgs e
@@ -790,6 +846,7 @@ public partial class MainWindow : Window
                     EnableExperimentalCheckBox.IsChecked =
                         _currentSettings.EnableExperimentalFeatures;
                     CheckForUpdatesCheckBox.IsChecked = _currentSettings.CheckForUpdatesOnStart;
+                    ImagePresetComboBox.SelectedIndex = _currentSettings.SelectedPresetIndex;
                     return;
                 }
             }
@@ -814,6 +871,8 @@ public partial class MainWindow : Window
         public bool EnableExperimentalFeatures { get; set; } = false;
 
         public bool CheckForUpdatesOnStart { get; set; } = true;
+
+        public int SelectedPresetIndex { get; set; } = 0;
     }
 
     private void SwitchVersionComboBox_SelectionChanged(object? sender, SelectionChangedEventArgs e)
