@@ -65,11 +65,16 @@ namespace TomodachiDrawer.Core.OutputSinks
         public void SetStick(Stick stick, byte value)
         {
             var xboxAxis = MapSwitchStick(stick);
-            var xboxValue = (short)(value / byte.MaxValue * short.MaxValue);
+
             if (xboxAxis == Xbox360Axis.LeftThumbY || xboxAxis == Xbox360Axis.RightThumbY)
             {
-                xboxValue = (short)(short.MaxValue - xboxValue);
+                value = (byte)(byte.MaxValue - value);
             }
+
+            short xboxValue = value != byte.MaxValue / 2
+                ? (short)((value * (double)(short.MaxValue - short.MinValue) / byte.MaxValue) + short.MinValue)
+                : (short) 0;
+
             _gamepad.SetAxisValue(xboxAxis, xboxValue);
         }
 
