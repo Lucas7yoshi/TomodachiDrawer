@@ -50,7 +50,12 @@ jobs:
         cache-dependency-path: '**/*.csproj'
     - name: Build
       working-directory: TomodachiDrawer.UI.Avalonia
-      run: dotnet publish --configuration ${{ matrix.configuration }} -r ${{ matrix.runtime }} --self-contained -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true ${{ github.ref_type == 'tag' && format('-p:Version={0}', github.ref_name) || '' }}
+      run: |
+        dotnet publish --configuration ${{ matrix.configuration }} \
+          -r ${{ matrix.runtime }} \
+          --self-contained \
+          ${{ !contains(matrix.runtime, 'osx') && '-p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true' || '-p:BundleMacOSApp=true' }} \
+          ${{ github.ref_type == 'tag' && format('-p:Version={0}', github.ref_name) || '' }}
     - name: Upload Artifacts
       uses: actions/upload-artifact@v7
       with:
@@ -69,7 +74,7 @@ jobs:
       with:
         path: unzipped-artifacts
         merge-multiple: false
-- name: Zip for Release
+    - name: Zip for Release
       run: |
         mkdir final-packages
         for dir in unzipped-artifacts/*/; do
@@ -79,34 +84,8 @@ jobs:
           cd "$dir"
           echo "Processing ${dirname} into ${outname}"
           
-          # osx is slop alert, because i do not have a mac and this is all a genuine mystery to me
           if [[ "$dirname" == *"osx"* ]]; then
-            echo "Mac .tar.gz (Creating .app bundle)"
-            
-            mkdir -p TomodachiDrawer.app/Contents/MacOS
-            
-            mv TomodachiDrawer.UI.Avalonia TomodachiDrawer.app/Contents/MacOS/TomodachiDrawer
-            chmod +x TomodachiDrawer.app/Contents/MacOS/TomodachiDrawer
-            
-            find . -maxdepth 1 -type f -exec mv {} TomodachiDrawer.app/Contents/MacOS/ \;
-            
-            cat << 'EOF' > TomodachiDrawer.app/Contents/Info.plist
-            <?xml version="1.0" encoding="UTF-8"?>
-            <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
-            <plist version="1.0">
-            <dict>
-                <key>CFBundleExecutable</key>
-                <string>TomodachiDrawer</string>
-                <key>CFBundleIdentifier</key>
-                <string>com.tomodachidrawer.app</string>
-                <key>CFBundleName</key>
-                <string>TomodachiDrawer</string>
-                <key>CFBundlePackageType</key>
-                <string>APPL</string>
-            </dict>
-            </plist>
-            EOF
-            
+            echo "Mac .tar.gz"
             tar -czvf "../../final-packages/${outname}-${{ github.ref_name }}.tar.gz" TomodachiDrawer.app
             
           elif [[ "$dirname" == *"linux"* ]]; then
