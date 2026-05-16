@@ -332,7 +332,7 @@ public partial class MainWindow : Window
 
         FlashFirmwareButton?.IsEnabled = _isBoardConnected && isBoardSupported && !BusyExporting;
         ExportToBoardButton?.IsEnabled = _isBoardConnected && isBoardSupported && hasImage && !BusyExporting;
-        ExportUF2Button.IsEnabled = isBoardSupported && hasImage && !BusyExporting;
+        ExportUF2Button?.IsEnabled = isBoardSupported && hasImage && !BusyExporting;
     }
 
     // messagebox replacement
