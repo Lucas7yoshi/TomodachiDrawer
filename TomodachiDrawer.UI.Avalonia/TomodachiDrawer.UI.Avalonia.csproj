@@ -48,10 +48,11 @@
       <ResourcesDir>$([System.IO.Path]::Combine('$(ContentsDir)', 'Resources'))</ResourcesDir>
     </PropertyGroup>
     <ItemGroup>
-      <PublishFiles Include="$(PublishDir)**\*.*" Exclude="$(AppBundleDir)\**\*.*" />
+      <PublishFiles Include="$(PublishDir)**\*.*" Exclude="$(AppBundleDir)\**\*.*;$(PublishDir)TomodachiDrawer.Firmware.uf2" />
     </ItemGroup>
     <MakeDir Directories="$(AppBundleDir);$(ContentsDir);$(MacOsDir);$(ResourcesDir)" />
     <Move SourceFiles="@(PublishFiles)" DestinationFolder="$(MacOsDir)\%(RecursiveDir)" />
+    <Copy SourceFiles="$(PublishDir)TomodachiDrawer.Firmware.uf2" DestinationFolder="$(MacOsDir)" />
     <Copy SourceFiles="$(ProjectDir)Packaging/macOS/AppIcon.icns" DestinationFolder="$(ResourcesDir)" />
     <PropertyGroup>
       <PlistSource>$(ProjectDir)Packaging/macOS/Info.plist</PlistSource>
