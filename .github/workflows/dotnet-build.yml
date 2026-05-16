@@ -69,18 +69,60 @@ jobs:
       with:
         path: unzipped-artifacts
         merge-multiple: false
-    - name: Zip for Release
+- name: Zip for Release
       run: |
-        mkdir final-zips
+        mkdir final-packages
         for dir in unzipped-artifacts/*/; do
           dirname=$(basename "$dir")
+          outname="${dirname//osx/mac}"
+          
           cd "$dir"
-          echo "${dirname}"
-          zip -r "../../final-zips/${dirname}-${{ github.ref_name }}.zip" .
+          echo "Processing ${dirname} into ${outname}"
+          
+          # osx is slop alert, because i do not have a mac and this is all a genuine mystery to me
+          if [[ "$dirname" == *"osx"* ]]; then
+            echo "Mac .tar.gz (Creating .app bundle)"
+            
+            mkdir -p TomodachiDrawer.app/Contents/MacOS
+            
+            mv TomodachiDrawer.UI.Avalonia TomodachiDrawer.app/Contents/MacOS/TomodachiDrawer
+            chmod +x TomodachiDrawer.app/Contents/MacOS/TomodachiDrawer
+            
+            find . -maxdepth 1 -type f -exec mv {} TomodachiDrawer.app/Contents/MacOS/ \;
+            
+            cat << 'EOF' > TomodachiDrawer.app/Contents/Info.plist
+            <?xml version="1.0" encoding="UTF-8"?>
+            <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+            <plist version="1.0">
+            <dict>
+                <key>CFBundleExecutable</key>
+                <string>TomodachiDrawer</string>
+                <key>CFBundleIdentifier</key>
+                <string>com.tomodachidrawer.app</string>
+                <key>CFBundleName</key>
+                <string>TomodachiDrawer</string>
+                <key>CFBundlePackageType</key>
+                <string>APPL</string>
+            </dict>
+            </plist>
+            EOF
+            
+            tar -czvf "../../final-packages/${outname}-${{ github.ref_name }}.tar.gz" TomodachiDrawer.app
+            
+          elif [[ "$dirname" == *"linux"* ]]; then
+            echo "Linux .tar.gz"
+            chmod +x TomodachiDrawer.UI.Avalonia
+            tar -czvf "../../final-packages/${outname}-${{ github.ref_name }}.tar.gz" *
+            
+          else
+            echo "Windows .zip"
+            zip -r "../../final-packages/${outname}-${{ github.ref_name }}.zip" .
+          fi
+          
           cd ../..
         done
     - name: Create release draft
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       run: |
-        gh release create ${{ github.ref_name}} final-zips/*.zip --draft --generate-notes --title "${{ github.ref_name }} - RELEASENAME_REPLACEME"
+        gh release create ${{ github.ref_name}} final-packages/* --draft --generate-notes --title "${{ github.ref_name }} - RELEASENAME_REPLACEME"

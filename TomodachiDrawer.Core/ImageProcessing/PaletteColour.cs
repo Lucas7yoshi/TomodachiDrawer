@@ -14,7 +14,8 @@ namespace TomodachiDrawer.Core.ImageProcessing
         bool IsArbitrary = false
     )
     {
-        public readonly string DisplayName => string.IsNullOrEmpty(Name) ? $"({R}, {G}, {B})" : Name;
+        public readonly string DisplayName =>
+            string.IsNullOrEmpty(Name) ? $"({R}, {G}, {B})" : Name;
 
         public static PaletteColour FromHex(string name, string hex, int gridX, int gridY)
         {

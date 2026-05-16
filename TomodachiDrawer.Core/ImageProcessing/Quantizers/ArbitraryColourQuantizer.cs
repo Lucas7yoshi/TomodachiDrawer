@@ -47,7 +47,16 @@ namespace TomodachiDrawer.Core.ImageProcessing.Quantizers
                     for (int x = 0; x < bitmap.Width; x++)
                     {
                         var p = pixels[y * bitmap.Width + x];
-                        row[x] = new Rgba32(p.Red, p.Green, p.Blue, p.Alpha);
+                        //row[x] = new Rgba32(p.Red, p.Green, p.Blue, p.Alpha);
+                        // need to handle transparency
+                        if (p.Alpha < 128)
+                        {
+                            row[x] = new Rgba32(0, 0, 0, 0);
+                        }
+                        else
+                        {
+                            row[x] = new Rgba32(p.Red, p.Green, p.Blue, 255);
+                        }
                     }
                 }
             });

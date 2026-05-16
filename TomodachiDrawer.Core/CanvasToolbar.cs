@@ -34,7 +34,6 @@ namespace TomodachiDrawer.Core
         private const int BucketSubmenuRows = 2;
         private bool _bucketSubmenuHomed = false;
 
-
         private int _lastBrushColumn = -1; // Brush menu remains on the previous
 
         public static readonly Dictionary<int, int> BrushColumnBySize = new()
@@ -115,7 +114,7 @@ namespace TomodachiDrawer.Core
                 currentColumn = 0;
             }
 
-            // After 
+            // After
             int deltaX = targetColumn - currentColumn;
             var dir = deltaX > 0 ? DPad.RIGHT : DPad.LEFT;
             for (int i = 0; i < Math.Abs(deltaX); i++)
@@ -150,7 +149,6 @@ namespace TomodachiDrawer.Core
             output.Delay(500);
 
             GoToToolbarIndex(output, ToolbarBucketIndex);
-
 
             // We really do not care about any of the other options but the top left default one
             // Homing is probably not needed but might as well.

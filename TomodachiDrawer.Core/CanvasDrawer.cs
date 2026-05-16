@@ -1,7 +1,6 @@
 ﻿using System.Diagnostics;
 using Google.OrTools.ConstraintSolver;
 using SkiaSharp;
-
 using TomodachiDrawer.Core.ImageProcessing;
 using TomodachiDrawer.Core.ImageProcessing.Denoising;
 using TomodachiDrawer.Core.ImageProcessing.Quantizers;
@@ -25,7 +24,11 @@ namespace TomodachiDrawer.Core
         private readonly Action<string> _log;
         private readonly SwitchVersion _switchVersion;
 
-        public CanvasDrawer(ISwitchOutput outputSink, SwitchVersion switchVersion, Action<string>? logger = null)
+        public CanvasDrawer(
+            ISwitchOutput outputSink,
+            SwitchVersion switchVersion,
+            Action<string>? logger = null
+        )
         {
             _realOutput = outputSink;
             _palette = new(outputSink);
@@ -33,7 +36,10 @@ namespace TomodachiDrawer.Core
             _log = logger ?? Console.WriteLine;
 
             if (switchVersion == SwitchVersion.None)
-                throw new ArgumentOutOfRangeException(nameof(switchVersion), "Switch version must be set.");
+                throw new ArgumentOutOfRangeException(
+                    nameof(switchVersion),
+                    "Switch version must be set."
+                );
 
             _switchVersion = switchVersion;
         }
@@ -60,22 +66,16 @@ namespace TomodachiDrawer.Core
             }
         }
 
-        public async Task DrawImage(
-            SKBitmap image,
-            QuantizerSettings quantizerSettings,
-            string? denoiserName = null,
-            float tspTimeLimit = 1.0f,
-            bool disableLargeBrush = false
-        )
+        public async Task DrawImage(SKBitmap image, DrawImageSettings settings)
         {
             if (image.Width > CanvasWidth || image.Height > CanvasHeight)
                 throw new InvalidDataException(
                     $"Image too big. Max is {CanvasWidth}x{CanvasHeight}."
                 );
             ArgumentOutOfRangeException.ThrowIfLessThanOrEqual(
-                tspTimeLimit,
+                settings.TSPTimeLimit,
                 0.0f,
-                nameof(tspTimeLimit)
+                nameof(settings.TSPTimeLimit)
             );
 
             // Stages:
@@ -90,26 +90,33 @@ namespace TomodachiDrawer.Core
 
             // Also we need to pass in the quantization method and dithering settings as arguments.
 
-            if (!string.IsNullOrEmpty(denoiserName))
+            if (!string.IsNullOrEmpty(settings.DenoiserName))
             {
-                image = ImageDenoiser.DenoiseImage(image, denoiserName);
+                image = ImageDenoiser.DenoiseImage(image, settings.DenoiserName);
             }
 
             // Quantized Map is a 2D array of PaletteColours.
-            var quantizedMap = _palette.QuantizeImage(image, quantizerSettings);
+            var quantizedMap = _palette.QuantizeImage(image, settings.QuantizerSettings);
 
             // First off we are just putting all the individual details into the fine detail pass,
             // following passes will start to remove from that and add to the stamp passes.
             // TODO: This doesnt really make too much sense to be in the palette class... Maybe move here?
             var layers = _palette.BuildFineLayers(quantizedMap);
 
-
             // If the image is 256x256 and has no transparent pixels at all we can use the bucket tool
             // for the most prevelant colour to save time.
             // This is done before the large brush detection to avoid needing to run stuff to count the large brush stuff to find the
             // biggest.
             PaletteColour? bucketColour = null;
-            if (_switchVersion == SwitchVersion.Switch2 && image.Width == 256 && image.Height == 256)
+
+            // This below uses the bucket on switch 2, but is generally stable enough since it is just a one off bucket use
+            // that doesnt even move the cursor.
+            // The dynamic bucket fill on the other hand is prone to desyncs even on switch 2, thus is classified as experimental.
+            if (
+                _switchVersion == SwitchVersion.Switch2
+                && image.Width == 256
+                && image.Height == 256
+            )
             {
                 _log("Seeing if we can use the bucket to save time");
                 bool anyTransparent = false;
@@ -132,7 +139,9 @@ namespace TomodachiDrawer.Core
                     bucketColour = layers.MaxBy(l => l.FineDetailPoints.Count)!.Colour;
                     // We need to then remove it from the rest of the drawing so it doesnt draw it now.
                     layers.RemoveAll(l => l.Colour == bucketColour); // is only one but this is easiest.
-                    _log($"\tUsing bucket to fill most prevalent colour: {bucketColour.Value.DisplayName}");
+                    _log(
+                        $"\tUsing bucket to fill most prevalent colour: {bucketColour.Value.DisplayName}"
+                    );
                     _toolbar.SelectBucket();
                     _palette.SelectColour(bucketColour.Value, 25.0);
                     _realOutput.Tap(Button.A);
@@ -144,17 +153,26 @@ namespace TomodachiDrawer.Core
                 }
             }
 
-            if (_switchVersion == SwitchVersion.Switch2)
+            if (settings.EnableExperimentalFeatures)
             {
-                _log("Finding large bucket-fillable zones...");
-                foreach (var l in layers)
+                if (_switchVersion == SwitchVersion.Switch2)
                 {
-                    DetectBucketZones(l, image.Width, image.Height);
+                    _log("Finding large bucket-fillable zones...");
+                    int sum = 0;
+                    foreach (var l in layers)
+                    {
+                        sum += DetectBucketZones(l, image.Width, image.Height);
+                    }
+                    _log($"\tFound {sum} dynamic bucket fill zones across image.");
+                }
+                else
+                {
+                    _log("Can't perform large bucket-fillable search because Switch 1 is laggy :(");
                 }
             }
             else
             {
-                _log("Can't perform large bucket-fillable search because Switch 1 is laggy :(");
+                _log("Experimental features disabled, so not running dynamic bucket fill scan.");
             }
 
             // Stamp/uniform area detection
@@ -162,14 +180,13 @@ namespace TomodachiDrawer.Core
             // a large number of small areas that were rejected for being too small during the bucket zone search.
             // TODO: Figure that out lol
             _log("Detecting uniform areas for large brushes...");
-            if (!disableLargeBrush)
+            if (!settings.DisableLargeBrush)
             {
                 foreach (var l in layers)
                 {
                     DetectUniformAreas(l, image.Width, image.Height);
                 }
             }
-
 
             double totalInLayerTime = 0.0;
 
@@ -237,7 +254,7 @@ namespace TomodachiDrawer.Core
                     _cursorY = savedY;
 
                     var tspSink = new TimingSink();
-                    FineDetailTsp(tspSink, l, tspTimeLimit);
+                    FineDetailTsp(tspSink, l, settings.TSPTimeLimit);
 
                     int afterTspX = _cursorX;
                     int afterTspY = _cursorY;
@@ -280,7 +297,10 @@ namespace TomodachiDrawer.Core
                     var bucketClickRouteTimeout = 0.25f;
                     if (l.BucketClicks.Count > 50)
                         bucketClickRouteTimeout = 0.5f;
-                    var optimizedBucketClickRoute = PerformTSP(l.BucketClicks.ToList(), bucketClickRouteTimeout);
+                    var optimizedBucketClickRoute = PerformTSP(
+                        l.BucketClicks.ToList(),
+                        bucketClickRouteTimeout
+                    );
                     foreach (var click in optimizedBucketClickRoute ?? l.BucketClicks.ToList()) // in case somehow it fails
                     {
                         NavigateTo(_realOutput, click);
@@ -301,7 +321,12 @@ namespace TomodachiDrawer.Core
         // TODO: MORE WORK TWEAKING THESE!!!
         private static readonly int[] LargeBrushEvictionThreshold = [1, 1, 2, 6, 12];
 
-        public static void DetectBucketZones(ColourLayer l, int width, int height, int minZoneSize = 36)
+        public static int DetectBucketZones(
+            ColourLayer l,
+            int width,
+            int height,
+            int minZoneSize = 36
+        )
         {
             var workingSet = new bool[width, height];
 
@@ -374,7 +399,14 @@ namespace TomodachiDrawer.Core
                                 int tx = current.X + dx[i];
                                 int ty = current.Y + dy[i];
 
-                                if (tx >= 0 && tx < width && ty >= 0 && ty < height && interiorPixels[tx, ty] && !visited[tx, ty])
+                                if (
+                                    tx >= 0
+                                    && tx < width
+                                    && ty >= 0
+                                    && ty < height
+                                    && interiorPixels[tx, ty]
+                                    && !visited[tx, ty]
+                                )
                                 {
                                     visited[tx, ty] = true;
                                     q.Enqueue(new CanvasPoint(tx, ty));
@@ -399,10 +431,10 @@ namespace TomodachiDrawer.Core
             l.FineDetailPoints.Clear();
             l.FineDetailPoints.UnionWith(outlinePixels);
 
-
             l.BucketClicks = new HashSet<CanvasPoint>(bucketClicks);
-        }
 
+            return l.BucketClicks.Count;
+        }
 
         /// <summary>Takes in a ColourLayer and detects large areas that can be better drawn with stamps.</summary>
         /// <param name="l"></param>
@@ -470,7 +502,6 @@ namespace TomodachiDrawer.Core
                 _log($"\tFOUND {largeBrushPoints.Count} areas for size {brushSize}^2");
             }
         }
-
 
         private static bool IsUniformArea(bool[,] map, int cx, int cy, int brushSize)
         {

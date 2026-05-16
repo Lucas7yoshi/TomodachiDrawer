@@ -1,247 +1,283 @@
 <Window xmlns="https://github.com/avaloniaui"
-        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        x:Class="TomodachiDrawer.UI.Avalonia.MainWindow"
-        Title="Tomodachi Drawer"
-        Width="1100" Height="660"
-        MinWidth="1100" MinHeight="660">
+		xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+		x:Class="TomodachiDrawer.UI.Avalonia.MainWindow"
+		Icon="/Assets/Icon.png"
+		Title="Tomodachi Drawer"
+		Width="1100" Height="760"
+		MinWidth="1100" MinHeight="760">
 
-    <Window.Styles>
-        <Style Selector="Border.group">
-            <Setter Property="BorderBrush" Value="#55888888" />
-            <Setter Property="BorderThickness" Value="1" />
-            <Setter Property="CornerRadius" Value="4" />
-            <Setter Property="Padding" Value="8" />
-        </Style>
-        <Style Selector="TextBlock.header">
-            <Setter Property="FontWeight" Value="SemiBold" />
-            <Setter Property="Margin" Value="0,0,0,6" />
-        </Style>
-    </Window.Styles>
-    <Grid Margin="8">
-        <Grid.ColumnDefinitions>
-            <ColumnDefinition Width="375" />
-            <ColumnDefinition Width="*" />
-        </Grid.ColumnDefinitions>
-        <Grid Grid.Column="0" Margin="0,0,6,0">
-            <Grid.RowDefinitions>
-                <RowDefinition Height="Auto" />
-                <RowDefinition Height="Auto"/> <!-- App options -->
-                <RowDefinition Height="Auto" />
-                <RowDefinition Height="*" />
-                <RowDefinition Height="Auto" />
-                <RowDefinition Height="Auto" />
-            </Grid.RowDefinitions>
-            <Border Grid.Row="0" Classes="group" Margin="0,0,0,6">
-                <StackPanel Spacing="6">
-                    <TextBlock Classes="header" Text="Input Image" />
-                    <Grid>
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="*" />
-                            <ColumnDefinition Width="Auto" />
-                        </Grid.ColumnDefinitions>
-                        <TextBox Grid.Column="0"
-                                 x:Name="ImagePathBox"
-                                 IsReadOnly="True"
-                                 PlaceholderText="No image loaded…" />
-                        <Button Grid.Column="1"
-                                Content="Open..."
-                                Margin="4,0,0,0"
-                                Click="OpenImageButton_Click" />
-                    </Grid>
-                </StackPanel>
-            </Border>
-            <Border Grid.Row="1" Classes="group" Margin="0,0,0,6">
-                <StackPanel Orientation="Vertical" Spacing="6">
-                    <TextBlock Classes="header" Text="App Settings" />
-                    <StackPanel Orientation="Horizontal">
-					    <TextBlock Grid.Column="0"
-                                   Text="Theme:"
-                                   VerticalAlignment="Center"
-                                   Margin="0,0,4,0" />
-                        <ComboBox Grid.Column="1"
-                                  x:Name="AppThemeComboBox"
-                                  HorizontalAlignment="Stretch"
-                                  Margin="0,0,8,0"
-                                  SelectedIndex="0"
-                                  SelectionChanged="AppThemeComboBox_SelectionChanged">
-                            <ComboBoxItem>Match System</ComboBoxItem>
-                            <ComboBoxItem>Light</ComboBoxItem>
-                            <ComboBoxItem>Dark</ComboBoxItem>
-                        </ComboBox>
-                    </StackPanel>
-                </StackPanel>
-            </Border>
-            <Border Grid.Row="2" Classes="group" Margin="0,0,0,6">
-                <StackPanel Spacing="6">
-                    <TextBlock Classes="header" Text="Routing" />
-                    <Grid ColumnDefinitions="Auto,*" ColumnSpacing="6">
-                        <TextBlock Grid.Column="0"
-                                   Text="Switch Compatibility:"
-                                   VerticalAlignment="Center" />
-                        <ComboBox Grid.Column="1"
-                                  x:Name="SwitchVersionComboBox"
-                                  SelectionChanged="SwitchVersionComboBox_SelectionChanged"
-                                  HorizontalAlignment="Stretch"
-                                  PlaceholderText="SELECT YOUR SWITCH!">
-                            <ComboBoxItem>Switch 1/Lite/OLED</ComboBoxItem>
-                            <ComboBoxItem>Switch 2</ComboBoxItem>
-                        </ComboBox>
-                    </Grid>
-                    <StackPanel Orientation="Horizontal" Spacing="6">
-                        <TextBlock Text="TSP Solver Time Limit"
-                                   VerticalAlignment="Center" />
-                        <NumericUpDown x:Name="TSPTimeLimitUpDown"
-                                       Minimum="0.1" Maximum="30"
-                                       Increment="0.1" Value="0.5"
-                                       FormatString="F1"
-                                       Width="110" />
-                        <TextBlock Text="seconds"
-                                   VerticalAlignment="Center" />
-                        <Button Content="?"
-                                Width="28"
-                                Click="TSPHelpButton_Click" />
-                    </StackPanel>
-                </StackPanel>
-            </Border>
-            <Border Grid.Row="3" Classes="group" Margin="0,0,0,6">
-                <DockPanel>
-                    <TextBlock DockPanel.Dock="Top"
-                               Classes="header"
-                               Text="Log" />
-                    <TextBox x:Name="LogBox"
-                             IsReadOnly="True"
-                             AcceptsReturn="True"
-                             TextWrapping="Wrap"
-                             ScrollViewer.VerticalScrollBarVisibility="Auto" />
-                </DockPanel>
-            </Border>
-            <TextBlock Grid.Row="4"
-                       x:Name="DrawTimeLabel"
-                       Text="Draw Time Estimate: ???"
-                       FontSize="17"
-                       FontWeight="Bold"
-                       Margin="2,0,2,6" />
-            <Border Grid.Row="5" Classes="group">
-                <StackPanel Spacing="5">
-                    <TextBlock Classes="header" Text="Board" />
-                    <TextBlock x:Name="BoardStatusLabel"
-                               Text="Status: Not Found" />
-                    <ComboBox Grid.Column="1"
-                              x:Name="BoardTypeComboBox"
-                              HorizontalAlignment="Stretch"
-                              Margin="4,0,4,0"
-                              SelectedIndex="0"
-                              SelectionChanged="BoardTypeComboBox_SelectionChanged">
-                        <ComboBoxItem>Unknown Board</ComboBoxItem>
-                        <ComboBoxItem>RP2040</ComboBoxItem>
-                        <ComboBoxItem>RP2350</ComboBoxItem>
-                    </ComboBox>
-                    <Grid>
-					        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="*" />
-                            <ColumnDefinition Width="*" />
-                        </Grid.ColumnDefinitions>
-                        <Button Grid.Column="0" Content="Setup Explanation"
-                            HorizontalAlignment="Stretch"
-                            Margin="2,0,2,0"
-                            Click="OutputExplanationButton_Click" />
-                        <Button Grid.Column="1" Content="In-Game setup Info."
-                            HorizontalAlignment="Stretch"
-                            Margin="2,0,2,0"
-                            Click="InGameSetupButton_Click" />
-                    </Grid>
-                    <Grid>
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="*" />
-                            <ColumnDefinition Width="*" />
-                        </Grid.ColumnDefinitions>
-                        <Button Grid.Column="0"
-                                x:Name="FlashFirmwareButton"
-                                IsEnabled="False"
-                                Content="Flash Base Firmware"
-                                HorizontalAlignment="Stretch"
-                                Margin="2,0,2,0"
-                                Click="FlashFirmwareButton_Click" />
-                        <Button Grid.Column="1"
-                                x:Name="ExportToBoardButton"
-                                IsEnabled="False"
-                                Content="Export To Board!"
-                                FontWeight="Bold"
-                                HorizontalAlignment="Stretch"
-                                Margin="2,0,2,0"
-                                Click="ExportToBoardButton_Click" />
+	<Window.Styles>
+		<Style Selector="Border.group">
+			<Setter Property="BorderBrush" Value="#55888888" />
+			<Setter Property="BorderThickness" Value="1" />
+			<Setter Property="CornerRadius" Value="4" />
+			<Setter Property="Padding" Value="8" />
+		</Style>
+		<Style Selector="TextBlock.header">
+			<Setter Property="FontWeight" Value="SemiBold" />
+			<Setter Property="Margin" Value="0,0,0,6" />
+		</Style>
+	</Window.Styles>
+	<DockPanel>
+		<Menu DockPanel.Dock="Top">
+			<MenuItem Header="_File">
+				<MenuItem Header="_Save Preview..." Click="MenuSavePreview_Click"/>
+				<Separator/>
+				<MenuItem Header="_Exit" Click="MenuExit_Click"/>
+			</MenuItem>
+			<MenuItem Header="_Settings" StaysOpenOnClick="True">
+				<MenuItem
+				    x:Name="CheckForUpdatesCheckBox"
+					Header="_Check For Updates On Start"
+					ToggleType="CheckBox"
+					Click="CheckForUpdatesCheckBox_Click"
+				/>
+			</MenuItem>
+			<MenuItem Header="_Help">
+				<MenuItem 
+					x:Name="MenuHelpOpenGitHub"
+					Header="_Open GitHub Repo"
+					Click="MenuHelpOpenGitHub_Click"
+				/>
+				<Separator/>
+				<MenuItem
+					x:Name="MenuHelpAbout"
+					Header="_About"
+					Click="MenuHelpAbout_Click"
+				/>
+			</MenuItem>
+		</Menu>
+		<Grid Margin="8">
+			<Grid.ColumnDefinitions>
+				<ColumnDefinition Width="375" />
+				<ColumnDefinition Width="*" />
+			</Grid.ColumnDefinitions>
+			<Grid Grid.Column="0" Margin="0,0,6,0">
+				<Grid.RowDefinitions>
+					<RowDefinition Height="Auto" />
+					<RowDefinition Height="Auto" />
+					<RowDefinition Height="Auto" />
+					<RowDefinition Height="*" />
+					<RowDefinition Height="Auto" />
+					<RowDefinition Height="Auto" />
+				</Grid.RowDefinitions>
+				<Border Grid.Row="0" Classes="group" Margin="0,0,0,6">
+					<StackPanel Spacing="6">
+						<TextBlock Classes="header" Text="Input Image" />
+						<Grid>
+							<Grid.ColumnDefinitions>
+								<ColumnDefinition Width="*" />
+								<ColumnDefinition Width="Auto" />
+							</Grid.ColumnDefinitions>
+							<TextBox Grid.Column="0"
+									 x:Name="ImagePathBox"
+									 IsReadOnly="True"
+									 PlaceholderText="No image loaded…" />
+							<Button Grid.Column="1"
+									Content="Open..."
+									Margin="4,0,0,0"
+									Click="OpenImageButton_Click" />
+						</Grid>
+					</StackPanel>
+				</Border>
+				<Border Grid.Row="1" Classes="group" Margin="0,0,0,6">
+					<StackPanel Orientation="Vertical" Spacing="6">
+						<TextBlock Classes="header" Text="App Settings" />
+						<StackPanel Orientation="Horizontal">
+							<TextBlock Grid.Column="0"
+									   Text="Theme:"
+									   VerticalAlignment="Center"
+									   Margin="0,0,4,0" />
+							<ComboBox Grid.Column="1"
+									  x:Name="AppThemeComboBox"
+									  HorizontalAlignment="Stretch"
+									  Margin="0,0,8,0"
+									  SelectedIndex="0"
+									  SelectionChanged="AppThemeComboBox_SelectionChanged">
+								<ComboBoxItem>Match System</ComboBoxItem>
+								<ComboBoxItem>Light</ComboBoxItem>
+								<ComboBoxItem>Dark</ComboBoxItem>
+							</ComboBox>
+					</StackPanel>
+					</StackPanel>
+			</Border>
+				<Border Grid.Row="2" Classes="group" Margin="0,0,0,6">
+					<StackPanel Spacing="6">
+						<TextBlock Classes="header" Text="Routing" />
+						<Grid ColumnDefinitions="Auto,*" ColumnSpacing="6">
+							<TextBlock Grid.Column="0"
+									   Text="Switch Compatibility:"
+									   VerticalAlignment="Center" />
+							<ComboBox Grid.Column="1"
+									  x:Name="SwitchVersionComboBox"
+									  SelectionChanged="SwitchVersionComboBox_SelectionChanged"
+									  HorizontalAlignment="Stretch"
+									  PlaceholderText="SELECT YOUR SWITCH!">
+								<ComboBoxItem>Switch 1/Lite/OLED</ComboBoxItem>
+								<ComboBoxItem>Switch 2</ComboBoxItem>
+							</ComboBox>
+						</Grid>
+						<CheckBox x:Name="EnableExperimentalCheckBox"
+								  Content="Enable Experimental (Possibly Desync Prone) Features"
+								  IsCheckedChanged="EnableExperimentalCheckBox_IsCheckedChanged"
+								  />
+						<StackPanel Orientation="Horizontal" Spacing="6">
+							<TextBlock Text="TSP Solver Time Limit"
+									   VerticalAlignment="Center" />
+							<NumericUpDown x:Name="TSPTimeLimitUpDown"
+										   Minimum="0.1" Maximum="30"
+										   Increment="0.1" Value="0.5"
+										   FormatString="F1"
+										   Width="110" />
+							<TextBlock Text="seconds"
+									   VerticalAlignment="Center" />
+							<Button Content="?"
+									Width="28"
+									Click="TSPHelpButton_Click" />
+						</StackPanel>
+					</StackPanel>
+				</Border>
+				<Border Grid.Row="3" Classes="group" Margin="0,0,0,6">
+					<DockPanel>
+						<TextBlock DockPanel.Dock="Top"
+								   Classes="header"
+								   Text="Log" />
+						<TextBox x:Name="LogBox"
+								 IsReadOnly="True"
+								 AcceptsReturn="True"
+								 TextWrapping="Wrap"
+								 ScrollViewer.VerticalScrollBarVisibility="Auto" />
+					</DockPanel>
+				</Border>
+				<TextBlock Grid.Row="4"
+						   x:Name="DrawTimeLabel"
+						   Text="Draw Time Estimate: ???"
+						   FontSize="17"
+						   FontWeight="Bold"
+						   Margin="2,0,2,6" />
+				<Border Grid.Row="5" Classes="group">
+					<StackPanel Spacing="5">
+						<TextBlock Classes="header" Text="Board Output" />
+						<TextBlock x:Name="BoardStatusLabel"
+								   Text="Board Status: Not Found" />
+						<ComboBox Grid.Column="1"
+								  x:Name="BoardTypeComboBox"
+								  HorizontalAlignment="Stretch"
+								  Margin="4,0,4,0"
+								  SelectedIndex="0"
+								  SelectionChanged="BoardTypeComboBox_SelectionChanged">
+							<ComboBoxItem>Unknown Board</ComboBoxItem>
+							<ComboBoxItem>RP2040</ComboBoxItem>
+							<ComboBoxItem>RP2350</ComboBoxItem>
+						</ComboBox>
+						<Grid>
+							<Grid.ColumnDefinitions>
+								<ColumnDefinition Width="*" />
+								<ColumnDefinition Width="*" />
+							</Grid.ColumnDefinitions>
+							<Button Grid.Column="0" Content="Setup Explanation"
+									HorizontalAlignment="Stretch"
+									Margin="2,0,2,0"
+									Click="OutputExplanationButton_Click" />
+							<Button Grid.Column="1" Content="In-Game setup Info."
+									HorizontalAlignment="Stretch"
+									Margin="2,0,2,0"
+									Click="InGameSetupButton_Click" />
+						</Grid>
+						<Grid>
+							<Grid.ColumnDefinitions>
+								<ColumnDefinition Width="*" />
+								<ColumnDefinition Width="*" />
+							</Grid.ColumnDefinitions>
+							<Button Grid.Column="0"
+									x:Name="FlashFirmwareButton"
+									IsEnabled="False"
+									Content="Flash Base Firmware"
+									HorizontalAlignment="Stretch"
+									Margin="2,0,2,0"
+									Click="FlashFirmwareButton_Click" />
+							<Button Grid.Column="1"
+									x:Name="ExportToBoardButton"
+									IsEnabled="False"
+									Content="Export To Board!"
+									FontWeight="Bold"
+									HorizontalAlignment="Stretch"
+									Margin="2,0,2,0"
+									Click="ExportToBoardButton_Click" />
 
-                    </Grid>
-                                            <Button
-                                x:Name="ExportUF2Button"
-                                IsEnabled="False"
-                                Content="Export to .UF2"
-                                FontWeight="Bold"
-                                HorizontalAlignment="Stretch"
-                                Margin="2,0,0,0"
-                                Click="ExportUF2Button_Click"
-                                />
+						</Grid>
+						<Button
+						x:Name="ExportUF2Button"
+						IsEnabled="False"
+						Content="Export to .UF2"
+						FontWeight="Bold"
+						HorizontalAlignment="Stretch"
+						Margin="2,0,0,0"
+						Click="ExportUF2Button_Click"
+						/>
 
-                </StackPanel>
-            </Border>
-        </Grid>
+					</StackPanel>
+				</Border>
+			</Grid>
 
-        <!-- PREVIEW -->
+			<!-- PREVIEW -->
 
-        <Border Grid.Column="1" Classes="group" Margin="0,0,6,0">
-            <DockPanel>
-                <TextBlock DockPanel.Dock="Top"
-                           Classes="header"
-                           Text="Preview" />
-                <Grid DockPanel.Dock="Top" Margin="0,0,0,6">
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="Auto" />
-                        <ColumnDefinition Width="*" />
-                        <ColumnDefinition Width="Auto" />
-                        <ColumnDefinition Width="Auto" />
-                        <ColumnDefinition Width="*" />
-                        <ColumnDefinition Width="Auto" />
-                        <ColumnDefinition Width="*" />
-                    </Grid.ColumnDefinitions>
-                    <TextBlock Grid.Column="0"
-                               Text="Colour Matcher:"
-                               VerticalAlignment="Center"
-                               Margin="0,0,4,0" />
-                    <ComboBox Grid.Column="1"
-                              x:Name="ColourMatcherComboBox"
-                              HorizontalAlignment="Stretch"
-                              Margin="0,0,8,0"
-                              SelectionChanged="ColourMatcherComboBox_SelectionChanged" />
-                    <Button Grid.Column="2" Content="?"
-                                Margin="0,0,4,0"
-                                Click="ColourMatcherHelpButton_Click" />
-                    <TextBlock Grid.Column="3"
-                               Text="Colour Limit:"
-                               VerticalAlignment="Center"
-                               Margin="0,0,4,0" />
-                    <NumericUpDown Grid.Column="4"
-                                   x:Name="ColourLimitUpDown"
-                                   Minimum="1" Maximum="256"
-                                   Increment="1" Value="16"
-                                   FormatString="F0"
-                                   HorizontalAlignment="Stretch"
-                                   Margin="0,0,8,0"
-                                   IsEnabled="False"
-                                   ValueChanged="ColourLimitUpDown_ValueChanged"/>
-                    <TextBlock Grid.Column="5"
-                               Text="Denoising:"
-                               VerticalAlignment="Center"
-                               Margin="0,0,4,0" />
-                    <ComboBox Grid.Column="6"
-                              x:Name="DenoisingComboBox"
-                              IsEnabled="True"
-                              HorizontalAlignment="Stretch" />
-                </Grid>
-                <Image x:Name="PreviewImage"
-                       Stretch="Uniform"
-                       Source="avares://TomodachiDrawer.UI.Avalonia/Assets/NoImagePlaceholder.png"
-                       RenderOptions.BitmapInterpolationMode="None" />
-            </DockPanel>
-        </Border>
-    </Grid>
+			<Border Grid.Column="1" Classes="group" Margin="0,0,6,0">
+				<DockPanel>
+					<TextBlock DockPanel.Dock="Top"
+							   Classes="header"
+							   Text="Preview" />
+					<Grid DockPanel.Dock="Top" Margin="0,0,0,6">
+						<Grid.ColumnDefinitions>
+							<ColumnDefinition Width="Auto" />
+							<ColumnDefinition Width="*" />
+							<ColumnDefinition Width="Auto" />
+							<ColumnDefinition Width="Auto" />
+							<ColumnDefinition Width="*" />
+							<ColumnDefinition Width="Auto" />
+							<ColumnDefinition Width="*" />
+						</Grid.ColumnDefinitions>
+						<TextBlock Grid.Column="0"
+								   Text="Colour Matcher:"
+								   VerticalAlignment="Center"
+								   Margin="0,0,4,0" />
+						<ComboBox Grid.Column="1"
+								  x:Name="ColourMatcherComboBox"
+								  HorizontalAlignment="Stretch"
+								  Margin="0,0,8,0"
+								  SelectionChanged="ColourMatcherComboBox_SelectionChanged" />
+						<Button Grid.Column="2" Content="?"
+								Margin="0,0,4,0"
+								Click="ColourMatcherHelpButton_Click" />
+						<TextBlock Grid.Column="3"
+								   Text="Colour Limit:"
+								   VerticalAlignment="Center"
+								   Margin="0,0,4,0" />
+						<NumericUpDown Grid.Column="4"
+									   x:Name="ColourLimitUpDown"
+									   Minimum="1" Maximum="256"
+									   Increment="1" Value="16"
+									   FormatString="F0"
+									   HorizontalAlignment="Stretch"
+									   Margin="0,0,8,0"
+									   IsEnabled="False"
+									   ValueChanged="ColourLimitUpDown_ValueChanged"/>
+						<TextBlock Grid.Column="5"
+								   Text="Denoising:"
+								   VerticalAlignment="Center"
+								   Margin="0,0,4,0" />
+						<ComboBox Grid.Column="6"
+								  x:Name="DenoisingComboBox"
+								  IsEnabled="True"
+								  HorizontalAlignment="Stretch" />
+					</Grid>
+					<Image x:Name="PreviewImage"
+						   Stretch="Uniform"
+						   Source="avares://TomodachiDrawer.UI.Avalonia/Assets/NoImagePlaceholder.png"
+						   RenderOptions.BitmapInterpolationMode="None" />
+				</DockPanel>
+			</Border>
+		</Grid>
+
+	</DockPanel>
 </Window>
