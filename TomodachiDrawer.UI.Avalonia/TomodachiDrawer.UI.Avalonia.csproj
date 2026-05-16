@@ -16,6 +16,7 @@
     <PackageReference Include="Avalonia.Desktop" Version="12.0.3" />
     <PackageReference Include="Avalonia.Themes.Fluent" Version="12.0.3" />
     <PackageReference Include="Avalonia.Fonts.Inter" Version="12.0.3" />
+    <PackageReference Include="Nefarius.ViGEm.Client" Version="1.21.256" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\TomodachiDrawer.Core\TomodachiDrawer.Core.csproj" />
