@@ -78,6 +78,19 @@
 									Margin="4,0,0,0"
 									Click="OpenImageButton_Click" />
 						</Grid>
+						<Grid ColumnDefinitions="Auto,*" ColumnSpacing="6">
+							<TextBlock Grid.Column="0" Text="Preset:" VerticalAlignment="Center" />
+							<ComboBox Grid.Column="1" x:Name="ImagePresetComboBox"
+									  HorizontalAlignment="Stretch"
+									  SelectedIndex="0"
+									  SelectionChanged="ImagePresetComboBox_SelectionChanged">
+								<ComboBoxItem>Square (256x256)</ComboBoxItem>
+								<ComboBoxItem>Poster (180x256)</ComboBoxItem>
+								<ComboBoxItem>TV Screen (256x131)</ComboBoxItem>
+								<ComboBoxItem>Video Game (256x144)</ComboBoxItem>
+								<ComboBoxItem>Interior (172x256)</ComboBoxItem>
+							</ComboBox>
+						</Grid>
 					</StackPanel>
 				</Border>
 				<Border Grid.Row="1" Classes="group" Margin="0,0,0,6">
@@ -214,9 +227,10 @@
 
 			<Border Grid.Column="1" Classes="group" Margin="0,0,6,0">
 				<DockPanel>
-					<TextBlock DockPanel.Dock="Top"
-							   Classes="header"
-							   Text="Preview" />
+					<Grid DockPanel.Dock="Top">
+						<TextBlock Classes="header" Text="Preview" />
+						<TextBlock x:Name="ImageDimensionsLabel" Text="" HorizontalAlignment="Right" VerticalAlignment="Center" FontWeight="SemiBold" />
+					</Grid>
 					<Grid DockPanel.Dock="Top" Margin="0,0,0,6">
 						<Grid.ColumnDefinitions>
 							<ColumnDefinition Width="Auto" />
@@ -261,10 +275,12 @@
 								  IsEnabled="True"
 								  HorizontalAlignment="Stretch" />
 					</Grid>
-					<Image x:Name="PreviewImage"
-						   Stretch="Uniform"
-						   Source="avares://TomodachiDrawer.UI.Avalonia/Assets/NoImagePlaceholder.png"
-						   RenderOptions.BitmapInterpolationMode="None" />
+					<Border Background="Black" VerticalAlignment="Stretch" HorizontalAlignment="Stretch">
+						<Image x:Name="PreviewImage"
+							   Stretch="Uniform"
+							   Source="avares://TomodachiDrawer.UI.Avalonia/Assets/NoImagePlaceholder.png"
+							   RenderOptions.BitmapInterpolationMode="None" />
+					</Border>
 				</DockPanel>
 			</Border>
 		</Grid>
