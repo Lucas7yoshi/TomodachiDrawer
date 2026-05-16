@@ -12,6 +12,7 @@ using Avalonia.Platform.Storage;
 using Avalonia.Styling;
 using Avalonia.Threading;
 using Nefarius.ViGEm.Client;
+using Nefarius.ViGEm.Client.Exceptions;
 using Nefarius.ViGEm.Client.Targets;
 using SkiaSharp;
 using TomodachiDrawer.Core;
@@ -36,7 +37,7 @@ public partial class MainWindow : Window
     //private int _selectedThemeIndex = 0; // 0 is System.
     private AppSettings _currentSettings = new(); // All cases will result in it being non-null but IntelliSense cant see that far.
 
-    private readonly ViGEmClient _virtualGamepadClient = new();
+    private ViGEmClient? _virtualGamepadClient;
     private IXbox360Controller? _virtualGamepadController = null;
     private bool _isVirtualGamepadControllerConnected = false;
 
@@ -919,6 +920,21 @@ public partial class MainWindow : Window
 
     private void MenuDebugConnectVirtualGamepad_Click(object? sender, RoutedEventArgs e)
     {
+        try
+        {
+            _virtualGamepadClient ??= new();
+        }
+        catch (VigemBusNotFoundException)
+        {
+            _ = ShowMessageAsync(
+                "ViGEmBus driver not found",
+                "To use this feature, you must install the ViGEmBus driver\n",
+                new Uri("https://github.com/nefarius/ViGEmBus/releases"),
+                "Download it here"
+            );
+            return;
+        }
+
         _virtualGamepadController ??= _virtualGamepadClient.CreateXbox360Controller();
 
         if (!_isVirtualGamepadControllerConnected)
