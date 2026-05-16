@@ -8,7 +8,7 @@
     <ApplicationManifest>app.manifest</ApplicationManifest>
     <AvaloniaUseCompiledBindingsByDefault>true</AvaloniaUseCompiledBindingsByDefault>
     <Version>0.0.0</Version>
-	  <ApplicationIcon>TomodachiDrawer.ico</ApplicationIcon>
+    <ApplicationIcon>TomodachiDrawer.ico</ApplicationIcon>
   </PropertyGroup>
   <ItemGroup>
     <PackageReference Include="Avalonia" Version="12.0.3" />
@@ -33,4 +33,33 @@
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
   </ItemGroup>
+  <!-- macOS .app bundling `-p:BundleMacOSApp=true` -->
+  <PropertyGroup Condition="'$(BundleMacOSApp)' == 'true' And $(RuntimeIdentifier.StartsWith('osx'))">
+    <SelfContained>true</SelfContained>
+    <UseAppHost>true</UseAppHost>
+    <PublishSingleFile>false</PublishSingleFile>
+    <IncludeNativeLibrariesForSelfExtract>false</IncludeNativeLibrariesForSelfExtract>
+  </PropertyGroup>
+  <Target Name="BundleMacOS" AfterTargets="Publish" Condition="'$(BundleMacOSApp)' == 'true' And $(RuntimeIdentifier.StartsWith('osx'))">
+    <PropertyGroup>
+      <OutDir>$([System.IO.Path]::Combine('$(PublishDir)', 'bundle'))</OutDir>
+      <AppBundleDir>$([System.IO.Path]::Combine('$(OutDir)', 'TomodachiDrawer.app'))</AppBundleDir>
+      <ContentsDir>$([System.IO.Path]::Combine('$(AppBundleDir)', 'Contents'))</ContentsDir>
+      <MacOsDir>$([System.IO.Path]::Combine('$(ContentsDir)', 'MacOS'))</MacOsDir>
+      <ResourcesDir>$([System.IO.Path]::Combine('$(ContentsDir)', 'Resources'))</ResourcesDir>
+    </PropertyGroup>
+    <MakeDir Directories="$(ContentsDir);$(MacOsDir);$(ResourcesDir)" />
+    <ItemGroup>
+      <PublishFiles Include="$(PublishDir)**\*.*" Exclude="$(OutDir)\**\*.*" />
+    </ItemGroup>
+    <Copy SourceFiles="@(PublishFiles)" DestinationFolder="$(MacOsDir)\%(RecursiveDir)" />
+    <Copy SourceFiles="$(ProjectDir)Packaging/macOS/AppIcon.icns" DestinationFolder="$(ResourcesDir)" />
+    <PropertyGroup>
+      <PlistSource>$(ProjectDir)Packaging/macOS/Info.plist</PlistSource>
+      <PlistDestination>$([System.IO.Path]::Combine('$(ContentsDir)', 'Info.plist'))</PlistDestination>
+      <PlistContent>$([System.IO.File]::ReadAllText('$(PlistSource)'))</PlistContent>
+      <PlistContent>$(PlistContent.Replace('{{version}}', '$(Version)'))</PlistContent>
+    </PropertyGroup>
+    <WriteLinesToFile File="$(PlistDestination)" Lines="$(PlistContent)" Overwrite="true" />
+  </Target>
 </Project>
