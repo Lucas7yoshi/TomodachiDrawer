@@ -614,19 +614,22 @@ public partial class MainWindow : Window
 
     private string GetBaseFirmwareFilePath()
     {
-#if DEBUG
-        return firmwareFileName;
-#else
+        // Check if we're running on macOS and the app is running from app bundle, not CLI.
         var baseDirectory = AppContext.BaseDirectory;
         if (OperatingSystem.IsMacOS() && baseDirectory.Contains(".app/Contents/MacOS"))
         {
+            // In macOS, when you launch `.app` from Finder, the current working directory is root directory `/` (Gemini said),
+            // and the firmware file isn't located there (`/TomodachiDrawer.Firmware.uf2`).
+            // So we need to find the firmware file in the app bundle.
+            // `AppContext.BaseDirectory` resolves to `/path/to/TomodachiDrawer.app/Contents/MacOS/`, so we can get the path to the firmware file from there.
+            // The firmware file should locate at `/path/to/TomodachiDrawer.app/Contents/MacOS/TomodachiDrawer.Firmware.uf2`
             return Path.Combine(baseDirectory, firmwareFileName);
         }
         else
         {
+            // Simply use the file in current working directory
             return firmwareFileName;
         }
-#endif
     }
 
     private void FlashFirmwareButton_Click(object? sender, RoutedEventArgs e)
@@ -783,23 +786,28 @@ public partial class MainWindow : Window
     private string GetSettingsFilePath()
     {
         const string settingsFileName = "settings.json";
-#if DEBUG
-        return settingsFileName;
-#else
-        if (OperatingSystem.IsMacOS())
+
+        // Check if we're running on macOS and the app is running from the app bundle, not CLI.
+        if (OperatingSystem.IsMacOS() && AppContext.BaseDirectory.Contains(".app/Contents/MacOS"))
         {
+            // In macOS, when you launch `.app` from Finder, the current working directory is root directory `/` (Gemini said),
+            // which is read-only and not a good place to store our settings file.
+            // We need to place the settings file somewhere else.
+            // `~/Library/Application Support` is a common place to store app data on macOS (like `%APPDATA%` on Windows).
+            // So first, ensure `~/Library/Application Support/TomodachiDrawer` exists
             var appDataFolder = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "TomodachiDrawer");
             if (!Directory.Exists(appDataFolder))
             {
                 Directory.CreateDirectory(appDataFolder);
             }
+            // Returns `~/Library/Application Support/TomodachiDrawer/settings.json`
             return Path.Combine(appDataFolder, settingsFileName);
         }
         else
         {
+            // Simply place it in the current working directory
             return settingsFileName;
         }
-#endif
     }
 
     private void SaveSettings()
