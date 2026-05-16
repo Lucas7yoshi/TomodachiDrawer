@@ -33,6 +33,11 @@
 					Click="CheckForUpdatesCheckBox_Click"
 				/>
 			</MenuItem>
+			<MenuItem Header="_Tools">
+				<MenuItem x:Name="MenuToolsOpenColourToHSVStepsTool"
+						  Header="_Convert Colour to HSV Steps"
+						  Click="MenuToolsOpenColourToHSVStepsTool_Click" />
+			</MenuItem>
 			<MenuItem Header="_Help">
 				<MenuItem 
 					x:Name="MenuHelpOpenGitHub"

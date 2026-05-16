@@ -880,6 +880,9 @@ public partial class MainWindow : Window
         AppendLog($"Saved current preview to {outputPath}");
     }
 
+    private void MenuToolsOpenColourToHSVStepsTool_Click(object? sender, RoutedEventArgs e) =>
+        new ColourToHSVStepsTool().ShowDialog(this);
+
     private void MenuHelpOpenGitHub_Click(object? sender, RoutedEventArgs e) =>
         Launcher.LaunchUriAsync(new Uri("https://github.com/Lucas7yoshi/TomodachiDrawer"));
 
