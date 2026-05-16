@@ -1,6 +1,5 @@
 using Avalonia.Controls;
 using SkiaSharp;
-using TomodachiDrawer.Core;
 using TomodachiDrawer.Core.Models;
 
 namespace TomodachiDrawer.UI.Avalonia;

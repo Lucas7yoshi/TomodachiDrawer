@@ -4,7 +4,8 @@
         Icon="/Assets/Icon.png"
         Title="Colour to HSV Steps Tool"
         Width="250" Height="205"
-		MinWidth="200" MinHeight="205">
+        CanResize="False"
+		WindowStartupLocation="CenterOwner">
 
     <Window.Resources>
         <ResourceDictionary>

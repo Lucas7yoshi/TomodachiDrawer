@@ -881,7 +881,7 @@ public partial class MainWindow : Window
     }
 
     private void MenuToolsOpenColourToHSVStepsTool_Click(object? sender, RoutedEventArgs e) =>
-        new ColourToHSVStepsTool().ShowDialog(this);
+        new ColourToHSVStepsTool().Show(this);
 
     private void MenuHelpOpenGitHub_Click(object? sender, RoutedEventArgs e) =>
         Launcher.LaunchUriAsync(new Uri("https://github.com/Lucas7yoshi/TomodachiDrawer"));
