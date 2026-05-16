@@ -59,7 +59,20 @@ namespace TomodachiDrawer.Core.OutputSinks
 
         public void ReleaseAll()
         {
-            _gamepad.ResetReport();
+            foreach (var xboxBtn in Xbox360Property.GetAll<Xbox360Button>())
+            {
+                _gamepad.SetButtonState(xboxBtn, false);
+            }
+
+            foreach (var xboxSlider in Xbox360Property.GetAll<Xbox360Slider>())
+            {
+                _gamepad.SetSliderValue(xboxSlider, 0);
+            }
+
+            foreach (var xboxAxis in Xbox360Property.GetAll<Xbox360Axis>())
+            {
+                _gamepad.SetAxisValue(xboxAxis, 0);
+            }
         }
 
         public void SetStick(Stick stick, byte value)
