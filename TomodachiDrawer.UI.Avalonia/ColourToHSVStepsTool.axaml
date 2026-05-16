@@ -25,6 +25,9 @@
         </Style>
         <Style Selector="Grid.field > TextBlock">
             <Setter Property="TextAlignment" Value="Right" />
+        </Style>
+        <Style Selector="Grid.field TextBlock">
+            <!-- For the TextBox's InnerRightContent -->
             <Setter Property="VerticalAlignment" Value="Center" />
         </Style>
         <Style Selector="Grid.field.field--read-only TextBox">
