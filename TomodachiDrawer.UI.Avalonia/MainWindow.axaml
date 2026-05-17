@@ -38,6 +38,19 @@
 						  Header="_Convert Colour to HSV Steps"
 						  Click="MenuToolsOpenColourToHSVStepsTool_Click" />
 			</MenuItem>
+			<MenuItem Header="_Debug">
+				<MenuItem x:Name="MenuDebugConnectVirtualGamepad"
+						  Header="_Connect Virtual Gamepad..."
+						  Click="MenuDebugConnectVirtualGamepad_Click" />
+				<MenuItem x:Name="MenuDebugRunInVirtualGamepad"
+						  IsEnabled="False"
+						  Header="_Run in Virtual Gamepad"
+						  Click="MenuDebugRunInVirtualGamepadButton_Click" />
+				<MenuItem x:Name="MenuDebugOpenVirtualGamepadController"
+						  IsEnabled="False"
+						  Header="_Control Virtual Gamepad"
+						  Click="MenuDebugOpenVirtualGamepadControllerButton_Click" />
+			</MenuItem>
 			<MenuItem Header="_Help">
 				<MenuItem 
 					x:Name="MenuHelpOpenGitHub"

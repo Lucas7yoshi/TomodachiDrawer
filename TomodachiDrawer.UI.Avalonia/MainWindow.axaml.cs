@@ -11,6 +11,9 @@ using Avalonia.Media.Imaging;
 using Avalonia.Platform.Storage;
 using Avalonia.Styling;
 using Avalonia.Threading;
+using Nefarius.ViGEm.Client;
+using Nefarius.ViGEm.Client.Exceptions;
+using Nefarius.ViGEm.Client.Targets;
 using SkiaSharp;
 using TomodachiDrawer.Core;
 using TomodachiDrawer.Core.ImageProcessing.Denoising;
@@ -33,6 +36,10 @@ public partial class MainWindow : Window
     //private SwitchVersion _selectedSwitchVersion = SwitchVersion.None;
     //private int _selectedThemeIndex = 0; // 0 is System.
     private AppSettings _currentSettings = new(); // All cases will result in it being non-null but IntelliSense cant see that far.
+
+    private ViGEmClient? _virtualGamepadClient;
+    private IXbox360Controller? _virtualGamepadController = null;
+    private bool _isVirtualGamepadControllerConnected = false;
 
     public MainWindow()
     {
@@ -910,6 +917,92 @@ public partial class MainWindow : Window
 
     private void MenuToolsOpenColourToHSVStepsTool_Click(object? sender, RoutedEventArgs e) =>
         new ColourToHSVStepsTool().Show(this);
+
+    private void MenuDebugConnectVirtualGamepad_Click(object? sender, RoutedEventArgs e)
+    {
+        try
+        {
+            _virtualGamepadClient ??= new();
+        }
+        catch (VigemBusNotFoundException)
+        {
+            _ = ShowMessageAsync(
+                "ViGEmBus driver not found",
+                "To use this feature, you must install the ViGEmBus driver.",
+                new Uri("https://github.com/nefarius/ViGEmBus/releases"),
+                "Download it here"
+            );
+            return;
+        }
+
+        _virtualGamepadController ??= _virtualGamepadClient.CreateXbox360Controller();
+
+        if (!_isVirtualGamepadControllerConnected)
+        {
+            _virtualGamepadController.Connect();
+            _isVirtualGamepadControllerConnected = true;
+            MenuDebugConnectVirtualGamepad.Header = "Disconnect Virtual Gamepad";
+        }
+        else
+        {
+            MenuDebugConnectVirtualGamepad.Header = "Re-connect Virtual Gamepad";
+            _virtualGamepadController.Disconnect();
+            _isVirtualGamepadControllerConnected = false;
+        }
+
+        MenuDebugRunInVirtualGamepad.IsEnabled = _isVirtualGamepadControllerConnected;
+        MenuDebugOpenVirtualGamepadController.IsEnabled = _isVirtualGamepadControllerConnected;
+    }
+
+    private async void MenuDebugRunInVirtualGamepadButton_Click(object sender, RoutedEventArgs e)
+    {
+        if (string.IsNullOrEmpty(_currentImagePath))
+        {
+            _ = ShowMessageAsync(
+                "No image selected",
+                "Select an image first."
+            );
+            return;
+        }
+
+        if (_virtualGamepadController == null || !_isVirtualGamepadControllerConnected)
+            return;
+
+        var imagePath = _currentImagePath;
+        var denoiser = DenoisingComboBox.SelectedItem?.ToString();
+        var tspLimit = (float)(TSPTimeLimitUpDown.Value ?? 0.5m);
+        var settings = GetQuantizerSettings();
+        var enableExperimental = EnableExperimentalCheckBox.IsChecked ?? false;
+
+        var drawer = new CanvasDrawer(
+            new VirtualGamepadSink(_virtualGamepadController),
+            _currentSettings.SelectedSwitchVersion,
+            AppendLog
+        );
+        var drawSettings = new DrawImageSettings()
+        {
+            QuantizerSettings = settings,
+            DenoiserName = denoiser,
+            TSPTimeLimit = tspLimit,
+            DisableLargeBrush = false,
+            EnableExperimentalFeatures = enableExperimental,
+        };
+        await drawer.DrawImage(SKBitmap.Decode(imagePath), drawSettings);
+
+        AppendLog("Done!");
+    }
+
+    private void MenuDebugOpenVirtualGamepadControllerButton_Click(object sender, RoutedEventArgs e)
+    {
+        if (_virtualGamepadController == null)
+            return;
+
+        var window = new VirtualGamepadController
+        {
+            GamepadController = _virtualGamepadController
+        };
+        window.Show(this);
+    }
 
     private void MenuHelpOpenGitHub_Click(object? sender, RoutedEventArgs e) =>
         Launcher.LaunchUriAsync(new Uri("https://github.com/Lucas7yoshi/TomodachiDrawer"));
