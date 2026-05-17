@@ -4,9 +4,15 @@ using TomodachiDrawer.Core.Interfaces;
 
 namespace TomodachiDrawer.Core.OutputSinks
 {
-    public class VirtualGamepadSink(IXbox360Controller gamepad) : ISwitchOutput
+    public class VirtualGamepadSink : ISwitchOutput
     {
-        private readonly IXbox360Controller _gamepad = gamepad;
+        private readonly IXbox360Controller _gamepad;
+
+        public VirtualGamepadSink(IXbox360Controller gamepad)
+        {
+            _gamepad = gamepad;
+            ReleaseAll();
+        }
 
         public void Delay(double milliseconds)
         {
