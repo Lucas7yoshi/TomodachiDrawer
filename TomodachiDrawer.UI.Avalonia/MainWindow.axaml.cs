@@ -23,8 +23,8 @@ namespace TomodachiDrawer.UI.Avalonia;
 
 public partial class MainWindow : Window
 {
-    private const string RP2040FirmwareFileName = "TomodachiDrawer.Firmware.uf2";
-    private const string RP2350FirmwareFileName = "TomodachiDrawer.Firmware.uf2";
+    private const string RP2040FirmwareFileName = "TomodachiDrawer.Firmware.rp2040.uf2";
+    private const string RP2350FirmwareFileName = "TomodachiDrawer.Firmware.rp2350.uf2";
     
     private string _currentImagePath = string.Empty;
     private bool _isBoardConnected = false;
@@ -659,10 +659,10 @@ public partial class MainWindow : Window
         if (OperatingSystem.IsMacOS() && baseDirectory.Contains(".app/Contents/MacOS"))
         {
             // In macOS, when you launch `.app` from Finder, the current working directory is root directory `/` (Gemini said),
-            // and the firmware file isn't located there (`/TomodachiDrawer.Firmware.uf2`).
+            // and the firmware file isn't located there (`/TomodachiDrawer.Firmware.(board).uf2`).
             // So we need to find the firmware file in the app bundle.
             // `AppContext.BaseDirectory` resolves to `/path/to/TomodachiDrawer.app/Contents/MacOS/`, so we can get the path to the firmware file from there.
-            // The firmware file should locate at `/path/to/TomodachiDrawer.app/Contents/MacOS/TomodachiDrawer.Firmware.uf2`
+            // The firmware file should locate at `/path/to/TomodachiDrawer.app/Contents/MacOS/TomodachiDrawer.Firmware.(board).uf2`
             return Path.Combine(baseDirectory, firmwareFileName);
         }
         else
