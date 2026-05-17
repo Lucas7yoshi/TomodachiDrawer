@@ -1,5 +1,6 @@
 using System.Reflection;
 using System.Text.Json;
+using System.Text.Json.Serialization;
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Input;
@@ -22,8 +23,9 @@ namespace TomodachiDrawer.UI.Avalonia;
 
 public partial class MainWindow : Window
 {
-    private const string SettingsFilePath = "settings.json";
-
+    private const string RP2040FirmwareFileName = "TomodachiDrawer.Firmware.uf2";
+    private const string RP2350FirmwareFileName = "TomodachiDrawer.Firmware.uf2";
+    
     private string _currentImagePath = string.Empty;
     private bool _isBoardConnected = false;
     private readonly CancellationTokenSource _cts = new();
@@ -641,6 +643,35 @@ public partial class MainWindow : Window
         SetEstimate(totalTime);
     }
 
+    private static string GetBaseFirmwareFileName(UF2Flasher.BoardType boardType) => boardType switch
+    {
+        UF2Flasher.BoardType.RP2350 => RP2350FirmwareFileName,
+        // RP2040 is the most common board, even if detection fails.
+        _ => RP2040FirmwareFileName,
+    };
+
+    private static string GetBaseFirmwareFilePath(UF2Flasher.BoardType boardType)
+    {
+        var firmwareFileName = GetBaseFirmwareFileName(boardType);
+
+        // Check if we're running on macOS and the app is running from app bundle, not CLI.
+        var baseDirectory = AppContext.BaseDirectory;
+        if (OperatingSystem.IsMacOS() && baseDirectory.Contains(".app/Contents/MacOS"))
+        {
+            // In macOS, when you launch `.app` from Finder, the current working directory is root directory `/` (Gemini said),
+            // and the firmware file isn't located there (`/TomodachiDrawer.Firmware.uf2`).
+            // So we need to find the firmware file in the app bundle.
+            // `AppContext.BaseDirectory` resolves to `/path/to/TomodachiDrawer.app/Contents/MacOS/`, so we can get the path to the firmware file from there.
+            // The firmware file should locate at `/path/to/TomodachiDrawer.app/Contents/MacOS/TomodachiDrawer.Firmware.uf2`
+            return Path.Combine(baseDirectory, firmwareFileName);
+        }
+        else
+        {
+            // Simply use the file in current working directory
+            return firmwareFileName;
+        }
+    }
+
     private void BoardTypeComboBox_SelectionChanged(object? sender, SelectionChangedEventArgs e)
     {
         UpdateFirmwareButtons();
@@ -648,21 +679,16 @@ public partial class MainWindow : Window
 
     private void FlashFirmwareButton_Click(object? sender, RoutedEventArgs e)
     {
-        string firmwareFile = _selectedBoardType switch
-        {
-            UF2Flasher.BoardType.RP2350 => "TomodachiDrawer.Firmware.rp2350.uf2",
-            // RP2040 is the most common board, even if detection fails.
-            _ => "TomodachiDrawer.Firmware.rp2040.uf2",
-        };
+        string firmwareFilePath = GetBaseFirmwareFilePath(_selectedBoardType);
         var drivePath = UF2Flasher.FindBoardDrive();
 
-        if (!File.Exists(firmwareFile))
+        if (!File.Exists(firmwareFilePath))
         {
             _ = ShowMessageAsync(
                 "Error flashing base firmware",
-                $"For some reason could not locate {firmwareFile}"
+                $"For some reason could not locate {firmwareFilePath}"
                 + $"\nPlease ensure that you extracted the program to a zip folder, and ran the executable from that extracted folder."
-                + $"\nIf you can still not flash with this button, you can manually drag the {firmwareFile} file to the RPI-RP2 or RP2350 drive on your system to flash it."
+                + $"\nIf you can still not flash with this button, you can manually drag the {firmwareFilePath} file to the RPI-RP2 or RP2350 drive on your system to flash it."
             );
             return;
         }
@@ -672,7 +698,7 @@ public partial class MainWindow : Window
             return;
         }
 
-        File.Copy(firmwareFile, Path.Combine(drivePath, Path.GetFileName(firmwareFile)), overwrite: true);
+        File.Copy(firmwareFilePath, Path.Combine(drivePath, GetBaseFirmwareFileName(_selectedBoardType)), overwrite: true);
 
         var timeout = System.DateTime.Now.AddSeconds(10);
         while (UF2Flasher.FindBoardDrive() != null)
@@ -793,43 +819,53 @@ public partial class MainWindow : Window
         );
     }
 
-    private JsonSerializerOptions _jsonOptions = new JsonSerializerOptions()
+    private static string GetSettingsFilePath()
     {
-#if DEBUG
-        WriteIndented = true
-#else
-        WriteIndented = false
-#endif
-    };
+        const string settingsFileName = "settings.json";
+
+        // Check if we're running on macOS and the app is running from the app bundle, not CLI.
+        if (OperatingSystem.IsMacOS() && AppContext.BaseDirectory.Contains(".app/Contents/MacOS"))
+        {
+            // In macOS, when you launch `.app` from Finder, the current working directory is root directory `/` (Gemini said),
+            // which is read-only and not a good place to store our settings file.
+            // We need to place the settings file somewhere else.
+            // `~/Library/Application Support` is a common place to store app data on macOS (like `%APPDATA%` on Windows).
+            // So first, ensure `~/Library/Application Support/TomodachiDrawer` exists
+            var appDataFolder = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "TomodachiDrawer");
+            if (!Directory.Exists(appDataFolder))
+            {
+                Directory.CreateDirectory(appDataFolder);
+            }
+            // Returns `~/Library/Application Support/TomodachiDrawer/settings.json`
+            return Path.Combine(appDataFolder, settingsFileName);
+        }
+        else
+        {
+            // Simply place it in the current working directory
+            return settingsFileName;
+        }
+    }
 
     private void SaveSettings()
     {
-        var json = JsonSerializer.Serialize(_currentSettings, _jsonOptions);
-        File.WriteAllText(SettingsFilePath, json);
+        var json = JsonSerializer.Serialize(_currentSettings, AppSettingsContext.Default.AppSettings);
+        File.WriteAllText(GetSettingsFilePath(), json);
     }
 
     private void GetSettings()
     {
-        if (File.Exists(SettingsFilePath))
+        var settingsFilePath =  GetSettingsFilePath();
+        
+        if (File.Exists(settingsFilePath))
         {
             try
             {
-                var json = File.ReadAllText(SettingsFilePath);
-                var settings = JsonSerializer.Deserialize<AppSettings>(json);
+                var json = File.ReadAllText(settingsFilePath);
+                var settings = JsonSerializer.Deserialize(json, AppSettingsContext.Default.AppSettings);
 
                 if (settings != null)
                 {
                     _currentSettings = settings;
-
-                    SwitchVersionComboBox.SelectedIndex =
-                        (int)_currentSettings.SelectedSwitchVersion - 1;
-                    SetTheme(_currentSettings.SelectedThemeIndex);
-                    AppThemeComboBox.SelectedIndex = _currentSettings.SelectedThemeIndex;
-
-                    EnableExperimentalCheckBox.IsChecked =
-                        _currentSettings.EnableExperimentalFeatures;
-                    CheckForUpdatesCheckBox.IsChecked = _currentSettings.CheckForUpdatesOnStart;
-                    return;
                 }
             }
             catch (Exception)
@@ -839,20 +875,16 @@ public partial class MainWindow : Window
         }
 
         // if no images or we fail, fall to defaults in the appsettings class.
-        _currentSettings = new AppSettings();
-    }
+        _currentSettings ??= new AppSettings();
 
-    // TODO: replace _selectedSwitchVersion and _selectedThemeIndex with just a instance of
-    // appsettings with whatever was last loaded.
-    private class AppSettings
-    {
-        public SwitchVersion SelectedSwitchVersion { get; set; } = SwitchVersion.None;
+        SwitchVersionComboBox.SelectedIndex =
+            (int)_currentSettings.SelectedSwitchVersion - 1;
+        SetTheme(_currentSettings.SelectedThemeIndex);
+        AppThemeComboBox.SelectedIndex = _currentSettings.SelectedThemeIndex;
 
-        public int SelectedThemeIndex { get; set; } = 0;
-
-        public bool EnableExperimentalFeatures { get; set; } = false;
-
-        public bool CheckForUpdatesOnStart { get; set; } = true;
+        EnableExperimentalCheckBox.IsChecked =
+            _currentSettings.EnableExperimentalFeatures;
+        CheckForUpdatesCheckBox.IsChecked = _currentSettings.CheckForUpdatesOnStart;
     }
 
     private void SwitchVersionComboBox_SelectionChanged(object? sender, SelectionChangedEventArgs e)
@@ -920,6 +952,9 @@ public partial class MainWindow : Window
         AppendLog($"Saved current preview to {outputPath}");
     }
 
+    private void MenuToolsOpenColourToHSVStepsTool_Click(object? sender, RoutedEventArgs e) =>
+        new ColourToHSVStepsTool().Show(this);
+
     private void MenuHelpOpenGitHub_Click(object? sender, RoutedEventArgs e) =>
         Launcher.LaunchUriAsync(new Uri("https://github.com/Lucas7yoshi/TomodachiDrawer"));
 
@@ -941,3 +976,6 @@ public partial class MainWindow : Window
         Close();
     }
 }
+
+// To avoid trimming errors...
+

@@ -4,11 +4,12 @@
     <TargetFramework>net10.0</TargetFramework>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
-    <BuiltInComInteropSupport>true</BuiltInComInteropSupport>
     <ApplicationManifest>app.manifest</ApplicationManifest>
     <AvaloniaUseCompiledBindingsByDefault>true</AvaloniaUseCompiledBindingsByDefault>
     <Version>0.0.0</Version>
-	  <ApplicationIcon>TomodachiDrawer.ico</ApplicationIcon>
+    <ApplicationIcon>TomodachiDrawer.ico</ApplicationIcon>
+	<!-- suppress warning from Google.OrTools from trimming since we are rooting it. -->
+    <NoWarn>$(NoWarn);IL2104</NoWarn>
   </PropertyGroup>
   <ItemGroup>
     <PackageReference Include="Avalonia" Version="12.0.3" />
@@ -24,6 +25,8 @@
     <TrimmerRootAssembly Include="Avalonia.Themes.Fluent" />
     <TrimmerRootAssembly Include="Avalonia.Controls" />
     <TrimmerRootAssembly Include="Avalonia.Base" />
+    <TrimmerRootAssembly Include="Google.OrTools" />
+    <TrimmerRootAssembly Include="Google.Protobuf" />
   </ItemGroup>
   <ItemGroup>
     <AvaloniaResource Include="Assets\**" />
@@ -36,4 +39,39 @@
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
   </ItemGroup>
+  <Target Name="RemoveNativePdbs" AfterTargets="Publish">
+    <!-- Delete large native pdbs of minimal value -->
+    <Delete Files="$(PublishDir)libSkiaSharp.pdb;$(PublishDir)libHarfBuzzSharp.pdb" />
+  </Target>
+  <!-- macOS .app bundling `-p:BundleMacOSApp=true` -->
+  <PropertyGroup Condition="'$(BundleMacOSApp)' == 'true' And $(RuntimeIdentifier.StartsWith('osx'))">
+    <SelfContained>true</SelfContained>
+    <UseAppHost>true</UseAppHost>
+    <PublishSingleFile>false</PublishSingleFile>
+    <IncludeNativeLibrariesForSelfExtract>false</IncludeNativeLibrariesForSelfExtract>
+	<PublishTrimmed>true</PublishTrimmed>
+  </PropertyGroup>
+  <Target Name="BundleMacOS" AfterTargets="Publish" Condition="'$(BundleMacOSApp)' == 'true' And $(RuntimeIdentifier.StartsWith('osx'))">
+    <PropertyGroup>
+      <AppBundleDir>$([System.IO.Path]::Combine('$(PublishDir)', 'TomodachiDrawer.app'))</AppBundleDir>
+      <ContentsDir>$([System.IO.Path]::Combine('$(AppBundleDir)', 'Contents'))</ContentsDir>
+      <MacOsDir>$([System.IO.Path]::Combine('$(ContentsDir)', 'MacOS'))</MacOsDir>
+      <ResourcesDir>$([System.IO.Path]::Combine('$(ContentsDir)', 'Resources'))</ResourcesDir>
+    </PropertyGroup>
+    <ItemGroup>
+      <PublishFiles Include="$(PublishDir)**\*.*" Exclude="$(AppBundleDir)\**\*.*;$(PublishDir)TomodachiDrawer.Firmware.uf2" />
+    </ItemGroup>
+    <MakeDir Directories="$(AppBundleDir);$(ContentsDir);$(MacOsDir);$(ResourcesDir)" />
+    <Move SourceFiles="@(PublishFiles)" DestinationFolder="$(MacOsDir)\%(RecursiveDir)" />
+    <Copy SourceFiles="$(PublishDir)TomodachiDrawer.Firmware.uf2" DestinationFolder="$(MacOsDir)" />
+    <Copy SourceFiles="$(ProjectDir)Packaging/macOS/AppIcon.icns" DestinationFolder="$(ResourcesDir)" />
+    <Copy SourceFiles="$(ProjectDir)Packaging/macOS/README.txt" DestinationFolder="$(PublishDir)" />
+    <PropertyGroup>
+      <PlistSource>$(ProjectDir)Packaging/macOS/Info.plist</PlistSource>
+      <PlistDestination>$([System.IO.Path]::Combine('$(ContentsDir)', 'Info.plist'))</PlistDestination>
+      <PlistContent>$([System.IO.File]::ReadAllText('$(PlistSource)'))</PlistContent>
+      <PlistContent>$(PlistContent.Replace('{{version}}', '$(Version)'))</PlistContent>
+    </PropertyGroup>
+    <WriteLinesToFile File="$(PlistDestination)" Lines="$(PlistContent)" Overwrite="true" />
+  </Target>
 </Project>

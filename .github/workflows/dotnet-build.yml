@@ -29,7 +29,7 @@ jobs:
     - name: Restore dependencies
       run: dotnet restore -v n /p:EnableWindowsTargeting=true
     - name: Build
-      run: dotnet build --configuration ${{ matrix.configuration }} --no-restore /p:EnableWindowsTargeting=true
+      run: dotnet build --configuration ${{ matrix.configuration }} --no-restore
     - name: Test
       run: dotnet test --configuration ${{ matrix.configuration }} --no-build --verbosity normal /p:EnableWindowsTargeting=true
   publish-avalonia:
@@ -39,7 +39,7 @@ jobs:
       fail-fast: false
       matrix:
         configuration: [Release]
-        runtime: [win-x64, win-arm64, linux-x64, linux-arm64, osx-x64, osx-arm64]
+        runtime: [win-x64, linux-x64, linux-arm64, osx-x64, osx-arm64] # win-arm64 removed since Google.OrTools dont even ship it. How does that not give a build warning??
 
     steps:
     - uses: actions/checkout@v6
@@ -50,7 +50,12 @@ jobs:
         cache-dependency-path: '**/*.csproj'
     - name: Build
       working-directory: TomodachiDrawer.UI.Avalonia
-      run: dotnet publish --configuration ${{ matrix.configuration }} -r ${{ matrix.runtime }} --self-contained -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true ${{ github.ref_type == 'tag' && format('-p:Version={0}', github.ref_name) || '' }}
+      run: |
+        dotnet publish --configuration ${{ matrix.configuration }} \
+          -r ${{ matrix.runtime }} \
+          --self-contained \
+          ${{ !contains(matrix.runtime, 'osx') && '-p:PublishTrimmed=true -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true' || '-p:BundleMacOSApp=true' }} \
+          ${{ github.ref_type == 'tag' && format('-p:Version={0}', github.ref_name) || '' }}
     - name: Upload Artifacts
       uses: actions/upload-artifact@v7
       with:
@@ -69,51 +74,24 @@ jobs:
       with:
         path: unzipped-artifacts
         merge-multiple: false
-- name: Zip for Release
+    - name: Zip for Release
       run: |
         mkdir final-packages
         for dir in unzipped-artifacts/*/; do
           dirname=$(basename "$dir")
+          cd "$dir"
+          echo "Zipping/Tarring ${dirname}"
+
           outname="${dirname//osx/mac}"
           
-          cd "$dir"
-          echo "Processing ${dirname} into ${outname}"
-          
-          # osx is slop alert, because i do not have a mac and this is all a genuine mystery to me
           if [[ "$dirname" == *"osx"* ]]; then
-            echo "Mac .tar.gz (Creating .app bundle)"
-            
-            mkdir -p TomodachiDrawer.app/Contents/MacOS
-            
-            mv TomodachiDrawer.UI.Avalonia TomodachiDrawer.app/Contents/MacOS/TomodachiDrawer
-            chmod +x TomodachiDrawer.app/Contents/MacOS/TomodachiDrawer
-            
-            find . -maxdepth 1 -type f -exec mv {} TomodachiDrawer.app/Contents/MacOS/ \;
-            
-            cat << 'EOF' > TomodachiDrawer.app/Contents/Info.plist
-            <?xml version="1.0" encoding="UTF-8"?>
-            <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
-            <plist version="1.0">
-            <dict>
-                <key>CFBundleExecutable</key>
-                <string>TomodachiDrawer</string>
-                <key>CFBundleIdentifier</key>
-                <string>com.tomodachidrawer.app</string>
-                <key>CFBundleName</key>
-                <string>TomodachiDrawer</string>
-                <key>CFBundlePackageType</key>
-                <string>APPL</string>
-            </dict>
-            </plist>
-            EOF
-            
-            tar -czvf "../../final-packages/${outname}-${{ github.ref_name }}.tar.gz" TomodachiDrawer.app
-            
+            echo "Mac .tar.gz"
+            chmod +x TomodachiDrawer.app/Contents/MacOS/TomodachiDrawer.UI.Avalonia
+            tar -czvf "../../final-packages/${outname}-${{ github.ref_name }}.tar.gz" TomodachiDrawer.app TomodachiDrawer.Firmware.uf2 README.txt
           elif [[ "$dirname" == *"linux"* ]]; then
             echo "Linux .tar.gz"
             chmod +x TomodachiDrawer.UI.Avalonia
             tar -czvf "../../final-packages/${outname}-${{ github.ref_name }}.tar.gz" *
-            
           else
             echo "Windows .zip"
             zip -r "../../final-packages/${outname}-${{ github.ref_name }}.zip" .
