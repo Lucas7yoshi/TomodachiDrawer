@@ -1,5 +1,6 @@
 using System.Reflection;
 using System.Text.Json;
+using System.Text.Json.Serialization;
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Input;
@@ -612,7 +613,7 @@ public partial class MainWindow : Window
         SetEstimate(totalTime);
     }
 
-    private string GetBaseFirmwareFilePath()
+    private static string GetBaseFirmwareFilePath()
     {
         // Check if we're running on macOS and the app is running from app bundle, not CLI.
         var baseDirectory = AppContext.BaseDirectory;
@@ -774,16 +775,7 @@ public partial class MainWindow : Window
         );
     }
 
-    private JsonSerializerOptions _jsonOptions = new JsonSerializerOptions()
-    {
-#if DEBUG
-        WriteIndented = true
-#else
-        WriteIndented = false
-#endif
-    };
-
-    private string GetSettingsFilePath()
+    private static string GetSettingsFilePath()
     {
         const string settingsFileName = "settings.json";
 
@@ -812,7 +804,7 @@ public partial class MainWindow : Window
 
     private void SaveSettings()
     {
-        var json = JsonSerializer.Serialize(_currentSettings, _jsonOptions);
+        var json = JsonSerializer.Serialize(_currentSettings, AppSettingsContext.Default.AppSettings);
         File.WriteAllText(GetSettingsFilePath(), json);
     }
 
@@ -825,7 +817,7 @@ public partial class MainWindow : Window
             try
             {
                 var json = File.ReadAllText(settingsFilePath);
-                var settings = JsonSerializer.Deserialize<AppSettings>(json);
+                var settings = JsonSerializer.Deserialize(json, AppSettingsContext.Default.AppSettings);
 
                 if (settings != null)
                 {
@@ -849,19 +841,6 @@ public partial class MainWindow : Window
         EnableExperimentalCheckBox.IsChecked =
             _currentSettings.EnableExperimentalFeatures;
         CheckForUpdatesCheckBox.IsChecked = _currentSettings.CheckForUpdatesOnStart;
-    }
-
-    // TODO: replace _selectedSwitchVersion and _selectedThemeIndex with just a instance of
-    // appsettings with whatever was last loaded.
-    private class AppSettings
-    {
-        public SwitchVersion SelectedSwitchVersion { get; set; } = SwitchVersion.None;
-
-        public int SelectedThemeIndex { get; set; } = 0;
-
-        public bool EnableExperimentalFeatures { get; set; } = false;
-
-        public bool CheckForUpdatesOnStart { get; set; } = true;
     }
 
     private void SwitchVersionComboBox_SelectionChanged(object? sender, SelectionChangedEventArgs e)
@@ -953,3 +932,6 @@ public partial class MainWindow : Window
         Close();
     }
 }
+
+// To avoid trimming errors...
+
