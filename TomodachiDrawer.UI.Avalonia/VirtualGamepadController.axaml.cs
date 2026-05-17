@@ -35,8 +35,8 @@ public partial class VirtualGamepadController : Window
 
         Xbox360Button? xboxBtn = tag switch
         {
-            "ZL" => Xbox360Button.LeftShoulder,
-            "ZR" => Xbox360Button.RightShoulder,
+            "L" => Xbox360Button.LeftShoulder,
+            "R" => Xbox360Button.RightShoulder,
             "LS" => Xbox360Button.LeftThumb,
             "RS" => Xbox360Button.RightThumb,
             "Up" => Xbox360Button.Up,
@@ -57,8 +57,8 @@ public partial class VirtualGamepadController : Window
 
         Xbox360Slider? xboxSlider = tag switch
         {
-            "L" => Xbox360Slider.LeftTrigger,
-            "R" => Xbox360Slider.LeftTrigger,
+            "ZL" => Xbox360Slider.LeftTrigger,
+            "ZR" => Xbox360Slider.RightTrigger,
             _ => null,
         };
         if (xboxSlider != null)
