@@ -951,6 +951,7 @@ public partial class MainWindow : Window
         }
 
         MenuDebugRunInVirtualGamepad.IsEnabled = _isVirtualGamepadControllerConnected;
+        MenuDebugOpenVirtualGamepadController.IsEnabled = _isVirtualGamepadControllerConnected;
     }
 
     private async void MenuDebugRunInVirtualGamepadButton_Click(object sender, RoutedEventArgs e)
@@ -989,6 +990,18 @@ public partial class MainWindow : Window
         await drawer.DrawImage(SKBitmap.Decode(imagePath), drawSettings);
 
         AppendLog("Done!");
+    }
+
+    private void MenuDebugOpenVirtualGamepadControllerButton_Click(object sender, RoutedEventArgs e)
+    {
+        if (_virtualGamepadController == null)
+            return;
+
+        var window = new VirtualGamepadController
+        {
+            GamepadController = _virtualGamepadController
+        };
+        window.Show(this);
     }
 
     private void MenuHelpOpenGitHub_Click(object? sender, RoutedEventArgs e) =>

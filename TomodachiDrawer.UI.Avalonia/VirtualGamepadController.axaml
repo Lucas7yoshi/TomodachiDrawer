@@ -1,0 +1,206 @@
+<Window xmlns="https://github.com/avaloniaui"
+		xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+		x:Class="TomodachiDrawer.UI.Avalonia.VirtualGamepadController"
+        Title="VirtualGamepadController"
+        Width="400" Height="300"
+        CanResize="False"
+        WindowStartupLocation="CenterOwner"
+        KeyDown="Window_KeyDown"
+        KeyUp="Window_KeyUp"
+        Background="{DynamicResource Background}">
+    <Window.Styles>
+        <Style Selector="Canvas Border">
+            <Setter Property="Width" Value="30" />
+            <Setter Property="Height" Value="30" />
+            <Setter Property="Background" Value="{DynamicResource ButtonBackground}" />
+            <Setter Property="CornerRadius" Value="5" />
+            <Setter Property="Cursor" Value="Hand" />
+
+            <Style Selector="^:pointerover">
+                <Setter Property="Background" Value="{DynamicResource ButtonBackgroundPointerOver}"></Setter>
+            </Style>
+
+            <Style Selector="^ > TextBlock">
+                <Setter Property="VerticalAlignment" Value="Center" />
+                <Setter Property="HorizontalAlignment" Value="Center" />
+            </Style>
+        </Style>
+    </Window.Styles>
+    <Canvas Margin="15">
+        <Border Canvas.Top="0" Canvas.Left="0" Width="75"
+                Tag="ZL"
+                PointerPressed="Button_PointerPressed"
+                PointerReleased="Button_PointerReleased">
+            <TextBlock Text="ZL" />
+        </Border>
+
+        <Border Canvas.Top="35" Canvas.Left="0" Width="75"
+                Tag="L"
+                PointerPressed="Button_PointerPressed"
+                PointerReleased="Button_PointerReleased">
+            <TextBlock Text="L" />
+        </Border>
+
+        <Border Canvas.Top="0" Canvas.Right="0" Width="75"
+                Tag="ZR"
+                PointerPressed="Button_PointerPressed"
+                PointerReleased="Button_PointerReleased">
+            <TextBlock Text="ZR" />
+        </Border>
+
+        <Border Canvas.Top="35" Canvas.Right="0" Width="75"
+                Tag="R"
+                PointerPressed="Button_PointerPressed"
+                PointerReleased="Button_PointerReleased">
+            <TextBlock Text="R" />
+        </Border>
+
+        <Canvas Canvas.Bottom="95" Canvas.Left="15"
+                Width="90" Height="90"
+                Tag="LS"
+                PointerPressed="Stick_PointerPressed"
+                PointerReleased="Stick_PointerReleased"
+                PointerMoved="Stick_PointerMoved"
+                Background="Transparent">
+            <Border Width="90" Height="90"
+                    Background="DimGray"
+                    CornerRadius="1000"
+                    IsHitTestVisible="False" />
+            <Border Canvas.Top="0" Canvas.Left="30"
+                    Tag="LS_Up"
+                    PointerPressed="Button_PointerPressed"
+                    PointerReleased="Button_PointerReleased">
+                <TextBlock Text="↑" />
+            </Border>
+            <Border Canvas.Top="30" Canvas.Left="0"
+                    Tag="LS_Left"
+                    PointerPressed="Button_PointerPressed"
+                    PointerReleased="Button_PointerReleased">
+                <TextBlock Text="←" />
+            </Border>
+            <Border Canvas.Top="30" Canvas.Left="60"
+                    Tag="LS_Right"
+                    PointerPressed="Button_PointerPressed"
+                    PointerReleased="Button_PointerReleased">
+                <TextBlock Text="→" />
+            </Border>
+            <Border Canvas.Top="60" Canvas.Left="30"
+                    Tag="LS_Down"
+                    PointerPressed="Button_PointerPressed"
+                    PointerReleased="Button_PointerReleased">
+                <TextBlock Text="↓" />
+            </Border>
+            <Border Canvas.Top="30" Canvas.Left="30"
+                    Tag="LS"
+                    PointerPressed="Button_PointerPressed"
+                    PointerReleased="Button_PointerReleased">
+                <TextBlock Text="LStick"
+                           FontSize="8"
+                           VerticalAlignment="Center" 
+                           HorizontalAlignment="Center"/>
+            </Border>
+        </Canvas>
+
+        <Canvas Canvas.Bottom="0" Canvas.Left="75"
+                Width="90" Height="90">
+            <Border Canvas.Top="0" Canvas.Left="30"
+                    Tag="Up"
+                    PointerPressed="Button_PointerPressed"
+                    PointerReleased="Button_PointerReleased">
+                <TextBlock Text="↑" />
+            </Border>
+            <Border Canvas.Top="30" Canvas.Left="0"
+                    Tag="Left"
+                    PointerPressed="Button_PointerPressed"
+                    PointerReleased="Button_PointerReleased">
+                <TextBlock Text="←" />
+            </Border>
+            <Border Canvas.Top="30" Canvas.Left="60"
+                    Tag="Right"
+                    PointerPressed="Button_PointerPressed"
+                    PointerReleased="Button_PointerReleased">
+                <TextBlock Text="→" />
+            </Border>
+            <Border Canvas.Top="60" Canvas.Left="30"
+                    Tag="Down"
+                    PointerPressed="Button_PointerPressed"
+                    PointerReleased="Button_PointerReleased">
+                <TextBlock Text="↓" />
+            </Border>
+        </Canvas>
+
+        <Canvas Canvas.Bottom="0" Canvas.Right="75"
+                Width="90" Height="90"
+                Tag="RS"
+                PointerPressed="Stick_PointerPressed"
+                PointerReleased="Stick_PointerReleased"
+                PointerMoved="Stick_PointerMoved"
+                Background="Transparent">
+            <Border Width="90" Height="90"
+                    Background="DimGray"
+                    CornerRadius="1000"
+                    IsHitTestVisible="False" />
+            <Border Canvas.Top="0" Canvas.Left="30"
+                    Tag="RS_Up"
+                    PointerPressed="Button_PointerPressed"
+                    PointerReleased="Button_PointerReleased">
+                <TextBlock Text="↑" />
+            </Border>
+            <Border Canvas.Top="30" Canvas.Left="0"
+                    Tag="RS_Left"
+                    PointerPressed="Button_PointerPressed"
+                    PointerReleased="Button_PointerReleased">
+                <TextBlock Text="←" />
+            </Border>
+            <Border Canvas.Top="30" Canvas.Left="60"
+                    Tag="RS_Right"
+                    PointerPressed="Button_PointerPressed"
+                    PointerReleased="Button_PointerReleased">
+                <TextBlock Text="→" />
+            </Border>
+            <Border Canvas.Top="60" Canvas.Left="30"
+                    Tag="RS_Down"
+                    PointerPressed="Button_PointerPressed"
+                    PointerReleased="Button_PointerReleased">
+                <TextBlock Text="↓" />
+            </Border>
+            <Border Canvas.Top="30" Canvas.Left="30"
+                    Tag="RS"
+                    PointerPressed="Button_PointerPressed"
+                    PointerReleased="Button_PointerReleased">
+                <TextBlock Text="RStick"
+                           FontSize="8"
+                           VerticalAlignment="Center" 
+                           HorizontalAlignment="Center"/>
+            </Border>
+        </Canvas>
+
+        <Canvas Canvas.Bottom="90" Canvas.Right="15"
+                Width="90" Height="90">
+            <Border Canvas.Top="0" Canvas.Left="30"
+                    Tag="X"
+                    PointerPressed="Button_PointerPressed"
+                    PointerReleased="Button_PointerReleased">
+                <TextBlock Text="X" />
+            </Border>
+            <Border Canvas.Top="30" Canvas.Left="0"
+                    Tag="Y"
+                    PointerPressed="Button_PointerPressed"
+                    PointerReleased="Button_PointerReleased">
+                <TextBlock Text="Y" />
+            </Border>
+            <Border Canvas.Top="30" Canvas.Left="60"
+                    Tag="A"
+                    PointerPressed="Button_PointerPressed"
+                    PointerReleased="Button_PointerReleased">
+                <TextBlock Text="A" />
+            </Border>
+            <Border Canvas.Top="60" Canvas.Left="30"
+                    Tag="B"
+                    PointerPressed="Button_PointerPressed"
+                    PointerReleased="Button_PointerReleased">
+                <TextBlock Text="B" />
+            </Border>
+        </Canvas>
+    </Canvas>
+</Window>

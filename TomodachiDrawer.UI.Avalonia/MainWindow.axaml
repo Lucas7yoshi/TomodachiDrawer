@@ -46,6 +46,10 @@
 						  IsEnabled="False"
 						  Header="_Run in Virtual Gamepad"
 						  Click="MenuDebugRunInVirtualGamepadButton_Click" />
+				<MenuItem x:Name="MenuDebugOpenVirtualGamepadController"
+						  IsEnabled="False"
+						  Header="_Control Virtual Gamepad"
+						  Click="MenuDebugOpenVirtualGamepadControllerButton_Click" />
 			</MenuItem>
 			<MenuItem Header="_Help">
 				<MenuItem 
