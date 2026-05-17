@@ -1,22 +1,19 @@
 ﻿using SkiaSharp;
 
-namespace TomodachiDrawer.Core.Models
+namespace TomodachiDrawer.Core
 {
-    public record struct ColourGameSteps()
+    /// <summary>Map RGB values to input counts. Used by both ColourPalette and the ColourToHSVSteps tool.</summary>
+    public static class ColourPickerRouter
     {
         // Full colour range.
         public const int FCR_HUE_SLIDER_STEP_COUNT = 201;
         public const int FCR_SATURATION_STEP_COUNT = 213;
         public const int FCR_VALUE_STEP_COUNT = 112;
 
-        /// <summary>Button taps to move from the left of the Hue slider</summary>
-        public int HueSteps;
-        /// <summary>Button taps to move from the right of the Colour gradient</summary>
-        public int SatSteps;
-        /// <summary>Button taps to move from the top of the Colour gradient</summary>
-        public int ValSteps;
-
-        public static ColourGameSteps FromColour(SKColor skColor)
+        /// <summary>Translate a Colour to the number of button inputs for the Colour picker</summary>
+        /// <param name="skColor">Colour to map.</param>
+        /// <returns>Number of button inputs for Hue, Sat and Value.</returns>
+        public static (int HueSteps, int SatSteps, int ValSteps) FromColour(SKColor skColor)
         {
             // TLDR: The RGB needs to be Linearized from sRGB then turned to HSV.
             // This seemingly is a 1:1 match.

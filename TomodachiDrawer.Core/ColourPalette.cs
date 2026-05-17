@@ -1,4 +1,5 @@
 ﻿using SkiaSharp;
+
 using TomodachiDrawer.Core.ImageProcessing;
 using TomodachiDrawer.Core.ImageProcessing.Denoising;
 using TomodachiDrawer.Core.ImageProcessing.Quantizers;
@@ -344,13 +345,13 @@ namespace TomodachiDrawer.Core
                 }
 
                 // Figure out the steps first off
-                var steps = ColourGameSteps.FromColour(target.skColor);
+                var steps = ColourPickerRouter.FromColour(target.skColor);
 
                 // Determine which way we home for shorter travel.
                 // If we are past the halfway point, use the opposite side.
-                bool hueHomeLeft = steps.HueSteps <= (ColourGameSteps.FCR_HUE_SLIDER_STEP_COUNT - 1) / 2;
-                bool satHomeRight = steps.SatSteps <= (ColourGameSteps.FCR_SATURATION_STEP_COUNT - 1) / 2;
-                bool valHomeTop = steps.ValSteps <= (ColourGameSteps.FCR_VALUE_STEP_COUNT - 1) / 2;
+                bool hueHomeLeft = steps.HueSteps <= (ColourPickerRouter.FCR_HUE_SLIDER_STEP_COUNT - 1) / 2;
+                bool satHomeRight = steps.SatSteps <= (ColourPickerRouter.FCR_SATURATION_STEP_COUNT - 1) / 2;
+                bool valHomeTop = steps.ValSteps <= (ColourPickerRouter.FCR_VALUE_STEP_COUNT - 1) / 2;
 
                 // Use stick for quicker homing
                 _realOutput.SetStick(Stick.LX, satHomeRight ? (byte)255 : (byte)0);
@@ -371,17 +372,17 @@ namespace TomodachiDrawer.Core
                 // but for colour selection it would be fairly insignificant.
                 int hueInputs = hueHomeLeft
                     ? steps.HueSteps
-                    : (ColourGameSteps.FCR_HUE_SLIDER_STEP_COUNT - 1) - steps.HueSteps;
+                    : (ColourPickerRouter.FCR_HUE_SLIDER_STEP_COUNT - 1) - steps.HueSteps;
                 Button hueTapDirection = hueHomeLeft ? Button.ZR : Button.ZL;
 
                 int satInputs = satHomeRight
                     ? steps.SatSteps
-                    : (ColourGameSteps.FCR_SATURATION_STEP_COUNT - 1) - steps.SatSteps;
+                    : (ColourPickerRouter.FCR_SATURATION_STEP_COUNT - 1) - steps.SatSteps;
                 DPad satDirection = satHomeRight ? DPad.LEFT : DPad.RIGHT;
 
                 int valInputs = valHomeTop
                     ? steps.ValSteps
-                    : (ColourGameSteps.FCR_VALUE_STEP_COUNT - 1) - steps.ValSteps;
+                    : (ColourPickerRouter.FCR_VALUE_STEP_COUNT - 1) - steps.ValSteps;
                 DPad valDirection = valHomeTop ? DPad.DOWN : DPad.UP;
 
                 for (int i = 0; i < hueInputs; i++)
