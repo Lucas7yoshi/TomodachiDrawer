@@ -63,7 +63,10 @@
     </ItemGroup>
     <MakeDir Directories="$(AppBundleDir);$(ContentsDir);$(MacOsDir);$(ResourcesDir)" />
     <Move SourceFiles="@(PublishFiles)" DestinationFolder="$(MacOsDir)\%(RecursiveDir)" />
-    <Copy SourceFiles="$(PublishDir)TomodachiDrawer.Firmware.*.uf2" DestinationFolder="$(MacOsDir)" />
+    <ItemGroup>
+      <FirmwareFiles Include="$(PublishDir)TomodachiDrawer.Firmware.*.uf2" />
+    </ItemGroup>
+    <Copy SourceFiles="@(FirmwareFiles)" DestinationFolder="$(MacOsDir)" />
     <Copy SourceFiles="$(ProjectDir)Packaging/macOS/AppIcon.icns" DestinationFolder="$(ResourcesDir)" />
     <Copy SourceFiles="$(ProjectDir)Packaging/macOS/README.txt" DestinationFolder="$(PublishDir)" />
     <PropertyGroup>
