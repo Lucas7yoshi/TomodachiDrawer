@@ -75,6 +75,7 @@
 					<RowDefinition Height="*" />
 					<RowDefinition Height="Auto" />
 					<RowDefinition Height="Auto" />
+					<RowDefinition Height="Auto" />
 				</Grid.RowDefinitions>
 				<Border Grid.Row="0" Classes="group" Margin="0,0,0,6">
 					<StackPanel Spacing="6">
@@ -229,7 +230,52 @@
 							Margin="2,0,0,0"
 							Click="ExportUF2Button_Click"
 						/>
+						<Button
+							x:Name="ExportTDLDButton"
+							IsEnabled="False"
+							Content="Export to .tdld"
+							ToolTip.Tip="Saves the raw .tdld file (the binary format the firmware reads). Useful for sharing drawings, flashing manually via parttool.py, or inspecting the opcode stream."
+							HorizontalAlignment="Stretch"
+							Margin="2,0,0,0"
+							Click="ExportTDLDButton_Click"
+						/>
 
+					</StackPanel>
+				</Border>
+				<Border Grid.Row="6" Classes="group" Margin="0,6,0,0">
+					<StackPanel Spacing="5">
+						<TextBlock Classes="header" Text="ESP32-S3 Output" />
+						<TextBlock x:Name="ESP32StatusLabel"
+								   Text="ESP32-S3 Status: scanning..." />
+						<Grid>
+							<Grid.ColumnDefinitions>
+								<ColumnDefinition Width="*" />
+								<ColumnDefinition Width="*" />
+							</Grid.ColumnDefinitions>
+							<Button Grid.Column="0"
+									x:Name="RefreshESP32Button"
+									Content="Re-scan COM Ports"
+									ToolTip.Tip="Probe all serial ports for ESP32-S3 chips. Each probe briefly resets the board on that port - if the board is currently drawing on a Switch, leave it alone and skip the scan."
+									HorizontalAlignment="Stretch"
+									Margin="2,0,2,0"
+									Click="RefreshESP32Button_Click" />
+							<Button Grid.Column="1"
+									x:Name="FlashESP32FirmwareButton"
+									IsEnabled="False"
+									Content="Flash Base Firmware"
+									ToolTip.Tip="Writes the bundled ESP32-S3 firmware (bootloader + partition table + app) to the detected board. Only needed once per board, or when updating to a new firmware version."
+									HorizontalAlignment="Stretch"
+									Margin="2,0,2,0"
+									Click="FlashESP32FirmwareButton_Click" />
+						</Grid>
+						<Button x:Name="ExportESP32Button"
+								IsEnabled="False"
+								Content="Export To ESP32-S3!"
+								ToolTip.Tip="Processes the drawing into a TDLD image and writes it to the ESP32-S3 board's tdld partition via esptool. Requires the base firmware to already be on the board."
+								FontWeight="Bold"
+								HorizontalAlignment="Stretch"
+								Margin="2,0,0,0"
+								Click="ExportESP32Button_Click" />
 					</StackPanel>
 				</Border>
 			</Grid>

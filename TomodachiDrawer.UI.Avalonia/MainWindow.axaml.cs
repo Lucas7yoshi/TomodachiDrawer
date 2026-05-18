@@ -34,6 +34,14 @@ public partial class MainWindow : Window
 
     private bool BusyExporting = false;
 
+    // Cached ESP32-S3 detection. Probing is invasive (resets the chip on
+    // connect) so we only do it on user-triggered Re-scan and reuse the
+    // result; the polling loop just notices when the cached port disappears.
+    private ESP32S3Flasher.DetectedBoard? _detectedESP32;
+    private ESP32S3Flasher.AppDescriptor? _detectedFirmware;
+    private string? _bundledEsptoolPath;
+    private ESP32S3Flasher.FirmwareLayout? _bundledFirmware;
+
     //private SwitchVersion _selectedSwitchVersion = SwitchVersion.None;
     //private int _selectedThemeIndex = 0; // 0 is System.
     private AppSettings _currentSettings = new(); // All cases will result in it being non-null but IntelliSense cant see that far.
@@ -69,6 +77,7 @@ public partial class MainWindow : Window
 #endif
 
         StartRP2040Polling();
+        StartESP32Polling();
         if (CheckForUpdatesCheckBox.IsChecked)
             _ = PerformAsyncUpdateCheck();
 
@@ -199,8 +208,9 @@ public partial class MainWindow : Window
                 {
                     bool hasImage = !string.IsNullOrEmpty(_currentImagePath);
 
-                    // ExportUF2 only needs an image — no RP2040 required
+                    // ExportUF2 / ExportTDLD only need an image - no RP2040 required
                     ExportUF2Button.IsEnabled = hasImage;
+                    ExportTDLDButton.IsEnabled = hasImage && !BusyExporting;
 
                     if (path != null)
                     {
@@ -242,6 +252,169 @@ public partial class MainWindow : Window
                 }
             }
         });
+    }
+
+    // ── ESP32-S3 polling ──────────────────────────────────────────────
+    // Mirrors the RP2040 path but cached - serial probes reset the chip, so
+    // re-probing happens only on user Re-scan.
+
+    private void StartESP32Polling()
+    {
+        _bundledEsptoolPath = ESP32S3Flasher.FindEsptool();
+        _bundledFirmware = ESP32S3Flasher.FindBundledFirmware(out var firmwareMissing);
+        if (_bundledEsptoolPath == null)
+        {
+            AppendLog(
+                "ESP32-S3 disabled - esptool not bundled. CI populates EspTools/ on "
+                + "release; for local dev drop esptool.exe in there or have ESP-IDF on PATH."
+            );
+        }
+        if (_bundledFirmware == null)
+        {
+            AppendLog($"ESP32-S3 base-firmware flash disabled - {firmwareMissing}. "
+                + "Build TomodachiDrawer.Firmware.ESP32S3 (idf.py build) so the bins land "
+                + "in build/ and the next UI build auto-copies them.");
+        }
+        UpdateESP32UI();
+
+        _ = Task.Run(async () =>
+        {
+            while (!_cts.Token.IsCancellationRequested)
+            {
+                await Dispatcher.UIThread.InvokeAsync(UpdateESP32UI);
+                try
+                {
+                    await Task.Delay(1000, _cts.Token);
+                }
+                catch (System.OperationCanceledException)
+                {
+                    break;
+                }
+            }
+        });
+    }
+
+    private void UpdateESP32UI()
+    {
+        bool hasImage = !string.IsNullOrEmpty(_currentImagePath);
+        bool ready = false;
+
+        if (_bundledEsptoolPath == null)
+        {
+            ESP32StatusLabel.Text = "ESP32-S3: esptool not bundled (see EspTools/)";
+            ESP32StatusLabel.Foreground = Brushes.Orange;
+        }
+        else if (_detectedESP32 == null)
+        {
+            ESP32StatusLabel.Text = "ESP32-S3: click Re-scan to detect";
+            ESP32StatusLabel.Foreground = Brushes.Gray;
+        }
+        else if (ESP32S3Flasher.IsPortStillPresent(_detectedESP32.Port))
+        {
+            string rev = _detectedESP32.ChipRevision is { } r ? $" rev {r}" : "";
+            string fw = _detectedFirmware is { } d
+                ? $"   →   {d.ProjectName} v{d.Version}"
+                : "   →   no recognized firmware (flash base firmware to install)";
+            ESP32StatusLabel.Text = $"ESP32-S3 on {_detectedESP32.Port} ({_detectedESP32.ChipFamily}{rev}){fw}";
+            ESP32StatusLabel.Foreground = _detectedFirmware != null ? Brushes.Green : Brushes.Orange;
+            ready = true;
+        }
+        else
+        {
+            ESP32StatusLabel.Text = $"ESP32-S3 on {_detectedESP32.Port} - disconnected";
+            ESP32StatusLabel.Foreground = Brushes.Red;
+        }
+
+        ExportESP32Button.IsEnabled = ready && hasImage && !BusyExporting;
+        RefreshESP32Button.IsEnabled = _bundledEsptoolPath != null && !BusyExporting;
+        FlashESP32FirmwareButton.IsEnabled =
+            ready && _bundledFirmware != null && !BusyExporting;
+    }
+
+    private async void RefreshESP32Button_Click(object? sender, RoutedEventArgs e)
+    {
+        if (_bundledEsptoolPath == null)
+        {
+            _ = ShowMessageAsync(
+                "esptool not found",
+                "ESP32-S3 flashing requires esptool to be bundled with the app (under EspTools/) "
+                    + "or available on PATH. See TomodachiDrawer.Firmware.ESP32S3/README.md for setup."
+            );
+            return;
+        }
+
+        RefreshESP32Button.IsEnabled = false;
+        ESP32StatusLabel.Text = "ESP32-S3: scanning all COM ports...";
+        ESP32StatusLabel.Foreground = Brushes.Gray;
+
+        var esptool = _bundledEsptoolPath;
+        var ports = ESP32S3Flasher.EnumeratePorts();
+        AppendLog($"ESP32-S3 scan: probing {ports.Length} port(s): {string.Join(", ", ports)}");
+
+        ESP32S3Flasher.DetectedBoard? found = null;
+        foreach (var port in ports)
+        {
+            AppendLog($"  probing {port}...");
+            var board = await ESP32S3Flasher.ProbePortAsync(port, esptool, log: AppendLog);
+            if (board != null && board.ChipFamily.Contains("ESP32-S3"))
+            {
+                found = board;
+                AppendLog($"  -> {board.ChipFamily} detected on {port}");
+                break;
+            }
+            else if (board != null)
+            {
+                AppendLog($"  -> {board.ChipFamily} on {port} (not an ESP32-S3, skipping)");
+            }
+        }
+
+        _detectedESP32 = found;
+        _detectedFirmware = null;
+        if (found == null)
+        {
+            AppendLog("ESP32-S3 scan: no compatible board found.");
+        }
+        else
+        {
+            _detectedFirmware = await ESP32S3Flasher.ReadAppDescriptorAsync(found, esptool);
+            if (_detectedFirmware != null)
+                AppendLog($"  firmware on board: {_detectedFirmware.ProjectName} v{_detectedFirmware.Version} (built with {_detectedFirmware.IdfVersion})");
+            else
+                AppendLog($"  no recognized firmware on {found.Port} - run Flash Base Firmware to install");
+        }
+        UpdateESP32UI();
+    }
+
+    private async void FlashESP32FirmwareButton_Click(object? sender, RoutedEventArgs e)
+    {
+        if (_detectedESP32 == null || _bundledEsptoolPath == null || _bundledFirmware == null)
+            return;
+        if (!ESP32S3Flasher.IsPortStillPresent(_detectedESP32.Port))
+        {
+            _ = ShowMessageAsync(
+                "ESP32-S3 disconnected",
+                $"The board on {_detectedESP32.Port} is no longer present. Reconnect and Re-scan."
+            );
+            return;
+        }
+        var board = _detectedESP32;
+        var firmware = _bundledFirmware;
+        var esptool = _bundledEsptoolPath;
+
+        BusyExporting = true;
+        UpdateESP32UI();
+        bool ok = await Task.Run(async () =>
+            await ESP32S3Flasher.FlashBaseFirmwareAsync(board, firmware, esptool, AppendLog));
+        if (ok)
+        {
+            // Re-read the descriptor so the status label shows the newly-flashed
+            // project name and version instead of the stale pre-flash state.
+            _detectedFirmware = await ESP32S3Flasher.ReadAppDescriptorAsync(board, esptool);
+            if (_detectedFirmware != null)
+                AppendLog($"Confirmed: {_detectedFirmware.ProjectName} v{_detectedFirmware.Version}");
+        }
+        BusyExporting = false;
+        UpdateESP32UI();
     }
 
     #region Image/Preview
@@ -652,6 +825,173 @@ public partial class MainWindow : Window
         ExportUF2Button.IsEnabled = true;
         BusyExporting = false;
 
+        SetEstimate(totalTime);
+    }
+
+    private async void ExportTDLDButton_Click(object? sender, RoutedEventArgs e)
+    {
+        if (string.IsNullOrEmpty(_currentImagePath))
+            return;
+
+        if (_currentSettings.SelectedSwitchVersion == SwitchVersion.None)
+        {
+            _ = ShowMessageAsync(
+                "Select Switch Version",
+                "For compatibility, you must select a switch version in the dropdown."
+                    + "\n\nSwitch 1 is more prone to desyncs, so this avoids certain things that are particularly prone to desyncing."
+                    + "\nPlease be aware that even with Switch 1 selected, desyncs are unfortunately expected due to inconsistent and unpredictable lag in the drawing UI."
+            );
+            return;
+        }
+
+        var file = await StorageProvider.SaveFilePickerAsync(
+            new FilePickerSaveOptions
+            {
+                Title = "Save .tdld",
+                DefaultExtension = "tdld",
+                FileTypeChoices =
+                [
+                    new FilePickerFileType("TDLD image") { Patterns = ["*.tdld"] },
+                    new FilePickerFileType("All Files") { Patterns = ["*.*"] },
+                ],
+            }
+        );
+
+        var outputPath = file?.TryGetLocalPath();
+        if (outputPath == null)
+            return;
+
+        var imagePath = _currentImagePath;
+        var denoiser = DenoisingComboBox.SelectedItem?.ToString();
+        var tspLimit = (float)(TSPTimeLimitUpDown.Value ?? 0.5m);
+
+        ExportTDLDButton.IsEnabled = false;
+        BusyExporting = true;
+        TimeSpan totalTime = TimeSpan.MaxValue;
+        var settings = GetQuantizerSettings();
+        var enableExperimental = EnableExperimentalCheckBox.IsChecked ?? false;
+        var enableHome = EnableHomeCanvas.IsChecked ?? false;
+
+        await Task.Run(async () =>
+        {
+            // FileControllerSink writes its output directly to disk, so we point
+            // it at the user's chosen path and skip the temp-file + copy dance the
+            // other export buttons do.
+            AppendLog($"Exporting TDLD to {outputPath}");
+            var timingSink = new TimingSink();
+            var drawer = new CanvasDrawer(
+                timingSink,
+                _currentSettings.SelectedSwitchVersion,
+                AppendLog
+            );
+            drawer.ConnectAndConfirmController();
+            AppendLog("Starting to generate inputs...");
+            var drawSettings = new DrawImageSettings()
+            {
+                QuantizerSettings = settings,
+                DenoiserName = denoiser,
+                TSPTimeLimit = tspLimit,
+                DisableLargeBrush = false,
+                EnableExperimentalFeatures = enableExperimental,
+                HomeToTopLeft = enableHome,
+            };
+            await drawer.DrawImage(SKBitmap.Decode(imagePath), drawSettings);
+            AppendLog($"True complete overall time is: {timingSink.TotalTime.TotalSeconds}s");
+
+            var fileSink = new FileControllerSink(outputPath);
+            timingSink.ReplayTo(fileSink);
+            fileSink.Dispose();
+
+            AppendLog($"Saved TDLD to {outputPath}");
+            totalTime = timingSink.TotalTime;
+        });
+
+        ExportTDLDButton.IsEnabled = true;
+        BusyExporting = false;
+        SetEstimate(totalTime);
+    }
+
+    private async void ExportESP32Button_Click(object? sender, RoutedEventArgs e)
+    {
+        if (string.IsNullOrEmpty(_currentImagePath))
+            return;
+        if (_detectedESP32 == null || _bundledEsptoolPath == null)
+            return;
+        if (!ESP32S3Flasher.IsPortStillPresent(_detectedESP32.Port))
+        {
+            _ = ShowMessageAsync(
+                "ESP32-S3 disconnected",
+                $"The board on {_detectedESP32.Port} is no longer present. Reconnect "
+                    + "it and click Re-scan."
+            );
+            return;
+        }
+        if (_currentSettings.SelectedSwitchVersion == SwitchVersion.None)
+        {
+            _ = ShowMessageAsync(
+                "Select Switch Version",
+                "For compatibility, you must select a switch version in the dropdown."
+                    + "\n\nSwitch 1 is more prone to desyncs, so this avoids certain things that are particularly prone to desyncing."
+                    + "\nPlease be aware that even with Switch 1 selected, desyncs are unfortunately expected due to inconsistent and unpredictable lag in the drawing UI."
+            );
+            return;
+        }
+
+        var imagePath = _currentImagePath;
+        var denoiser = DenoisingComboBox.SelectedItem?.ToString();
+        var tspLimit = (float)(TSPTimeLimitUpDown.Value ?? 0.5m);
+        var board = _detectedESP32;
+        var esptoolPath = _bundledEsptoolPath;
+        var settings = GetQuantizerSettings();
+        var enableExperimental = EnableExperimentalCheckBox.IsChecked ?? false;
+        var enableHome = EnableHomeCanvas.IsChecked ?? false;
+
+        BusyExporting = true;
+        ExportESP32Button.IsEnabled = false;
+        TimeSpan totalTime = TimeSpan.MaxValue;
+
+        await Task.Run(async () =>
+        {
+            string tempPath = Path.Combine(
+                Path.GetTempPath(),
+                $"esp32output{System.Random.Shared.Next(1000000, 9999999)}.tdld"
+            );
+
+            AppendLog($"Exporting to ESP32-S3 ({Path.GetFileName(tempPath)})");
+            var timingSink = new TimingSink();
+            var drawer = new CanvasDrawer(
+                timingSink,
+                _currentSettings.SelectedSwitchVersion,
+                AppendLog
+            );
+            drawer.ConnectAndConfirmController();
+            AppendLog("Starting to generate inputs...");
+            var drawSettings = new DrawImageSettings()
+            {
+                QuantizerSettings = settings,
+                DenoiserName = denoiser,
+                TSPTimeLimit = tspLimit,
+                DisableLargeBrush = false,
+                EnableExperimentalFeatures = enableExperimental,
+                HomeToTopLeft = enableHome,
+            };
+            await drawer.DrawImage(SKBitmap.Decode(imagePath), drawSettings);
+            AppendLog($"True complete overall time is: {timingSink.TotalTime.TotalSeconds}s");
+
+            var fileSink = new FileControllerSink(tempPath);
+            timingSink.ReplayTo(fileSink);
+            fileSink.Dispose();
+
+            var tdldBytes = File.ReadAllBytes(tempPath);
+            await ESP32S3Flasher.WriteTdldImageAsync(board, tdldBytes, esptoolPath, AppendLog);
+
+            if (File.Exists(tempPath))
+                File.Delete(tempPath);
+            totalTime = timingSink.TotalTime;
+        });
+
+        BusyExporting = false;
+        UpdateESP32UI();
         SetEstimate(totalTime);
     }
 
