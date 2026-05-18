@@ -1,0 +1,4 @@
+﻿[*.cs]
+
+# IDE0305: Simplify collection initialization
+dotnet_diagnostic.IDE0305.severity = silent
