@@ -82,6 +82,7 @@ jobs:
     - name: Download esptool for ${{ matrix.runtime }}
       shell: bash
       run: |
+        set -euo pipefail
         case "${{ matrix.runtime }}" in
           win-x64)     ESP_PKG="esptool-v${ESPTOOL_VERSION}-windows-amd64.zip";   ESP_BIN=esptool.exe ;;
           linux-x64)   ESP_PKG="esptool-v${ESPTOOL_VERSION}-linux-amd64.tar.gz";  ESP_BIN=esptool     ;;
@@ -91,16 +92,24 @@ jobs:
           *) echo "Unknown runtime"; exit 1 ;;
         esac
         DEST=TomodachiDrawer.UI.Avalonia/EspTools
+        URL="https://github.com/espressif/esptool/releases/download/v${ESPTOOL_VERSION}/${ESP_PKG}"
         mkdir -p "$DEST"
-        curl -sSL -o esptool_pkg "https://github.com/espressif/esptool/releases/download/v${ESPTOOL_VERSION}/${ESP_PKG}"
+        echo "Downloading $URL"
+        curl -fLsS -o esptool_pkg "$URL"
         mkdir esptool_extract
         case "${ESP_PKG}" in
           *.zip)    unzip -q esptool_pkg -d esptool_extract ;;
           *.tar.gz) tar -xzf esptool_pkg -C esptool_extract ;;
         esac
+        echo "Archive contents:"
+        find esptool_extract -type f | head -20
         # esptool archives put the binary in a subdir named after the package.
         find esptool_extract -type f -name "${ESP_BIN}" -exec cp {} "$DEST/${ESP_BIN}" \;
         chmod +x "$DEST/${ESP_BIN}" || true
+        if [ ! -f "$DEST/${ESP_BIN}" ]; then
+          echo "ERROR: $ESP_BIN not found after extracting $ESP_PKG"
+          exit 1
+        fi
         ls -la "$DEST"
     - name: Build
       working-directory: TomodachiDrawer.UI.Avalonia

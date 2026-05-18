@@ -24,6 +24,7 @@
          per-runtime; local dev drops them in manually. -->
     <None Include="EspTools\**\*" Condition="Exists('EspTools')">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
       <Link>EspTools\%(RecursiveDir)%(Filename)%(Extension)</Link>
     </None>
     <!-- Bundled ESP32-S3 firmware (bootloader / partition table / app).
@@ -31,6 +32,7 @@
          them auto-copied by the CopyESP32S3FirmwareLocal target below. -->
     <None Include="EspFirmware\**\*.bin" Condition="Exists('EspFirmware')">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
       <Link>EspFirmware\%(RecursiveDir)%(Filename)%(Extension)</Link>
     </None>
   </ItemGroup>
