@@ -32,15 +32,41 @@ jobs:
       run: dotnet build --configuration ${{ matrix.configuration }} --no-restore
     - name: Test
       run: dotnet test --configuration ${{ matrix.configuration }} --no-build --verbosity normal /p:EnableWindowsTargeting=true
+  build-firmware:
+    name: Build ESP32-S3 firmware
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v6
+    - name: Build firmware
+      uses: espressif/esp-idf-ci-action@v1
+      with:
+        esp_idf_version: v5.4
+        target: esp32s3
+        path: 'TomodachiDrawer.Firmware.ESP32S3'
+    - name: Stage firmware artifacts
+      run: |
+        mkdir firmware_artifacts
+        cp TomodachiDrawer.Firmware.ESP32S3/build/bootloader/bootloader.bin firmware_artifacts/
+        cp TomodachiDrawer.Firmware.ESP32S3/build/partition_table/partition-table.bin firmware_artifacts/
+        cp TomodachiDrawer.Firmware.ESP32S3/build/TomodachiDrawer_FW_ESP32S3.bin firmware_artifacts/
+        ls -la firmware_artifacts/
+    - name: Upload firmware
+      uses: actions/upload-artifact@v7
+      with:
+        name: esp32s3-firmware
+        path: firmware_artifacts/
+
   publish-avalonia:
     runs-on: ubuntu-latest
-    needs: build
+    needs: [build, build-firmware]
     strategy:
       fail-fast: false
       matrix:
         configuration: [Release]
         runtime: [win-x64, linux-x64, linux-arm64, osx-x64, osx-arm64] # win-arm64 removed since Google.OrTools dont even ship it. How does that not give a build warning??
 
+    env:
+      ESPTOOL_VERSION: 5.2.0
     steps:
     - uses: actions/checkout@v6
     - uses: actions/setup-dotnet@v5
@@ -48,6 +74,34 @@ jobs:
         dotnet-version: '10.0.x'
         cache: true
         cache-dependency-path: '**/*.csproj'
+    - name: Download ESP32-S3 firmware
+      uses: actions/download-artifact@v8
+      with:
+        name: esp32s3-firmware
+        path: TomodachiDrawer.UI.Avalonia/EspFirmware
+    - name: Download esptool for ${{ matrix.runtime }}
+      shell: bash
+      run: |
+        case "${{ matrix.runtime }}" in
+          win-x64)     ESP_PKG="esptool-v${ESPTOOL_VERSION}-windows-amd64.zip";   ESP_BIN=esptool.exe ;;
+          linux-x64)   ESP_PKG="esptool-v${ESPTOOL_VERSION}-linux-amd64.tar.gz";  ESP_BIN=esptool     ;;
+          linux-arm64) ESP_PKG="esptool-v${ESPTOOL_VERSION}-linux-aarch64.tar.gz"; ESP_BIN=esptool    ;;
+          osx-x64)     ESP_PKG="esptool-v${ESPTOOL_VERSION}-macos-amd64.tar.gz";  ESP_BIN=esptool     ;;
+          osx-arm64)   ESP_PKG="esptool-v${ESPTOOL_VERSION}-macos-arm64.tar.gz";  ESP_BIN=esptool     ;;
+          *) echo "Unknown runtime"; exit 1 ;;
+        esac
+        DEST=TomodachiDrawer.UI.Avalonia/EspTools
+        mkdir -p "$DEST"
+        curl -sSL -o esptool_pkg "https://github.com/espressif/esptool/releases/download/v${ESPTOOL_VERSION}/${ESP_PKG}"
+        mkdir esptool_extract
+        case "${ESP_PKG}" in
+          *.zip)    unzip -q esptool_pkg -d esptool_extract ;;
+          *.tar.gz) tar -xzf esptool_pkg -C esptool_extract ;;
+        esac
+        # esptool archives put the binary in a subdir named after the package.
+        find esptool_extract -type f -name "${ESP_BIN}" -exec cp {} "$DEST/${ESP_BIN}" \;
+        chmod +x "$DEST/${ESP_BIN}" || true
+        ls -la "$DEST"
     - name: Build
       working-directory: TomodachiDrawer.UI.Avalonia
       run: |

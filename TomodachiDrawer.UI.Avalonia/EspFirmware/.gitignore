@@ -1,0 +1,7 @@
+# Built ESP32-S3 firmware binaries. CI builds these via the esp-idf-ci-action
+# and bundles them into release artifacts; local dev auto-copies them from
+# ../TomodachiDrawer.Firmware.ESP32S3/build/ via the CopyESP32S3FirmwareLocal
+# MSBuild target. Either way we don't commit the binaries.
+*
+!.gitignore
+!README.md
