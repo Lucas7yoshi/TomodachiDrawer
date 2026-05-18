@@ -3,8 +3,8 @@
 		x:Class="TomodachiDrawer.UI.Avalonia.MainWindow"
 		Icon="/Assets/Icon.png"
 		Title="Tomodachi Drawer"
-		Width="1100" Height="760"
-		MinWidth="1100" MinHeight="760">
+		Width="1100" Height="800"
+		MinWidth="1100" MinHeight="800">
 
 	<Window.Styles>
 		<Style Selector="Border.group">
@@ -43,6 +43,16 @@
 					x:Name="MenuHelpOpenGitHub"
 					Header="_Open GitHub Repo"
 					Click="MenuHelpOpenGitHub_Click"
+				/>
+				<MenuItem
+					x:Name="MenuHelpOpenWelcome"
+					Header="_Show Welcome Again"
+					Click="MenuHelpOpenWelcome_Click"
+				/>
+				<MenuItem
+					x:Name="MenuHelpCheckForUpdate"
+					Header="Check For Update"
+					Click="MenuHelpCheckForUpdate_Click"
 				/>
 				<Separator/>
 				<MenuItem
@@ -125,7 +135,7 @@
 						<CheckBox x:Name="EnableExperimentalCheckBox"
 								  Content="Enable Experimental (Possibly Desync Prone) Features"
 								  IsCheckedChanged="EnableExperimentalCheckBox_IsCheckedChanged"
-								  />
+						/>
 						<StackPanel Orientation="Horizontal" Spacing="6">
 							<TextBlock Text="TSP Solver Time Limit"
 									   VerticalAlignment="Center" />
@@ -140,6 +150,11 @@
 									Width="28"
 									Click="TSPHelpButton_Click" />
 						</StackPanel>
+						<CheckBox x:Name="EnableHomeCanvas"
+								  Content="Auto Home Canvas To Top Left"
+								  ToolTip.Tip="At the beginning, the program will zoom out, and set itself at the very very top left of the canvas. This is automatically checked for full size (256x256) images."
+								  IsCheckedChanged="EnableHomeCanvas_IsCheckedChanged"
+						/>
 					</StackPanel>
 				</Border>
 				<Border Grid.Row="3" Classes="group" Margin="0,0,0,6">
@@ -157,6 +172,7 @@
 				<TextBlock Grid.Row="4"
 						   x:Name="DrawTimeLabel"
 						   Text="Draw Time Estimate: ???"
+						   ToolTip.Tip="This is a generally very accurate estimate as to how long the drawing will take, including all actions."
 						   FontSize="17"
 						   FontWeight="Bold"
 						   Margin="2,0,2,6" />
@@ -198,6 +214,7 @@
 									x:Name="FlashFirmwareButton"
 									IsEnabled="False"
 									Content="Flash Base Firmware"
+									ToolTip.Tip="Flash the code that handles reading the drawing data written by the Export to Board button."
 									HorizontalAlignment="Stretch"
 									Margin="2,0,2,0"
 									Click="FlashFirmwareButton_Click" />
@@ -205,6 +222,7 @@
 									x:Name="ExportToBoardButton"
 									IsEnabled="False"
 									Content="Export To Board!"
+									ToolTip.Tip="This processes all routing, converts it to a uf2 file, and copies that directly to the connected board, flashing it with the image data. You must have the base firmware flashed once though!"
 									FontWeight="Bold"
 									HorizontalAlignment="Stretch"
 									Margin="2,0,2,0"
@@ -212,13 +230,14 @@
 
 						</Grid>
 						<Button
-						x:Name="ExportUF2Button"
-						IsEnabled="False"
-						Content="Export to .UF2"
-						FontWeight="Bold"
-						HorizontalAlignment="Stretch"
-						Margin="2,0,0,0"
-						Click="ExportUF2Button_Click"
+							x:Name="ExportUF2Button"
+							IsEnabled="False"
+							Content="Export to .UF2"
+							ToolTip.Tip="This processes all routing, and outputs to a saved .uf2 file. This can be copied manually to your devices drive while in boot mode to flash it. Use this if the detection code doesnt find your device."
+							FontWeight="Bold"
+							HorizontalAlignment="Stretch"
+							Margin="2,0,0,0"
+							Click="ExportUF2Button_Click"
 						/>
 
 					</StackPanel>

@@ -15,5 +15,7 @@ namespace TomodachiDrawer.Core.Models
 
         /// <summary>Enables stuff that may be prone to desyncs or other instabilities.</summary>
         public bool EnableExperimentalFeatures { get; set; } = false;
+
+        public bool HomeToTopLeft { get; set; } = false;
     }
 }

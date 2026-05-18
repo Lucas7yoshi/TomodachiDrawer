@@ -12,6 +12,8 @@ internal class AppSettings
     public bool EnableExperimentalFeatures { get; set; } = false;
 
     public bool CheckForUpdatesOnStart { get; set; } = true;
+
+    public int FirstStartId { get; set; } = 0;
 }
 
 // Source gen serialization to avoid trimming warnings.

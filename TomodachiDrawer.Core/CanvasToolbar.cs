@@ -19,6 +19,7 @@ namespace TomodachiDrawer.Core
         // 10: Eyedropper
         // 11: effects.
         // 12: settings
+        private const int ToolbarSelectIndex = 3; // Used for canvas homing.
         private const int ToolbarBucketIndex = 7;
         private const int ToolbarBrushIndex = 8;
         private const int ToolbarItemCount = 12;
@@ -71,6 +72,47 @@ namespace TomodachiDrawer.Core
             }
             output.Delay(300);
             _toolbarCurrentIndex = targetIndex;
+        }
+
+        /// <summary>Homes the canvas to the very very top left pixel of the area. For 256x256 drawings.</summary>
+        /// <param name="output"></param>
+        public void HomeCanvasToTopLeft(ISwitchOutput output)
+        {
+            // Zoom out
+            output.SetStick(Stick.RY, 255);
+            output.Delay(1400);
+            output.ReleaseAll();
+            output.Delay(75);
+
+
+            // Open toolbar
+            output.Tap(Button.X);
+            output.Delay(500);
+
+            GoToToolbarIndex(output, ToolbarSelectIndex); // Move is closest to the the 
+
+            // 7 down 16 right
+            const int downCount = 7;
+            const int rightCount = 16;
+            // for efficiency, we do diagonals which eats up all the down inputs.
+            output.Tap(DPad.DOWN);
+            output.Delay(250);
+            for (int i = 0; i < downCount - 1; i++)
+            {
+                output.Tap(DPad.DOWNRIGHT);
+            }
+            for (int i = 0; i < rightCount - (downCount - 1); i++) // this feels worse than magic numbers...
+            {
+                output.Tap(DPad.RIGHT);
+            }
+
+            // should be at perfect top left of image.
+
+            output.Delay(100); // for good measure.
+
+            // Because we Go to the Select index on the toolbar, but we dont select it, we just go down
+            // our position on the toolbar actually is whatever it was before homing so we'll need to home again
+            _toolbarCurrentIndex = -1;
         }
 
         public bool SelectBrush(int brushSize) => SelectBrush(_realOutput, brushSize);

@@ -1,6 +1,7 @@
 using System.Reflection;
 using System.Text.Json;
 using System.Text.Json.Serialization;
+
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Input;
@@ -11,12 +12,15 @@ using Avalonia.Media.Imaging;
 using Avalonia.Platform.Storage;
 using Avalonia.Styling;
 using Avalonia.Threading;
+
 using SkiaSharp;
+
 using TomodachiDrawer.Core;
 using TomodachiDrawer.Core.ImageProcessing.Denoising;
 using TomodachiDrawer.Core.ImageProcessing.Quantizers;
 using TomodachiDrawer.Core.Models;
 using TomodachiDrawer.Core.OutputSinks;
+
 using Button = Avalonia.Controls.Button; // conflict with the Button enum in SinkEnums
 
 namespace TomodachiDrawer.UI.Avalonia;
@@ -58,6 +62,8 @@ public partial class MainWindow : Window
 
         GetSettings();
 
+
+
         DragDrop.SetAllowDrop(this, true);
         AddHandler(DragDrop.DropEvent, OnDrop);
         AddHandler(DragDrop.DragOverEvent, OnDragOver);
@@ -73,6 +79,32 @@ public partial class MainWindow : Window
             _ = PerformAsyncUpdateCheck();
 
         UpdateFirmwareButtons();
+
+        if (_currentSettings.FirstStartId != CURRENT_WELCOME_ID)
+        {
+            Opened += MainWindow_Opened;
+        }
+    }
+
+    private async void MainWindow_Opened(object? sender, EventArgs e)
+    {
+        ShowWelcomeMessage();
+        _currentSettings.FirstStartId = CURRENT_WELCOME_ID;
+        SaveSettings();
+    }
+
+    // Welcome message stuff. For important changes, the ID is incremented by one by hand whenever something notable changes.
+    // This is only really needed for Mac since its settings are saved in a way that persists more readily.
+    private const int CURRENT_WELCOME_ID = 1;
+    private async void ShowWelcomeMessage()
+    {
+        await ShowMessageAsync(
+            "Welcome to TomodachiDrawer",
+            "As of 0.4.7, the Base Firmware has been tweaked to fix a slowdown introduced in 0.3.3. " +
+            "You are encouraged to hit the Flash Base Firmware button again if you flashed prior to this, its harmless if you aren't sure. " +
+            "\nIf this is your first time using TomodachiDrawer, you do not need to worry about this. " +
+            "\n\nHappy (computer assisted) drawing!"
+        );
     }
 
     private static string GetVersionString(bool includeCommit)
@@ -272,6 +304,13 @@ public partial class MainWindow : Window
         _currentImagePath = path;
         ImagePathBox.Text = path;
         UpdateFirmwareButtons();
+
+        if (img.Width == 256 && img.Height == 256)
+        {
+            AppendLog("Image is full canvas size, so enabling auto home by default.\nYou can disable it if it causes you trouble and manually home before connecting.");
+            EnableHomeCanvas.IsChecked = true;
+        }
+
         UpdatePreview();
         TSPTimeLimitUpDown.Value = (decimal)
             CanvasDrawer.GetRecommendedTSPSolveTime(img.Width, img.Height);
@@ -487,6 +526,7 @@ public partial class MainWindow : Window
         TimeSpan totalTime = TimeSpan.MaxValue;
         var settings = GetQuantizerSettings();
         var enableExperimental = EnableExperimentalCheckBox.IsChecked ?? false;
+        var enableHome = EnableHomeCanvas.IsChecked ?? false;
 
         await Task.Run(async () =>
         {
@@ -495,7 +535,7 @@ public partial class MainWindow : Window
                 $"rp2040output{System.Random.Shared.Next(1000000, 9999999)}.tdld"
             );
 
-            AppendLog($"Exporting to RP2040 flash ({Path.GetFileName(tempPath)})");
+            AppendLog($"Exporting to board's flash ({Path.GetFileName(tempPath)})");
             var timingSink = new TimingSink();
             var drawer = new CanvasDrawer(
                 timingSink,
@@ -511,6 +551,7 @@ public partial class MainWindow : Window
                 TSPTimeLimit = tspLimit,
                 DisableLargeBrush = false,
                 EnableExperimentalFeatures = enableExperimental,
+                HomeToTopLeft = enableHome,
             };
             await drawer.DrawImage(SKBitmap.Decode(imagePath), drawSettings);
             AppendLog($"True complete overall time is: {timingSink.TotalTime.TotalSeconds}s");
@@ -854,8 +895,8 @@ public partial class MainWindow : Window
 
     private void GetSettings()
     {
-        var settingsFilePath =  GetSettingsFilePath();
-        
+        var settingsFilePath = GetSettingsFilePath();
+
         if (File.Exists(settingsFilePath))
         {
             try
@@ -975,7 +1016,13 @@ public partial class MainWindow : Window
     {
         Close();
     }
+
+    private void MenuHelpOpenWelcome_Click(object? sender, RoutedEventArgs e) => ShowWelcomeMessage();
+
+    private void MenuHelpCheckForUpdate_Click(object? sender, RoutedEventArgs e) => _ = PerformAsyncUpdateCheck();
+
+    private void EnableHomeCanvas_IsCheckedChanged(object? sender, RoutedEventArgs e)
+    {
+        // TODO: Notify if non 256x256 image.
+    }
 }
-
-// To avoid trimming errors...
-

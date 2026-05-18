@@ -396,6 +396,7 @@ namespace TomodachiDrawer.Core
 
                 _realOutput.Tap(Button.A);
                 _realOutput.Delay(400); // wait for ui to close.
+                _lastWasArbitrary = true;
             }
 
             _lastColour = target;
