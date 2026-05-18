@@ -87,7 +87,7 @@ jobs:
           if [[ "$dirname" == *"osx"* ]]; then
             echo "Mac .tar.gz"
             chmod +x TomodachiDrawer.app/Contents/MacOS/TomodachiDrawer.UI.Avalonia
-            tar -czvf "../../final-packages/${outname}-${{ github.ref_name }}.tar.gz" TomodachiDrawer.app TomodachiDrawer.Firmware.uf2 README.txt
+            tar -czvf "../../final-packages/${outname}-${{ github.ref_name }}.tar.gz" TomodachiDrawer.app TomodachiDrawer.Firmware.*.uf2 README.txt
           elif [[ "$dirname" == *"linux"* ]]; then
             echo "Linux .tar.gz"
             chmod +x TomodachiDrawer.UI.Avalonia

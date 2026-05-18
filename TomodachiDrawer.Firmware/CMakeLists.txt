@@ -20,7 +20,14 @@ if (EXISTS ${picoVscode})
     include(${picoVscode})
 endif()
 # ====================================================================================
-set(PICO_BOARD waveshare_rp2040_zero CACHE STRING "Board type")
+# Board is configurable via -DPICO_BOARD=...
+# Defaults to waveshare_rp2040_zero if not specified.
+# Examples:
+#   cmake -DPICO_BOARD=waveshare_rp2040_zero ..   (RP2040 Zero)
+#   cmake -DPICO_BOARD=waveshare_rp2350_zero ..   (RP2350 Zero)
+if(NOT PICO_BOARD)
+    set(PICO_BOARD waveshare_rp2040_zero CACHE STRING "Board type")
+endif()
 
 # Pull in Raspberry Pi Pico SDK (must be before project)
 include(pico_sdk_import.cmake)

@@ -32,7 +32,10 @@
     <AvaloniaResource Include="Assets\**" />
   </ItemGroup>
   <ItemGroup>
-    <None Update="TomodachiDrawer.Firmware.uf2">
+    <None Update="TomodachiDrawer.Firmware.rp2040.uf2">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="TomodachiDrawer.Firmware.rp2350.uf2">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
   </ItemGroup>
@@ -56,11 +59,12 @@
       <ResourcesDir>$([System.IO.Path]::Combine('$(ContentsDir)', 'Resources'))</ResourcesDir>
     </PropertyGroup>
     <ItemGroup>
-      <PublishFiles Include="$(PublishDir)**\*.*" Exclude="$(AppBundleDir)\**\*.*;$(PublishDir)TomodachiDrawer.Firmware.uf2" />
+      <FirmwareFiles Include="$(PublishDir)TomodachiDrawer.Firmware.*.uf2" />
+      <PublishFiles Include="$(PublishDir)**\*.*" Exclude="$(AppBundleDir)\**\*.*;@(FirmwareFiles)" />
     </ItemGroup>
     <MakeDir Directories="$(AppBundleDir);$(ContentsDir);$(MacOsDir);$(ResourcesDir)" />
     <Move SourceFiles="@(PublishFiles)" DestinationFolder="$(MacOsDir)\%(RecursiveDir)" />
-    <Copy SourceFiles="$(PublishDir)TomodachiDrawer.Firmware.uf2" DestinationFolder="$(MacOsDir)" />
+    <Copy SourceFiles="@(FirmwareFiles)" DestinationFolder="$(MacOsDir)" />
     <Copy SourceFiles="$(ProjectDir)Packaging/macOS/AppIcon.icns" DestinationFolder="$(ResourcesDir)" />
     <Copy SourceFiles="$(ProjectDir)Packaging/macOS/README.txt" DestinationFolder="$(PublishDir)" />
     <PropertyGroup>
