@@ -290,6 +290,16 @@ namespace TomodachiDrawer.Core
 
         private bool _lastWasArbitrary = false;
 
+        // Track the HSV picker position so we can do relative moves instead of
+        // slamming back to a corner every colour change. The slam costs ~4.25s
+        // of delay plus tap-from-corner travel, so skipping it is the big win.
+        // Becomes true after we slam to a known corner. Tapping R to swap tabs
+        // (or never having been in the arbitrary picker yet) resets it.
+        private bool _hsvHomed = false;
+        private int _lastHueSteps = 0;
+        private int _lastSatSteps = 0;
+        private int _lastValSteps = 0;
+
         private PaletteColour? _lastColour = null;
 
         public void SelectColour(PaletteColour target, double speed)
@@ -341,24 +351,58 @@ namespace TomodachiDrawer.Core
             {
                 if (!_lastWasArbitrary)
                 {
+                    // Coming from the palette grid tab - flip over to the arbitrary
+                    // picker. We have no idea where the HSV sliders were left, so we
+                    // need a slam-home before any relative moves can be trusted.
                     _realOutput.Tap(Button.R);
+                    _hsvHomed = false;
                 }
 
                 // Figure out the steps first off
                 var steps = ColourPickerRouter.FromColour(target.skColor);
 
-                // Determine which way we home for shorter travel.
-                // If we are past the halfway point, use the opposite side.
-                bool hueHomeLeft = steps.HueSteps <= (ColourPickerRouter.FCR_HUE_SLIDER_STEP_COUNT - 1) / 2;
-                bool satHomeRight = steps.SatSteps <= (ColourPickerRouter.FCR_SATURATION_STEP_COUNT - 1) / 2;
-                bool valHomeTop = steps.ValSteps <= (ColourPickerRouter.FCR_VALUE_STEP_COUNT - 1) / 2;
+                if (!_hsvHomed)
+                {
+                    // First arbitrary colour of the session (or we just swapped tabs).
+                    // The slam-home is expensive (~4.25s + tap travel from the corner)
+                    // so we eat it once here and then track the picker position from
+                    // here on out, letting subsequent calls skip straight to deltas.
 
-                // Use stick for quicker homing
-                _realOutput.SetStick(Stick.LX, satHomeRight ? (byte)255 : (byte)0);
-                _realOutput.SetStick(Stick.LY, valHomeTop ? (byte)0 : (byte)255);
-                _realOutput.Press(hueHomeLeft ? Button.ZL : Button.ZR); // Home by holding
-                _realOutput.Delay(4250); // This delay is pretty much as low as it can be for handling the worst case (black)
-                _realOutput.ReleaseAll();
+                    // Determine which way we home for shorter travel.
+                    // If we are past the halfway point, use the opposite side.
+                    bool hueHomeLeft = steps.HueSteps <= (ColourPickerRouter.FCR_HUE_SLIDER_STEP_COUNT - 1) / 2;
+                    bool satHomeRight = steps.SatSteps <= (ColourPickerRouter.FCR_SATURATION_STEP_COUNT - 1) / 2;
+                    bool valHomeTop = steps.ValSteps <= (ColourPickerRouter.FCR_VALUE_STEP_COUNT - 1) / 2;
+
+                    // Use stick for quicker homing
+                    _realOutput.SetStick(Stick.LX, satHomeRight ? (byte)255 : (byte)0);
+                    _realOutput.SetStick(Stick.LY, valHomeTop ? (byte)0 : (byte)255);
+                    _realOutput.Press(hueHomeLeft ? Button.ZL : Button.ZR); // Home by holding
+                    _realOutput.Delay(4250); // This delay is pretty much as low as it can be for handling the worst case (black)
+                    _realOutput.ReleaseAll();
+
+                    // We're now pinned to a known corner - record it so the tap loop
+                    // below (and every subsequent call) can work off pure deltas.
+                    _lastHueSteps = hueHomeLeft ? 0 : ColourPickerRouter.FCR_HUE_SLIDER_STEP_COUNT - 1;
+                    _lastSatSteps = satHomeRight ? 0 : ColourPickerRouter.FCR_SATURATION_STEP_COUNT - 1;
+                    _lastValSteps = valHomeTop ? 0 : ColourPickerRouter.FCR_VALUE_STEP_COUNT - 1;
+                    _hsvHomed = true;
+                }
+
+                // Delta from where the sliders currently sit to where the target wants
+                // them. For consecutive arbitrary picks this is usually tiny - which is
+                // the whole point, we get to skip the slam.
+                int dHue = steps.HueSteps - _lastHueSteps;
+                int dSat = steps.SatSteps - _lastSatSteps;
+                int dVal = steps.ValSteps - _lastValSteps;
+
+                // Direction conventions (match the original homed-from-corner logic):
+                //   ZR increases hueSteps, ZL decreases.
+                //   DPad LEFT increases satSteps (cursor left = lower saturation), RIGHT decreases.
+                //   DPad DOWN increases valSteps (cursor down = darker), UP decreases.
+                Button hueTapDirection = dHue >= 0 ? Button.ZR : Button.ZL;
+                DPad satDirection = dSat >= 0 ? DPad.LEFT : DPad.RIGHT;
+                DPad valDirection = dVal >= 0 ? DPad.DOWN : DPad.UP;
 
                 // TODO: Hue inputs could be entered at the same time as sat/val (although sat/val can only be one of those at a time, no diagonals)
                 // This would require something like
@@ -370,29 +414,18 @@ namespace TomodachiDrawer.Core
                 // _output.Delay(25);
                 // to avoid the inherent delays of .Tap, this would negate compression savings of .Tap
                 // but for colour selection it would be fairly insignificant.
-                int hueInputs = hueHomeLeft
-                    ? steps.HueSteps
-                    : (ColourPickerRouter.FCR_HUE_SLIDER_STEP_COUNT - 1) - steps.HueSteps;
-                Button hueTapDirection = hueHomeLeft ? Button.ZR : Button.ZL;
-
-                int satInputs = satHomeRight
-                    ? steps.SatSteps
-                    : (ColourPickerRouter.FCR_SATURATION_STEP_COUNT - 1) - steps.SatSteps;
-                DPad satDirection = satHomeRight ? DPad.LEFT : DPad.RIGHT;
-
-                int valInputs = valHomeTop
-                    ? steps.ValSteps
-                    : (ColourPickerRouter.FCR_VALUE_STEP_COUNT - 1) - steps.ValSteps;
-                DPad valDirection = valHomeTop ? DPad.DOWN : DPad.UP;
-
-                for (int i = 0; i < hueInputs; i++)
+                for (int i = 0; i < Math.Abs(dHue); i++)
                     _realOutput.Tap(hueTapDirection);
 
-                for (int i = 0; i < satInputs; i++)
+                for (int i = 0; i < Math.Abs(dSat); i++)
                     _realOutput.Tap(satDirection);
 
-                for (int i = 0; i < valInputs; i++)
+                for (int i = 0; i < Math.Abs(dVal); i++)
                     _realOutput.Tap(valDirection);
+
+                _lastHueSteps = steps.HueSteps;
+                _lastSatSteps = steps.SatSteps;
+                _lastValSteps = steps.ValSteps;
 
                 _realOutput.Tap(Button.A);
                 _realOutput.Delay(400); // wait for ui to close.
