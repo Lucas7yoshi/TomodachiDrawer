@@ -423,9 +423,21 @@ namespace TomodachiDrawer.Core
                 for (int i = 0; i < Math.Abs(dVal); i++)
                     _realOutput.Tap(valDirection);
 
-                _lastHueSteps = steps.HueSteps;
-                _lastSatSteps = steps.SatSteps;
-                _lastValSteps = steps.ValSteps;
+                // The cursor visually lands on the target while the picker is open, but
+                // the moment we press A the game stores only the 8-bit RGB equivalent.
+                // On the next reopen it converts that RGB back to HSV and positions the
+                // sliders accordingly, which is NOT necessarily the step we tapped to:
+                //  - Black/very-dark colours collapse to RGB(0,0,0) and reopen at the
+                //    bottom-left corner regardless of the H/S we picked.
+                //  - Greys lose hue info (RGB(v,v,v)) and snap back to hue 0 on reopen.
+                //  - Every other colour drifts by 0-2 steps from 8-bit RGB rounding.
+                // So we cache the *predicted reopen* position by running the same
+                // HSV -> RGB -> HSV round-trip the game does, not the target position.
+                var storedRgb = ColourPickerRouter.ToColour(steps);
+                var reopenSteps = ColourPickerRouter.FromColour(storedRgb);
+                _lastHueSteps = reopenSteps.HueSteps;
+                _lastSatSteps = reopenSteps.SatSteps;
+                _lastValSteps = reopenSteps.ValSteps;
 
                 _realOutput.Tap(Button.A);
                 _realOutput.Delay(400); // wait for ui to close.
