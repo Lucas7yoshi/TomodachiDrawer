@@ -16,6 +16,8 @@ using Avalonia.Threading;
 using SkiaSharp;
 
 using TomodachiDrawer.Core;
+using TomodachiDrawer.Core.Extensions;
+using TomodachiDrawer.Core.ImageProcessing;
 using TomodachiDrawer.Core.ImageProcessing.Denoising;
 using TomodachiDrawer.Core.ImageProcessing.Quantizers;
 using TomodachiDrawer.Core.Models;
@@ -30,6 +32,7 @@ public partial class MainWindow : Window
     private const string firmwareFileName = "TomodachiDrawer.Firmware.uf2";
 
     private string _currentImagePath = string.Empty;
+    private SKBitmap? _currentImage;
     private readonly CancellationTokenSource _cts = new();
 
     private bool BusyExporting = false;
@@ -54,9 +57,9 @@ public partial class MainWindow : Window
         DenoisingComboBox.SelectedIndex = 0;
         DenoisingComboBox.SelectionChanged += (_, _) => UpdatePreview();
 
+        InitializeTemplates();
+
         GetSettings();
-
-
 
         DragDrop.SetAllowDrop(this, true);
         AddHandler(DragDrop.DropEvent, OnDrop);
@@ -79,6 +82,47 @@ public partial class MainWindow : Window
         }
     }
 
+    private void InitializeTemplates()
+    {
+        foreach (var mask in Enum.GetValues<TomodachiLifeMask>().Cast<TomodachiLifeMask>())
+        {
+            var desc = mask.GetDescription();
+            var menuItem = new MenuItem()
+            {
+                Header = desc
+            };
+            menuItem.Click += (s, e) => OpenTemplate(mask);
+            MenuTemplates.Items.Add(menuItem);
+        }
+    }
+
+    private async void OpenTemplate(TomodachiLifeMask mask)
+    {
+        var templateWindow = new TemplateTool(mask);
+        var templateOutput = await templateWindow.ShowDialog<TemplateToolResponse?>(this);
+        if (templateOutput != null)
+        {
+            if (templateOutput.Success && templateOutput.Result != null)
+            {
+                LoadImageFromBitmap(templateOutput.Result, $"template_{mask}.png");
+                AppendLog($"Loaded masked image for template {mask.GetDescription()} from editor.");
+            }
+            else if (templateOutput.CouldNotLoad)
+            {
+                AppendLog($"Template editor failed to load the template for {mask.GetDescription()}");
+                _ = ShowMessageAsync("Error loading template", "The template tool could not find the image. This REALLY shouldn't happen... Try reinstalling?");
+            }
+            else
+            {
+                AppendLog($"Template editor closed with no input. Nothing changed.");
+            }
+        }
+        else
+        {
+            AppendLog($"The template editor closed unexpectedly...");
+        }
+    }
+
     private async void MainWindow_Opened(object? sender, EventArgs e)
     {
         ShowWelcomeMessage();
@@ -88,15 +132,13 @@ public partial class MainWindow : Window
 
     // Welcome message stuff. For important changes, the ID is incremented by one by hand whenever something notable changes.
     // This is only really needed for Mac since its settings are saved in a way that persists more readily.
-    private const int CURRENT_WELCOME_ID = 1;
+    private const int CURRENT_WELCOME_ID = 2;
     private async void ShowWelcomeMessage()
     {
         await ShowMessageAsync(
             "Welcome to TomodachiDrawer",
-            "As of 0.4.7, the Base Firmware has been tweaked to fix a slowdown introduced in 0.3.3. " +
-            "You are encouraged to hit the Flash Base Firmware button again if you flashed prior to this, its harmless if you aren't sure. " +
-            "\nIf this is your first time using TomodachiDrawer, you do not need to worry about this. " +
-            "\n\nHappy (computer assisted) drawing!"
+            "0.5.0 adds a tool for helping you with more complex, non square templates." +
+            "\nAt the top menu bar, select \"Templates\" and choose the item type you want, it will open an editor with a preview of the layout, and copy it to your clipboard for you to easily edit in other image editing software."
         );
     }
 
@@ -185,6 +227,45 @@ public partial class MainWindow : Window
         base.OnClosed(e);
     }
 
+    // Check if we can access the RP2040 drive.
+    // Also trigger permission prompt on macOS if we haven't been granted permissions yet.
+    // Returns `true` if we can access it.
+    private bool CanAccessRP2040Drive(string drivePath)
+    {
+        try
+        {
+            // Try to access the drive by listing its files.
+            // This also trigger the permission prompt on macOS.
+            _ = Directory.GetFiles(drivePath);
+            return true;
+        }
+        catch (UnauthorizedAccessException)
+        {
+            // macOS: User (probably) clicked "Don't Allow".
+            if (OperatingSystem.IsMacOS())
+            {
+                _ = ShowMessageAsync(
+                    "Permission Denied",
+                    $"Permission to access the RPI-RP2 drive ({drivePath}) was denied.\n\n"
+                        + "Please open System Settings -> Privacy & Security -> Files & Folders, find \"TomodachiDrawer\", and make sure \"Removable Volumes\" is enabled.\n\n"
+                        + "This is required for the app to write the firmware directly to your RPI-RP2 drive.\r"
+                        + $"Or you can manually copy the .uf2 file to {drivePath} if you want to avoid granting permissions.",
+                    new Uri("x-apple.systempreferences:com.apple.preference.security?Privacy_FilesAndFolders"),
+                    "Open System Settings"
+                );
+            }
+            // Log the error. Just in case, log on other OSes as well.
+            AppendLog($"Permission to access RPI-RP2 drive ({drivePath}) was denied");
+            return false;
+        }
+        catch (Exception ex)
+        {
+            // Also just in case, log any other error that might occur while trying to access the drive.
+            AppendLog($"Could not access the RPI-RP2 drive ({drivePath}): {ex.Message}");
+            return false;
+        }
+    }
+
     // ── RP2040 polling ────────────────────────────────────────────────
 
     private void StartRP2040Polling()
@@ -197,7 +278,7 @@ public partial class MainWindow : Window
                 var path = UF2Flasher.FindRP2040Drive();
                 await Dispatcher.UIThread.InvokeAsync(() =>
                 {
-                    bool hasImage = !string.IsNullOrEmpty(_currentImagePath);
+                    bool hasImage = _currentImage != null;
 
                     // ExportUF2 only needs an image — no RP2040 required
                     ExportUF2Button.IsEnabled = hasImage;
@@ -270,23 +351,24 @@ public partial class MainWindow : Window
                 new SKImageInfo(newWidth, newHeight),
                 new SKSamplingOptions(SKCubicResampler.CatmullRom)
             );
-            img.Dispose();
             img = resized;
-
-            string tempPath = Path.Combine(
-                Path.GetTempPath(),
-                $"tomodachi_{Path.GetFileName(path)}"
-            );
-            using var data = SKImage.FromBitmap(img).Encode(SKEncodedImageFormat.Png, 100);
-            using var stream = File.OpenWrite(tempPath);
-            data.SaveTo(stream);
-
-            path = tempPath;
-            AppendLog($"Image resized to {newWidth}x{newHeight}, saved to temp: {tempPath}");
+            AppendLog($"Image resized to {newWidth}x{newHeight}");
         }
 
-        _currentImagePath = path;
-        ImagePathBox.Text = path;
+        LoadImageFromBitmap(img, Path.GetFileName(path));
+    }
+
+    /// <summary>
+    /// Stores <paramref name="img"/> as the active image and refreshes all dependent UI.
+    /// Takes ownership of <paramref name="img"/> — do not dispose it after calling this.
+    /// </summary>
+    private void LoadImageFromBitmap(SKBitmap img, string displayName)
+    {
+        _currentImage?.Dispose();
+        _currentImage = img;
+        _currentImagePath = displayName; // kept for log messages / ImagePathBox
+
+        ImagePathBox.Text = displayName;
         ExportUF2Button.IsEnabled = true;
 
         if (img.Width == 256 && img.Height == 256)
@@ -298,28 +380,25 @@ public partial class MainWindow : Window
         UpdatePreview();
         TSPTimeLimitUpDown.Value = (decimal)
             CanvasDrawer.GetRecommendedTSPSolveTime(img.Width, img.Height);
-        AppendLog($"Loaded image: {Path.GetFileName(path)} ({img.Width}x{img.Height})");
-        img.Dispose();
+        AppendLog($"Loaded image: {displayName} ({img.Width}x{img.Height})");
     }
 
     private SKBitmap GetPreview()
     {
+        if (_currentImage == null)
+            throw new InvalidOperationException("No image loaded.");
+
         var pal = new ColourPalette(new DummySink());
         var denoiser = DenoisingComboBox.SelectedItem?.ToString();
         var quantizerSettings = GetQuantizerSettings();
-        var preview = pal.PreviewColourMapping(
-            SKBitmap.Decode(_currentImagePath),
-            quantizerSettings,
-            denoiser
-        );
-        return preview;
+        return pal.PreviewColourMapping(_currentImage, quantizerSettings, denoiser);
     }
 
     private void UpdatePreview()
     {
-        if (!File.Exists(_currentImagePath))
+        if (_currentImage == null)
         {
-            AppendLog($"File does not exist, cannot update preview: {_currentImagePath}");
+            AppendLog($"No image loaded, cannot update preview.");
             return;
         }
 
@@ -328,11 +407,11 @@ public partial class MainWindow : Window
 
         PreviewImage.Source = ToAvaloniaBitmap(preview);
         AppendLog(
-            $"Updated preview for {Path.GetFileName(_currentImagePath)} using {quantizerSettings.quantizerName}"
+            $"Updated preview for {_currentImagePath} using {quantizerSettings.quantizerName}"
         );
     }
 
-    private static Bitmap? ToAvaloniaBitmap(SKBitmap skBitmap)
+    public static Bitmap ToAvaloniaBitmap(SKBitmap skBitmap)
     {
         using var image = SKImage.FromBitmap(skBitmap);
         using var data = image.Encode(SKEncodedImageFormat.Png, 100);
@@ -442,7 +521,7 @@ public partial class MainWindow : Window
 
     private void ColourMatcherComboBox_SelectionChanged(object? sender, SelectionChangedEventArgs e)
     {
-        if (!string.IsNullOrEmpty(_currentImagePath))
+        if (_currentImage != null)
             UpdatePreview();
         ColourLimitUpDown.IsEnabled =
             ColourMatcherComboBox?.SelectedValue?.ToString() == "Arbitrary";
@@ -475,7 +554,7 @@ public partial class MainWindow : Window
 
     private async void ExportRP2040Button_Click(object? sender, RoutedEventArgs e)
     {
-        if (string.IsNullOrEmpty(_currentImagePath))
+        if (_currentImage == null)
             return;
 
         if (_currentSettings.SelectedSwitchVersion == SwitchVersion.None)
@@ -489,7 +568,7 @@ public partial class MainWindow : Window
             return;
         }
 
-        var imagePath = _currentImagePath;
+        var imageSnapshot = _currentImage!.Copy();
         var denoiser = DenoisingComboBox.SelectedItem?.ToString();
         var tspLimit = (float)(TSPTimeLimitUpDown.Value ?? 0.5m);
 
@@ -502,6 +581,7 @@ public partial class MainWindow : Window
 
         await Task.Run(async () =>
         {
+            using var img = imageSnapshot;
             string tempPath = Path.Combine(
                 Path.GetTempPath(),
                 $"rp2040output{System.Random.Shared.Next(1000000, 9999999)}.tdld"
@@ -525,7 +605,7 @@ public partial class MainWindow : Window
                 EnableExperimentalFeatures = enableExperimental,
                 HomeToTopLeft = enableHome,
             };
-            await drawer.DrawImage(SKBitmap.Decode(imagePath), drawSettings);
+            await drawer.DrawImage(img, drawSettings);
             AppendLog($"True complete overall time is: {timingSink.TotalTime.TotalSeconds}s");
 
             var fileSink = new FileControllerSink(tempPath);
@@ -536,7 +616,7 @@ public partial class MainWindow : Window
             var uf2Bytes = UF2Flasher.BuildTDLDUF2(tdldBytes);
             var drivePath = UF2Flasher.FindRP2040Drive();
 
-            if (uf2Bytes != null && uf2Bytes.Length > 0 && drivePath != null)
+            if (uf2Bytes != null && uf2Bytes.Length > 0 && drivePath != null && CanAccessRP2040Drive(drivePath))
             {
                 File.WriteAllBytes(Path.Combine(drivePath, "tdld_image.uf2"), uf2Bytes);
                 AppendLog(
@@ -563,7 +643,7 @@ public partial class MainWindow : Window
 
     private async void ExportUF2Button_Click(object sender, RoutedEventArgs e)
     {
-        if (string.IsNullOrEmpty(_currentImagePath))
+        if (_currentImage == null)
             return;
 
         if (_currentSettings.SelectedSwitchVersion == SwitchVersion.None)
@@ -594,7 +674,7 @@ public partial class MainWindow : Window
         if (outputPath == null)
             return;
 
-        var imagePath = _currentImagePath;
+        var imageSnapshot = _currentImage!.Copy();
         var denoiser = DenoisingComboBox.SelectedItem?.ToString();
         var tspLimit = (float)(TSPTimeLimitUpDown.Value ?? 0.5m);
 
@@ -606,6 +686,7 @@ public partial class MainWindow : Window
 
         await Task.Run(async () =>
         {
+            using var img = imageSnapshot;
             string tempPath = Path.Combine(
                 Path.GetTempPath(),
                 $"rp2040output{System.Random.Shared.Next(1000000, 9999999)}.tdld"
@@ -628,7 +709,7 @@ public partial class MainWindow : Window
                 DisableLargeBrush = false,
                 EnableExperimentalFeatures = enableExperimental,
             };
-            await drawer.DrawImage(SKBitmap.Decode(imagePath), drawSettings);
+            await drawer.DrawImage(img, drawSettings);
             AppendLog($"True complete overall time is: {timingSink.TotalTime.TotalSeconds}s");
 
             var fileSink = new FileControllerSink(tempPath);
@@ -693,6 +774,10 @@ public partial class MainWindow : Window
         if (drivePath == null)
         {
             _ = ShowMessageAsync("Error", "RP2040 not detected. Connect it in BOOT mode first.");
+            return;
+        }
+        if (!CanAccessRP2040Drive(drivePath))
+        {
             return;
         }
 
@@ -919,7 +1004,7 @@ public partial class MainWindow : Window
 
     private async void MenuSavePreview_Click(object? sender, RoutedEventArgs e)
     {
-        if (string.IsNullOrEmpty(_currentImagePath))
+        if (_currentImage == null)
             return;
         // very scientific
         var img = GetPreview();

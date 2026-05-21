@@ -153,9 +153,10 @@ namespace TomodachiDrawer.Core
                 // Go to the square brush area, at the 1 pixel brush.
                 output.Tap(DPad.DOWN);
                 output.Tap(Button.A); // Select a brush that we dont actually use so we KNOW we will need two A presses. avoids a accidental click through draw
-                output.Delay(200);
+                output.Delay(350);
                 output.Tap(DPad.DOWN);
                 currentColumn = 0;
+                output.Delay(100);
             }
 
             // After
@@ -175,7 +176,7 @@ namespace TomodachiDrawer.Core
             if (needsTwoTaps)
             {
                 output.Tap(Button.A, 50, 25); // Switch 1 seems to want the press to last longer oddly. Hold for 50ms instead of 25.
-                output.Delay(500);
+                output.Delay(350);
             }
             // Close
             output.Tap(Button.A, 50, 25);

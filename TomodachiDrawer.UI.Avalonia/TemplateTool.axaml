@@ -1,0 +1,70 @@
+<Window xmlns="https://github.com/avaloniaui"
+		xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+		xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+		xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+		mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450"
+		x:Class="TomodachiDrawer.UI.Avalonia.TemplateTool"
+		Title="Template Tool"
+		Width="800" Height="575"
+		MinWidth="800" MinHeight="575"
+		>
+	<Window.Styles>
+		<Style Selector="Border.group">
+			<Setter Property="BorderBrush" Value="#55888888" />
+			<Setter Property="BorderThickness" Value="1" />
+			<Setter Property="CornerRadius" Value="4" />
+			<Setter Property="Padding" Value="8" />
+		</Style>
+		<Style Selector="TextBlock.header">
+			<Setter Property="FontWeight" Value="SemiBold" />
+			<Setter Property="Margin" Value="0,0,0,6" />
+		</Style>
+	</Window.Styles>
+	<Grid Margin="8">
+		<Grid.ColumnDefinitions>
+			<ColumnDefinition Width="290" />
+			<ColumnDefinition Width="*" />
+		</Grid.ColumnDefinitions>
+		<Grid Grid.Column="0">
+			<Grid.RowDefinitions>
+				<RowDefinition Height="Auto" />
+				<RowDefinition Height="Auto" />
+			</Grid.RowDefinitions>
+			<Border Grid.Row="0" Classes="group" Margin="0,0,0,6">
+				<StackPanel Spacing="6">
+					<TextBlock Classes="header" Text="Information" />
+					<TextBlock TextWrapping="Wrap" Text="You selected a complex template type. The template (shown on the right) has been copied to your clipboard." />
+					<TextBlock TextWrapping="Wrap" FontWeight="SemiBold" Text="Steps:" />
+					<StackPanel Spacing="4" Margin="8,0,0,0">
+						<TextBlock TextWrapping="Wrap" Text="1. Paste the image on your clipboard in an image editor of your choice." />
+						<TextBlock TextWrapping="Wrap" Text="2. Add whatever content you want to the image. Anything in the opaque area of the template will not be drawn!" />
+						<TextBlock TextWrapping="Wrap" Text="3. Once done, click Paste drawing from clipboard (after copying the final version in your editor)" />
+						<TextBlock TextWrapping="Wrap" Text="4. Press Confirm to return to the main view with this image as the input. This tool will remove all pixels in the undrawable area." />
+					</StackPanel>
+				</StackPanel>
+			</Border>
+			<Border Grid.Row="1" Classes="group" Margin="0,0,0,6">
+				<StackPanel Spacing="6">
+					<TextBlock Classes="header" Text="Options" />
+					<Button x:Name="CopyClipboardButton" Content="Copy template to clipboard." HorizontalAlignment="Stretch" Click="CopyClipboardButton_Click" />
+					<Button x:Name="PasteButton" Content="Paste drawing from clipboard." HorizontalAlignment="Stretch" Click="PasteButton_Click" />
+					<Separator />
+					<Grid ColumnDefinitions="*,6,*">
+						<Button x:Name="ConfirmButton" Grid.Column="0" Content="Confirm" HorizontalAlignment="Stretch" Click="ConfirmButton_Click" IsEnabled="False"/>
+						<Button x:Name="ExitButton" Grid.Column="2" Content="Exit" HorizontalAlignment="Stretch" Click="ExitButton_Click" />
+					</Grid>
+				</StackPanel>
+			</Border>
+		</Grid>
+		<Border Grid.Column="1" Classes="group" Margin="6,0,0,0">
+			<Panel>
+				<Image x:Name="CheckerboardPreview"
+					   Stretch="Uniform"
+					   RenderOptions.BitmapInterpolationMode="None" />
+				<Image x:Name="TemplatePreview"
+					   Stretch="Uniform"
+					   RenderOptions.BitmapInterpolationMode="None" />
+			</Panel>
+		</Border>
+	</Grid>
+</Window>

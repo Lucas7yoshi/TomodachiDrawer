@@ -33,6 +33,9 @@
 					Click="CheckForUpdatesCheckBox_Click"
 				/>
 			</MenuItem>
+			<MenuItem Header="_Templates" x:Name="MenuTemplates">
+				<!-- Inserted at runtime -->
+			</MenuItem>
 			<MenuItem Header="_Tools">
 				<MenuItem x:Name="MenuToolsOpenColourToHSVStepsTool"
 						  Header="_Convert Colour to HSV Steps"
