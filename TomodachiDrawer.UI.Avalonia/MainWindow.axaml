@@ -3,8 +3,8 @@
 		x:Class="TomodachiDrawer.UI.Avalonia.MainWindow"
 		Icon="/Assets/Icon.png"
 		Title="Tomodachi Drawer"
-		Width="1100" Height="800"
-		MinWidth="1100" MinHeight="800">
+		Width="1100" Height="700"
+		MinWidth="1000" MinHeight="600">
 
 	<Window.Styles>
 		<Style Selector="Border.group">
@@ -32,6 +32,20 @@
 					ToggleType="CheckBox"
 					Click="CheckForUpdatesCheckBox_Click"
 				/>
+				<MenuItem Header="_Theme">
+					<MenuItem x:Name="ThemeSystemMenuItem" Header="_Match System" ToggleType="CheckBox" IsChecked="True" Click="ThemeMenuItem_Click"/>
+					<MenuItem x:Name="ThemeLightMenuItem" Header="_Light" ToggleType="CheckBox" Click="ThemeMenuItem_Click"/>
+					<MenuItem x:Name="ThemeDarkMenuItem" Header="_Dark" ToggleType="CheckBox" Click="ThemeMenuItem_Click"/>
+				</MenuItem>
+				<MenuItem
+					x:Name="EnableExperimentalMenuItem"
+					Header="_Enable Experimental Features"
+					ToggleType="CheckBox"
+					Click="EnableExperimentalMenuItem_Click"
+				/>
+			</MenuItem>
+			<MenuItem Header="_Templates" x:Name="MenuTemplates">
+				<!-- Inserted at runtime -->
 			</MenuItem>
 			<MenuItem Header="_Tools">
 				<MenuItem x:Name="MenuToolsOpenColourToHSVStepsTool"
@@ -71,7 +85,6 @@
 				<Grid.RowDefinitions>
 					<RowDefinition Height="Auto" />
 					<RowDefinition Height="Auto" />
-					<RowDefinition Height="Auto" />
 					<RowDefinition Height="*" />
 					<RowDefinition Height="Auto" />
 					<RowDefinition Height="Auto" />
@@ -96,27 +109,6 @@
 					</StackPanel>
 				</Border>
 				<Border Grid.Row="1" Classes="group" Margin="0,0,0,6">
-					<StackPanel Orientation="Vertical" Spacing="6">
-						<TextBlock Classes="header" Text="App Settings" />
-						<StackPanel Orientation="Horizontal">
-							<TextBlock Grid.Column="0"
-									   Text="Theme:"
-									   VerticalAlignment="Center"
-									   Margin="0,0,4,0" />
-							<ComboBox Grid.Column="1"
-									  x:Name="AppThemeComboBox"
-									  HorizontalAlignment="Stretch"
-									  Margin="0,0,8,0"
-									  SelectedIndex="0"
-									  SelectionChanged="AppThemeComboBox_SelectionChanged">
-								<ComboBoxItem>Match System</ComboBoxItem>
-								<ComboBoxItem>Light</ComboBoxItem>
-								<ComboBoxItem>Dark</ComboBoxItem>
-							</ComboBox>
-					</StackPanel>
-					</StackPanel>
-			</Border>
-				<Border Grid.Row="2" Classes="group" Margin="0,0,0,6">
 					<StackPanel Spacing="6">
 						<TextBlock Classes="header" Text="Routing" />
 						<Grid ColumnDefinitions="Auto,*" ColumnSpacing="6">
@@ -132,10 +124,6 @@
 								<ComboBoxItem>Switch 2</ComboBoxItem>
 							</ComboBox>
 						</Grid>
-						<CheckBox x:Name="EnableExperimentalCheckBox"
-								  Content="Enable Experimental (Possibly Desync Prone) Features"
-								  IsCheckedChanged="EnableExperimentalCheckBox_IsCheckedChanged"
-						/>
 						<StackPanel Orientation="Horizontal" Spacing="6">
 							<TextBlock Text="TSP Solver Time Limit"
 									   VerticalAlignment="Center" />
@@ -157,7 +145,7 @@
 						/>
 					</StackPanel>
 				</Border>
-				<Border Grid.Row="3" Classes="group" Margin="0,0,0,6">
+				<Border Grid.Row="2" Classes="group" Margin="0,0,0,6">
 					<DockPanel>
 						<TextBlock DockPanel.Dock="Top"
 								   Classes="header"
@@ -169,14 +157,14 @@
 								 ScrollViewer.VerticalScrollBarVisibility="Auto" />
 					</DockPanel>
 				</Border>
-				<TextBlock Grid.Row="4"
+				<TextBlock Grid.Row="3"
 						   x:Name="DrawTimeLabel"
 						   Text="Draw Time Estimate: ???"
 						   ToolTip.Tip="This is a generally very accurate estimate as to how long the drawing will take, including all actions."
 						   FontSize="17"
 						   FontWeight="Bold"
 						   Margin="2,0,2,6" />
-				<Border Grid.Row="5" Classes="group">
+				<Border Grid.Row="4" Classes="group">
 					<StackPanel Spacing="5">
 						<TextBlock Classes="header" Text="Board Output" />
 						<TextBlock x:Name="BoardStatusLabel"

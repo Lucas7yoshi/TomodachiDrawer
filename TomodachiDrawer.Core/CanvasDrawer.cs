@@ -531,11 +531,9 @@ namespace TomodachiDrawer.Core
         {
             int half = brushSize / 2; // rounds down.
             for (int dy = -half; dy <= half; dy++)
-            {
                 for (int dx = -half; dx <= half; dx++)
                     if (!map[cx + dx, cy + dy])
                         return false;
-            }
 
             return true;
         }

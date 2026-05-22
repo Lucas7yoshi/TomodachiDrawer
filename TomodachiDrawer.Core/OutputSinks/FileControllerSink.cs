@@ -65,6 +65,8 @@ namespace TomodachiDrawer.Core.OutputSinks
 
         public void Delay(double milliseconds)
         {
+            if (milliseconds <= 0) return;
+
             int units = (int)Math.Round(milliseconds / OpcodeDelayResolutionMs);
             // max 0xFFF (4095) units per record = ~4s at 1ms resolution; loop for larger delays
             while (units > 0)
@@ -122,14 +124,16 @@ namespace TomodachiDrawer.Core.OutputSinks
             byte record = (byte)((opcode << 4) | (value & 0xF));
             if (_lastSingleByteRecord == record)
             {
-                _pendingRepeats++;
-                if (_pendingRepeats > MaxRleCount)
+                if (_pendingRepeats >= MaxRleCount)
                 {
-                    _pendingRepeats--; // errrr
                     FlushRle();
                     _writer.Write(record);
                     _lastSingleByteRecord = record;
-                    _pendingRepeats = 0;
+                    // _pendingRepeats resets to 0 automatically in FlushRle, so this begins a fresh streak.
+                }
+                else
+                {
+                    _pendingRepeats++;
                 }
             }
             else
@@ -170,7 +174,8 @@ namespace TomodachiDrawer.Core.OutputSinks
                         Opcode.RepeatLast2 << 4 | (_pendingRepeats >> 8)
                     );
                     byte lower = (byte)(_pendingRepeats & 0xFF);
-                    _writer.Write([opcodeAndHighNibble, lower]);
+                    _writer.Write(opcodeAndHighNibble);
+                    _writer.Write(lower);
                     Console.WriteLine(
                         $"RepeatLast2: Repeating opcode 0x{_lastSingleByteRecord:X2} {_pendingRepeats} times"
                     );
@@ -186,6 +191,9 @@ namespace TomodachiDrawer.Core.OutputSinks
             FlushRle();
             // we mark the end of the file for convenience in the flash reading logic on the RP2040 with the invalid opcode.
             _writer.Write((byte)(Opcode.Invalid << 4)); // this is just 0x00 but yknow.
+
+            _writer.Flush();
+            _writer.BaseStream.Flush();
             _writer.Dispose();
         }
     }

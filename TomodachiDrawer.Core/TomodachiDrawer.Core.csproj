@@ -4,6 +4,9 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
   </PropertyGroup>
+  <ItemGroup>
+  <EmbeddedResource Include="Assets\Masks\*.png" />
+  </ItemGroup>
 
   <ItemGroup>
     <PackageReference Include="Google.OrTools" Version="9.15.6755" />
