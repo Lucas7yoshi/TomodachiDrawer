@@ -14,6 +14,8 @@ internal static class UF2Flasher
     private const uint FamilyIdRP2040 = 0xE48BFF56u;
     private const uint FamilyIdRP2350 = 0xE48BFF5Au; // ARM core
 
+    private static readonly string[] VolumeNames = ["RPI-RP2", "RP2350"];
+
     // This is repeated code so i would like to make it shared in .Core later.
     public static byte[] BuildTDLDUF2(byte[] tdldData, BoardType boardType)
     {
@@ -88,7 +90,7 @@ internal static class UF2Flasher
         {
             try
             {
-                if (drive.IsReady && drive.VolumeLabel == "RPI-RP2" || drive.VolumeLabel == "RP2350")
+                if (drive.IsReady && VolumeNames.Contains(drive.VolumeLabel))
                     return drive.RootDirectory.FullName;
             }
             catch { }
@@ -103,20 +105,26 @@ internal static class UF2Flasher
                     continue;
                 foreach (var userDir in Directory.GetDirectories(baseDir))
                 {
-                    var candidate = Path.Combine(userDir, "RPI-RP2");
-                    if (Directory.Exists(candidate))
-                        return candidate + Path.DirectorySeparatorChar;
+                    foreach (var volumeName in VolumeNames)
+                    {
+                        var candidate = Path.Combine(userDir, volumeName);
+                        if (Directory.Exists(candidate))
+                            return candidate + Path.DirectorySeparatorChar;
+                    }
                 }
             }
         }
         // Fallback for macOS
         else if (OperatingSystem.IsMacOS())
         {
-            var candidate = "/Volumes/RPI-RP2";
-            if (Directory.Exists(candidate))
-                return candidate.EndsWith(Path.DirectorySeparatorChar)
-                    ? candidate
-                    : candidate + Path.DirectorySeparatorChar;
+            foreach (var volumeName in VolumeNames)
+            {
+                var candidate = $"/Volumes/{volumeName}";
+                if (Directory.Exists(candidate))
+                    return candidate.EndsWith(Path.DirectorySeparatorChar)
+                        ? candidate
+                        : candidate + Path.DirectorySeparatorChar;
+            }
         }
 
         return null;
