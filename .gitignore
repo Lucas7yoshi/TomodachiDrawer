@@ -367,3 +367,5 @@ FodyWeavers.xsd
 
 # macOS Finder
 .DS_Store
+
+.c*/

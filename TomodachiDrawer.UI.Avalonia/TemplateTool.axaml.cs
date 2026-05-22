@@ -57,11 +57,15 @@ public partial class TemplateTool : Window
 
     private async Task SetClipboardBitmap(Bitmap bitmap)
     {
+        if (OperatingSystem.IsWindows())
+        {
+            WindowsClipboardHelper.SetBitmap(bitmap);
+            return;
+        }
+
         var topLevel = TopLevel.GetTopLevel(this);
         if (topLevel?.Clipboard is { } clipboard)
-        {
             await clipboard.SetBitmapAsync(bitmap);
-        }
     }
 
     private async Task ShowMessageAsync(
