@@ -859,7 +859,7 @@ public partial class MainWindow : Window
                 + "You then flash the image data onto it for each image, without needing to reflash the firmware.\r\n\r\n"
                 + "When you first install the firmware, it'll reset itself, flash yellow 3 times, and then flash red.\r\n"
                 + "Flashing red is expected, as that means it cannot find the image data.\r\n"
-                + "Reconnect it using the same \"BOOT\" button steps as described above, load your image, and hit \"Export to RP2040\".\r\n\r\n"
+                + "Reconnect it using the same \"BOOT\" button steps as described above, load your image, and hit \"Export to Board\".\r\n\r\n"
                 + "Again, it will reboot, but now you can unplug it and plug it into your switch.\r\n\r\n"
                 + "YOU MUST HAVE \"Pro Controller Wired Commmunication\" ENABLED.\r\n"
                 + "Go to system settings -> Controllers & Accessories -> Pro Controller Wired Communication\r\n"
