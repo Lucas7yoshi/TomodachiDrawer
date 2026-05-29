@@ -1,5 +1,6 @@
 <Window xmlns="https://github.com/avaloniaui"
 		xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+		xmlns:strings="clr-namespace:TomodachiDrawer.UI.Avalonia"
 		x:Class="TomodachiDrawer.UI.Avalonia.MainWindow"
 		Icon="/Assets/Icon.png"
 		Title="Tomodachi Drawer"
@@ -26,71 +27,71 @@
 	</Window.Styles>
 	<DockPanel>
 		<Menu x:Name="Menu" DockPanel.Dock="Top">
-			<MenuItem Header="_File">
-				<MenuItem Header="_Save Preview..." Click="MenuSavePreview_Click"/>
+			<MenuItem Header="{x:Static strings:Strings.Menu_File}">
+				<MenuItem Header="{x:Static strings:Strings.Menu_File_SavePreview}" Click="MenuSavePreview_Click"/>
 				<Separator/>
-				<MenuItem Header="_Exit" Click="MenuExit_Click"/>
+				<MenuItem Header="{x:Static strings:Strings.Menu_File_Exit}" Click="MenuExit_Click"/>
 			</MenuItem>
-			<MenuItem Header="_Settings" StaysOpenOnClick="True">
+			<MenuItem Header="{x:Static strings:Strings.Menu_Settings}" StaysOpenOnClick="True">
 				<MenuItem
 				x:Name="CheckForUpdatesCheckBox"
-				Header="_Check For Updates On Start"
+				Header="{x:Static strings:Strings.Menu_Settings_CheckForUpdatesOnStart}"
 				ToggleType="CheckBox"
 				Click="CheckForUpdatesCheckBox_Click"
 				/>
-				<MenuItem Header="_Theme">
-					<MenuItem x:Name="ThemeSystemMenuItem" Header="_Match System" ToggleType="CheckBox" IsChecked="True" Click="ThemeMenuItem_Click"/>
-					<MenuItem x:Name="ThemeLightMenuItem" Header="_Light" ToggleType="CheckBox" Click="ThemeMenuItem_Click"/>
-					<MenuItem x:Name="ThemeDarkMenuItem" Header="_Dark" ToggleType="CheckBox" Click="ThemeMenuItem_Click"/>
+				<MenuItem Header="{x:Static strings:Strings.Menu_Settings_Theme}">
+					<MenuItem x:Name="ThemeSystemMenuItem" Header="{x:Static strings:Strings.Menu_Settings_Theme_MatchSystem}" ToggleType="CheckBox" IsChecked="True" Click="ThemeMenuItem_Click"/>
+					<MenuItem x:Name="ThemeLightMenuItem" Header="{x:Static strings:Strings.Menu_Settings_Theme_Light}" ToggleType="CheckBox" Click="ThemeMenuItem_Click"/>
+					<MenuItem x:Name="ThemeDarkMenuItem" Header="{x:Static strings:Strings.Menu_Settings_Theme_Dark}" ToggleType="CheckBox" Click="ThemeMenuItem_Click"/>
 				</MenuItem>
 				<MenuItem
 				x:Name="EnableExperimentalMenuItem"
-				Header="_Enable Experimental Features"
+				Header="{x:Static strings:Strings.Menu_Settings_EnableExperimentalFeatures}"
 				ToggleType="CheckBox"
 				Click="EnableExperimentalMenuItem_Click"
 				/>
 				<MenuItem
 				x:Name="OpenTelemetryPrompt"
-				Header="_Open Telemetry Prompt"
+				Header="{x:Static strings:Strings.Menu_Settings_OpenTelemetryPrompt}"
 				Click="OpenTelemetryPrompt_Click"
 				/>
 			</MenuItem>
-			<MenuItem Header="_Templates" x:Name="MenuTemplates">
+			<MenuItem Header="{x:Static strings:Strings.Menu_Templates}" x:Name="MenuTemplates">
 				<!-- Inserted at runtime -->
 			</MenuItem>
-			<MenuItem Header="_Tools">
+			<MenuItem Header="{x:Static strings:Strings.Menu_Tools}">
 				<MenuItem x:Name="MenuToolsOpenColourToHSVStepsTool"
-						  Header="_Convert Colour to HSV Steps"
+						  Header="{x:Static strings:Strings.Menu_Tools_ConvertColourToHSVSteps}"
 						  Click="MenuToolsOpenColourToHSVStepsTool_Click" />
 			</MenuItem>
-			<MenuItem Header="_Help">
+			<MenuItem Header="{x:Static strings:Strings.Menu_Help}">
 				<MenuItem
 				x:Name="MenuHelpOpenGitHub"
-				Header="_Open GitHub Repo"
+				Header="{x:Static strings:Strings.Menu_Help_OpenGitHubRepo}"
 				Click="MenuHelpOpenGitHub_Click"
 				/>
 				<MenuItem
 				x:Name="MenuHelpOpenWelcome"
-				Header="_Show Welcome Again"
+				Header="{x:Static strings:Strings.Menu_Help_ShowWelcomeAgain}"
 				Click="MenuHelpOpenWelcome_Click"
 				/>
 				<MenuItem
 				x:Name="MenuHelpCheckForUpdate"
-				Header="Check For Update"
+				Header="{x:Static strings:Strings.Menu_Help_CheckForUpdate}"
 				Click="MenuHelpCheckForUpdate_Click"
 				/>
 				<MenuItem
-				Header="_Setup Explanation"
+				Header="{x:Static strings:Strings.Menu_Help_SetupExplanation}"
 				Click="OutputExplanationButton_Click"
 				/>
 				<MenuItem
-				Header="_In-Game Setup Info"
+				Header="{x:Static strings:Strings.Menu_Help_InGameSetupInfo}"
 				Click="InGameSetupButton_Click"
 				/>
 				<Separator/>
 				<MenuItem
 				x:Name="MenuHelpAbout"
-				Header="_About"
+				Header="{x:Static strings:Strings.Menu_Help_About}"
 				Click="MenuHelpAbout_Click"
 				/>
 			</MenuItem>
@@ -110,7 +111,7 @@
 				</Grid.RowDefinitions>
 				<Border Grid.Row="0" Classes="group" Margin="0,0,0,6">
 					<StackPanel Spacing="6">
-						<TextBlock Classes="header" Text="Input Image" />
+						<TextBlock Classes="header" Text="{x:Static strings:Strings.InputImage_Header}" />
 						<Grid>
 							<Grid.ColumnDefinitions>
 								<ColumnDefinition Width="*" />
@@ -119,9 +120,9 @@
 							<TextBox Grid.Column="0"
 									 x:Name="ImagePathBox"
 									 IsReadOnly="True"
-									 PlaceholderText="No image loaded…" />
+									 PlaceholderText="{x:Static strings:Strings.InputImage_PathBox_Placeholder}" />
 							<Button Grid.Column="1"
-									Content="Open..."
+									Content="{x:Static strings:Strings.InputImage_OpenButton}"
 									Margin="4,0,0,0"
 									Click="OpenImageButton_Click" />
 						</Grid>
@@ -129,37 +130,37 @@
 				</Border>
 				<Border Grid.Row="1" Classes="group" Margin="0,0,0,6">
 					<StackPanel Spacing="6">
-						<TextBlock Classes="header" Text="Routing" />
+						<TextBlock Classes="header" Text="{x:Static strings:Strings.Routing_Header}" />
 						<Grid ColumnDefinitions="Auto,*" ColumnSpacing="6">
 							<TextBlock Grid.Column="0"
-									   Text="Switch Compatibility:"
+									   Text="{x:Static strings:Strings.Routing_SwitchCompatibility_Label}"
 									   VerticalAlignment="Center" />
 							<ComboBox Grid.Column="1"
 									  x:Name="SwitchVersionComboBox"
 									  SelectionChanged="SwitchVersionComboBox_SelectionChanged"
 									  HorizontalAlignment="Stretch"
-									  PlaceholderText="SELECT YOUR SWITCH!">
-								<ComboBoxItem>Switch 1/Lite/OLED</ComboBoxItem>
-								<ComboBoxItem>Switch 2</ComboBoxItem>
+									  PlaceholderText="{x:Static strings:Strings.Routing_SwitchComboBox_Placeholder}">
+								<ComboBoxItem Content="{x:Static strings:Strings.Routing_Switch1LiteOLED}"/>
+								<ComboBoxItem Content="{x:Static strings:Strings.Routing_Switch2}"/>
 							</ComboBox>
 						</Grid>
 						<StackPanel Orientation="Horizontal" Spacing="6">
-							<TextBlock Text="TSP Solver Time Limit"
+							<TextBlock Text="{x:Static strings:Strings.Routing_TSPTimeLimitLabel}"
 									   VerticalAlignment="Center" />
 							<NumericUpDown x:Name="TSPTimeLimitUpDown"
 										   Minimum="0.1" Maximum="30"
 										   Increment="0.1" Value="0.5"
 										   FormatString="F1"
 										   Width="110" />
-							<TextBlock Text="seconds"
+							<TextBlock Text="{x:Static strings:Strings.Routing_TSPTimeLimitSeconds}"
 									   VerticalAlignment="Center" />
-							<Button Content="?"
+							<Button Content="{x:Static strings:Strings.Routing_TSPHelpButton}"
 									Width="28"
 									Click="TSPHelpButton_Click" />
 						</StackPanel>
 						<CheckBox x:Name="EnableHomeCanvas"
-								  Content="Auto Home Canvas To Top Left (Resets canvas)"
-								  ToolTip.Tip="At the beginning, the program will zoom out, and set itself at the very very top left of the canvas. This is automatically checked for full size (256x256) images. Additionally, to ensure the bucket tool works for Switch 2 it will clear the canvas."
+								  Content="{x:Static strings:Strings.Routing_AutoHomeCanvas}"
+								  ToolTip.Tip="{x:Static strings:Strings.Routing_AutoHomeCanvas_Tooltip}"
 								  IsCheckedChanged="EnableHomeCanvas_IsCheckedChanged"
 								  />
 					</StackPanel>
@@ -168,7 +169,7 @@
 					<DockPanel>
 						<TextBlock DockPanel.Dock="Top"
 								   Classes="header"
-								   Text="Log" />
+								   Text="{x:Static strings:Strings.Log_Header}" />
 						<TextBox x:Name="LogBox"
 								 IsReadOnly="True"
 								 AcceptsReturn="True"
@@ -178,30 +179,30 @@
 				</Border>
 				<TextBlock Grid.Row="3"
 						   x:Name="DrawTimeLabel"
-						   Text="Draw Time Estimate: ???"
-						   ToolTip.Tip="This is a generally very accurate estimate as to how long the drawing will take, including all actions."
+						   Text="{x:Static strings:Strings.DrawTimeEstimate_Initial}"
+						   ToolTip.Tip="{x:Static strings:Strings.DrawTimeEstimate_Tooltip}"
 						   FontSize="17"
 						   FontWeight="Bold"
 						   Margin="2,0,2,6" />
 				<Border Grid.Row="4" Classes="group">
 					<TabControl x:Name="ChipTabControl">
-						<TabItem x:Name="RP2040Tab" Header="RP2040">
+						<TabItem x:Name="RP2040Tab" Header="{x:Static strings:Strings.Chip_RP2040_TabHeader}">
 							<StackPanel Spacing="5" Margin="0,4,0,0">
-								<TextBlock x:Name="RP2040StatusLabel" Text="RP2040: Not Found" />
+								<TextBlock x:Name="RP2040StatusLabel" Text="{x:Static strings:Strings.Chip_RP2040_StatusNotFound}" />
 								<Grid ColumnDefinitions="*,*">
 									<Button Grid.Column="0"
 											x:Name="RP2040FlashButton"
 											IsEnabled="False"
-											Content="Flash Base Firmware"
-											ToolTip.Tip="Flash the firmware that reads drawing data from the RP2040's flash."
+											Content="{x:Static strings:Strings.Chip_RP2040_FlashButton}"
+											ToolTip.Tip="{x:Static strings:Strings.Chip_RP2040_FlashButton_Tooltip}"
 											HorizontalAlignment="Stretch"
 											Margin="2,0,2,0"
 											Click="FlashFirmwareButton_Click" />
 									<Button Grid.Column="1"
 											x:Name="RP2040ExportButton"
 											IsEnabled="False"
-											Content="Export To RP2040!"
-											ToolTip.Tip="Converts your image to a uf2 and copies it directly to a connected RP2040. Base firmware must be flashed first!"
+											Content="{x:Static strings:Strings.Chip_RP2040_ExportButton}"
+											ToolTip.Tip="{x:Static strings:Strings.Chip_RP2040_ExportButton_Tooltip}"
 											FontWeight="Bold"
 											HorizontalAlignment="Stretch"
 											Margin="2,0,2,0"
@@ -209,31 +210,31 @@
 								</Grid>
 								<Button x:Name="RP2040ExportUF2Button"
 										IsEnabled="False"
-										Content="Export to .UF2"
-										ToolTip.Tip="Converts your image to a .uf2 file for manual transfer. Use this if auto-detection doesn't find your device."
+										Content="{x:Static strings:Strings.Chip_RP2040_ExportUF2Button}"
+										ToolTip.Tip="{x:Static strings:Strings.Chip_RP2040_ExportUF2Button_Tooltip}"
 										FontWeight="Bold"
 										HorizontalAlignment="Stretch"
 										Margin="2,0,0,0"
 										Click="ExportUF2Button_Click" />
 							</StackPanel>
 						</TabItem>
-						<TabItem x:Name="RP2350Tab" Header="RP2350">
+						<TabItem x:Name="RP2350Tab" Header="{x:Static strings:Strings.Chip_RP2350_TabHeader}">
 							<StackPanel Spacing="5" Margin="0,4,0,0">
-								<TextBlock x:Name="RP2350StatusLabel" Text="RP2350: Not Found" />
+								<TextBlock x:Name="RP2350StatusLabel" Text="{x:Static strings:Strings.Chip_RP2350_StatusNotFound}" />
 								<Grid ColumnDefinitions="*,*">
 									<Button Grid.Column="0"
 											x:Name="RP2350FlashButton"
 											IsEnabled="False"
-											Content="Flash Base Firmware"
-											ToolTip.Tip="Flash the firmware that reads drawing data from the RP2350's flash."
+											Content="{x:Static strings:Strings.Chip_RP2350_FlashButton}"
+											ToolTip.Tip="{x:Static strings:Strings.Chip_RP2350_FlashButton_Tooltip}"
 											HorizontalAlignment="Stretch"
 											Margin="2,0,2,0"
 											Click="FlashFirmwareButton_Click" />
 									<Button Grid.Column="1"
 											x:Name="RP2350ExportButton"
 											IsEnabled="False"
-											Content="Export To RP2350!"
-											ToolTip.Tip="Converts your image to a uf2 and copies it directly to a connected RP2350. Base firmware must be flashed first!"
+											Content="{x:Static strings:Strings.Chip_RP2350_ExportButton}"
+											ToolTip.Tip="{x:Static strings:Strings.Chip_RP2350_ExportButton_Tooltip}"
 											FontWeight="Bold"
 											HorizontalAlignment="Stretch"
 											Margin="2,0,2,0"
@@ -241,8 +242,8 @@
 								</Grid>
 								<Button x:Name="RP2350ExportUF2Button"
 										IsEnabled="False"
-										Content="Export to .UF2"
-										ToolTip.Tip="Converts your image to a .uf2 file for manual transfer. Use this if auto-detection doesn't find your device."
+										Content="{x:Static strings:Strings.Chip_RP2350_ExportUF2Button}"
+										ToolTip.Tip="{x:Static strings:Strings.Chip_RP2350_ExportUF2Button_Tooltip}"
 										FontWeight="Bold"
 										HorizontalAlignment="Stretch"
 										Margin="2,0,0,0"
@@ -261,7 +262,7 @@
 					x:Name="PreviewHeader"
 					DockPanel.Dock="Top"
 					Classes="header"
-					Text="Preview" />
+					Text="{x:Static strings:Strings.Preview_Header}" />
 					<Grid DockPanel.Dock="Top" Margin="0,0,0,6">
 						<Grid.ColumnDefinitions>
 							<ColumnDefinition Width="Auto" />
@@ -273,7 +274,7 @@
 							<ColumnDefinition Width="*" />
 						</Grid.ColumnDefinitions>
 						<TextBlock Grid.Column="0"
-								   Text="Colour Matcher:"
+								   Text="{x:Static strings:Strings.Preview_ColourMatcher_Label}"
 								   VerticalAlignment="Center"
 								   Margin="0,0,4,0" />
 						<ComboBox Grid.Column="1"
@@ -281,11 +282,11 @@
 								  HorizontalAlignment="Stretch"
 								  Margin="0,0,8,0"
 								  SelectionChanged="ColourMatcherComboBox_SelectionChanged" />
-						<Button Grid.Column="2" Content="?"
+						<Button Grid.Column="2" Content="{x:Static strings:Strings.Preview_ColourMatcherHelp_Button}"
 								Margin="0,0,4,0"
 								Click="ColourMatcherHelpButton_Click" />
 						<TextBlock Grid.Column="3"
-								   Text="Colour Limit:"
+								   Text="{x:Static strings:Strings.Preview_ColourLimit_Label}"
 								   VerticalAlignment="Center"
 								   Margin="0,0,4,0" />
 						<NumericUpDown Grid.Column="4"
@@ -298,7 +299,7 @@
 									   IsEnabled="False"
 									   ValueChanged="ColourLimitUpDown_ValueChanged"/>
 						<TextBlock Grid.Column="5"
-								   Text="Denoising:"
+								   Text="{x:Static strings:Strings.Preview_Denoising_Label}"
 								   VerticalAlignment="Center"
 								   Margin="0,0,4,0" />
 						<ComboBox Grid.Column="6"

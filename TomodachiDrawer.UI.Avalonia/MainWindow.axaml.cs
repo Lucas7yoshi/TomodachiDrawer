@@ -60,11 +60,11 @@ public partial class MainWindow : Window
         InitializeComponent();
 
         var quantizers = ColourPalette.Quantizers.Keys.ToList();
-        quantizers.Insert(0, "Arbitrary");
+        quantizers.Insert(0, Strings.ColourMatcher_Arbitrary);
         ColourMatcherComboBox.ItemsSource = quantizers;
         ColourMatcherComboBox.SelectedIndex = 0;
 
-        var denoiserSelection = new List<string> { "None" };
+        var denoiserSelection = new List<string> { Strings.Denoising_None };
         denoiserSelection.AddRange(ImageDenoiser.Denoisers.Keys);
 
         DenoisingComboBox.ItemsSource = denoiserSelection;
@@ -177,12 +177,10 @@ public partial class MainWindow : Window
         if (!IsVCRuntimeInstalled())
         {
             await ShowMessageAsync(
-                "WARNING: MISSING LIBRARIES",
-                $"In order for this program to run, you MUST install the VC Redistributable." +
-                $"\n\nClick the open link button to install it. " +
-                $"If you do not install it, this program will probably crash silently.",
+                Strings.Dialog_MissingVCRuntime_Title,
+                Strings.Dialog_MissingVCRuntime_Message,
                 new Uri("https://aka.ms/vc14/vc_redist.x64.exe"),
-                "Download Redistributable"
+                Strings.Dialog_MissingVCRuntime_DownloadButton
             );
         }
 
@@ -302,14 +300,14 @@ public partial class MainWindow : Window
                 if (releaseVersionTag != ourVersion)
                 {
                     _ = ShowMessageAsync(
-                        "Update available",
+                        Strings.Dialog_UpdateAvailable_Title,
                         "A new update is available on GitHub."
                             + $"\nCurrent Version: {ourVersion}"
                             + $"\nLatest Version: {releaseVersionTag}"
                             + $"\nVersion title: {responseJsonObject.RootElement.GetProperty("name").GetString() ?? "N/A"}"
                             + $"\n\nDownload at:\nhttps://github.com/Lucas7yoshi/TomodachiDrawer",
                         new Uri("https://github.com/Lucas7yoshi/TomodachiDrawer/releases"),
-                        "Open Releases"
+                        Strings.Dialog_UpdateAvailable_OpenReleases
                     );
                 }
                 else
@@ -347,13 +345,13 @@ public partial class MainWindow : Window
             if (OperatingSystem.IsMacOS())
             {
                 _ = ShowMessageAsync(
-                    "Permission Denied",
+                    Strings.Dialog_PermissionDenied_Title,
                     $"Permission to access the microcontrollers drive ({drivePath}) was denied.\n\n"
                         + "Please open System Settings -> Privacy & Security -> Files & Folders, find \"TomodachiDrawer\", and make sure \"Removable Volumes\" is enabled.\n\n"
                         + "This is required for the app to write the firmware directly to your Pico drive.\r"
                         + $"Or you can manually copy the .uf2 file to {drivePath} if you want to avoid granting permissions.",
                     new Uri("x-apple.systempreferences:com.apple.preference.security?Privacy_FilesAndFolders"),
-                    "Open System Settings"
+                    Strings.Dialog_OpenSystemSettings
                 );
             }
             AppendLog($"Permission to access microcontrollers drive ({drivePath}) was denied");
@@ -545,7 +543,7 @@ public partial class MainWindow : Window
 
         PreviewImage.Source = ToAvaloniaBitmap(preview);
         // update the preview label to indicate the size of the image just for user reference
-        PreviewHeader.Text = $"Preview ({_currentImage.Width}x{_currentImage.Height})";
+        PreviewHeader.Text = string.Format(Strings.Preview_Header_WithSize, _currentImage.Width, _currentImage.Height);
         AppendLog(
             $"Updated preview for {_currentImagePath} using {quantizerSettings.quantizerName}"
         );
@@ -586,7 +584,7 @@ public partial class MainWindow : Window
 
         var okButton = new Button
         {
-            Content = "OK",
+            Content = Strings.Dialog_OK,
             Margin = new Thickness(0, 10, 0, 0),
             MinWidth = 80,
         };
@@ -600,7 +598,7 @@ public partial class MainWindow : Window
         {
             linkButton = new Button
             {
-                Content = linkButtonText ?? "Open Link",
+                Content = linkButtonText ?? Strings.Dialog_OpenLink,
                 Margin = new Thickness(0, 10, 0, 0),
                 MinWidth = 80,
             };
@@ -642,15 +640,15 @@ public partial class MainWindow : Window
         var files = await StorageProvider.OpenFilePickerAsync(
             new FilePickerOpenOptions
             {
-                Title = "Open Image",
+                Title = Strings.Dialog_OpenImage_Title,
                 AllowMultiple = false,
                 FileTypeFilter =
                 [
-                    new FilePickerFileType("Images")
+                    new FilePickerFileType(Strings.Dialog_OpenImage_FilterImages)
                     {
                         Patterns = ["*.png", "*.jpg", "*.jpeg", "*.bmp", "*.gif", "*.webp"],
                     },
-                    new FilePickerFileType("All Files") { Patterns = ["*.*"] },
+                    new FilePickerFileType(Strings.Dialog_OpenImage_FilterAll) { Patterns = ["*.*"] },
                 ],
             }
         );
@@ -669,16 +667,7 @@ public partial class MainWindow : Window
 
     private void TSPHelpButton_Click(object? sender, RoutedEventArgs e)
     {
-        const string message =
-            "TSP Solver Time Limit refers to how much time is alloted to the TSP solver.\n"
-            + "TSP refers to the Travelling Sales Person problem, which is finding the optimal route among a set of points.\n"
-            + "This is used to find the optimal path for the pen tool to take while drawing to minimize drawing time.\n\n"
-            + "For larger images, the TSP solver can take longer to find an optimal route, its also possible it will never even find an optimal route if there is too many points.\n"
-            + "For 64x64, 0.5s is generally fine, anything largest you should consider giving it more time.\n\n"
-            + "This time is how long it is alloted PER colour, so if an image has 30 different colours used, 0.5s will take 15 seconds.\n"
-            + "The TSP solve is not used always, a simpler \"snaking\" algorithm is used if its quicker, or if TSP didnt find anything in time, which it sometimes is, mostly for large continuous areas of colour.";
-
-        _ = ShowMessageAsync("TSP Solver Time Limit", message);
+        _ = ShowMessageAsync(Strings.Dialog_TSPHelp_Title, Strings.Dialog_TSPHelp_Message);
     }
 
     private QuantizerSettings GetQuantizerSettings()
@@ -702,12 +691,7 @@ public partial class MainWindow : Window
 
         if (_currentSettings.SelectedSwitchVersion == SwitchVersion.None)
         {
-            _ = ShowMessageAsync(
-                "Select Switch Version",
-                "For compatibility, you must select a switch version in the dropdown."
-                    + "\n\nSwitch 1 is more prone to desyncs, so this avoids certain things that are particularly prone to desyncing."
-                    + "\nPlease be aware that even with Switch 1 selected, desyncs are unfortunately expected due to inconsistent and unpredictable lag in the drawing UI."
-            );
+            _ = ShowMessageAsync(Strings.Dialog_SelectSwitchVersion_Title, Strings.Dialog_SelectSwitchVersion_Message);
             return;
         }
 
@@ -766,7 +750,7 @@ public partial class MainWindow : Window
     private void SetEstimate(TimeSpan time)
     {
         var estimateStr = $"{time:h\\hm\\ms\\s}";
-        DrawTimeLabel.Text = $"Draw Time Estimate: {estimateStr}";
+        DrawTimeLabel.Text = string.Format(Strings.DrawTimeEstimate_Format, estimateStr);
     }
 
     private async Task<(byte[]? uf2Bytes, TimeSpan totalTime)> GenerateUF2Async(
@@ -863,12 +847,7 @@ public partial class MainWindow : Window
 
         if (_currentSettings.SelectedSwitchVersion == SwitchVersion.None)
         {
-            _ = ShowMessageAsync(
-                "Select Switch Version",
-                "For compatibility, you must select a switch version in the dropdown."
-                    + "\n\nSwitch 1 is more prone to desyncs, so this avoids certain things that are particularly prone to desyncing."
-                    + "\nPlease be aware that even with Switch 1 selected, desyncs are unfortunately expected due to inconsistent and unpredictable lag in the drawing UI."
-            );
+            _ = ShowMessageAsync(Strings.Dialog_SelectSwitchVersion_Title, Strings.Dialog_SelectSwitchVersion_Message);
             return;
         }
 
@@ -878,12 +857,12 @@ public partial class MainWindow : Window
         var file = await StorageProvider.SaveFilePickerAsync(
             new FilePickerSaveOptions
             {
-                Title = "Save .UF2",
+                Title = Strings.Dialog_SaveUF2_Title,
                 DefaultExtension = "uf2",
                 FileTypeChoices =
                 [
-                    new FilePickerFileType("UF2 Firmware Image") { Patterns = ["*.uf2"] },
-                    new FilePickerFileType("All Files") { Patterns = ["*.*"] },
+                    new FilePickerFileType(Strings.Dialog_SaveUF2_FilterUF2) { Patterns = ["*.uf2"] },
+                    new FilePickerFileType(Strings.Dialog_OpenImage_FilterAll) { Patterns = ["*.*"] },
                 ],
             }
         );
@@ -952,7 +931,7 @@ public partial class MainWindow : Window
         if (!File.Exists(firmwareFilePath))
         {
             _ = ShowMessageAsync(
-                "Error flashing base firmware",
+                Strings.Dialog_FlashFirmwareError_Title,
                 $"Could not locate {firmwareFileName}."
                     + "\nPlease ensure that you extracted all files from the zip before running."
                     + $"\nAlternatively, you can manually drag {firmwareFileName} to the {chipName} drive."
@@ -983,45 +962,18 @@ public partial class MainWindow : Window
             Thread.Sleep(500);
         }
 
-        _ = ShowMessageAsync(
-            "",
-            "Base firmware flashed! You can now use the standard output button to output your images to it!\nIf this is your first time, its likely flashing red. Simply hold BOOT and plug it back in, or hold BOOT and press reset if you have it."
-        );
+        _ = ShowMessageAsync("", Strings.Dialog_FlashFirmwareSuccess_Message);
         AppendLog($"Flashed base firmware to {chipName}");
     }
 
     private void OutputExplanationButton_Click(object? sender, RoutedEventArgs e)
     {
-        _ = ShowMessageAsync(
-            "",
-            "Your RP2040-Zero (or similar) needs two things in its memory (it's flash):\r\n"
-                + "- The code that reads the instructions to draw your image and pipe it to the switch\r\n"
-                + "- The instructions to draw your image.\r\n\r\n\r\n"
-                + "To connect your device for flashing, hold down the \"BOOT\" button and plug it in, or hold \"BOOT\" and press \"RESET\" while it is connected.\r\n\r\n"
-                + "You only need to flash the code/\"firmware\" once.\r\n\r\n"
-                + "You then flash the image data onto it for each image, without needing to reflash the firmware.\r\n\r\n"
-                + "When you first install the firmware, it'll reset itself, flash yellow 3 times, and then flash red.\r\n"
-                + "Flashing red is expected, as that means it cannot find the image data.\r\n"
-                + "Reconnect it using the same \"BOOT\" button steps as described above, load your image, and hit \"Export to RP2040\".\r\n\r\n"
-                + "Again, it will reboot, but now you can unplug it and plug it into your switch.\r\n\r\n"
-                + "YOU MUST HAVE \"Pro Controller Wired Commmunication\" ENABLED.\r\n"
-                + "Go to system settings -> Controllers & Accessories -> Pro Controller Wired Communication\r\n"
-        );
+        _ = ShowMessageAsync("", Strings.Dialog_SetupExplanation_Message);
     }
 
     private void InGameSetupButton_Click(object? sender, RoutedEventArgs e)
     {
-        _ = ShowMessageAsync(
-            "In Game Setup",
-            "Setup in game is fairly straightforward.\r\n"
-                + "- Navigate to the palette house\r\n"
-                + "- Ensure you are on the \"advanced\" drawing UI\r\n"
-                + "- Ensure your top colour is set to Black (it is by default)\r\n"
-                + "- Set your cursor to the TOP LEFT of where you want the drawing to be.\r\n"
-                + "- Ensure the full area of the canvas that will be drawn is on screen.\r\n\r\n"
-                + "If the canvas is zoomed in, it will cause the cursor to desync as the canvas moves when the cursor gets on the edges. Zooming out fully avoids this.\r\n\r\n"
-                + "If your image is 256x256 or larger, set it all the way in the top left. If your image is smaller, set your cursor to where you want the topleft most pixel of your drawing to be."
-        );
+        _ = ShowMessageAsync(Strings.Dialog_InGameSetup_Title, Strings.Dialog_InGameSetup_Message);
     }
 
     // this doesnt seem to work >:|
@@ -1076,16 +1028,7 @@ public partial class MainWindow : Window
 
     private void ColourMatcherHelpButton_Click(object? sender, RoutedEventArgs e)
     {
-        _ = ShowMessageAsync(
-            "Colour Matchers",
-            "You have 4 options for colour matchers."
-                + "\nEuclidean, Redmean, and CieLab work using the Pro modes default palette."
-                + "\n\nArbitrary on the other hands works using the full colour range, selecting colours in-game is slower but you can achieve much better results."
-                + "\nYou can tweak the number of colours it has by changing the value to the right of this button."
-                + "\nTry and pick the lowest number that looks good to your standards to minimize draw time."
-                + "\nLess colours means quicker drawing, and more opportunities for the solver to find large continous blocks it can draw quickly."
-                + "\nIf time is of the essence, you can also enable Denoising which can increase the number of large spots for the larger brushes."
-        );
+        _ = ShowMessageAsync(Strings.Dialog_ColourMatcherHelp_Title, Strings.Dialog_ColourMatcherHelp_Message);
     }
 
     private static string GetSettingsFilePath()
@@ -1172,10 +1115,8 @@ public partial class MainWindow : Window
         if (EnableExperimentalMenuItem.IsChecked)
         {
             _ = ShowMessageAsync(
-                "Experimental Features",
-                "WARNING: Enabling experimental features may induce more common desyncs. Things that are prone to desyncs, but that are desired to be made stable are put here."
-                    + "\nNamely, this includes bucket filling dynamic areas on the switch 2."
-                    + "\nOnly enable this if you are okay with the increased chance of desyncs. Having this disabled does not guarantee it will work, but that is the goal and in 99% of cases it will work.",
+                Strings.Dialog_ExperimentalFeatures_Title,
+                Strings.Dialog_ExperimentalFeatures_Message,
                 new Uri("https://github.com/Lucas7yoshi/TomodachiDrawer/issues/34"),
                 "Open Experimental Feature Info"
             );
@@ -1203,7 +1144,7 @@ public partial class MainWindow : Window
         var file = await StorageProvider.SaveFilePickerAsync(
             new FilePickerSaveOptions
             {
-                Title = "Save preview .png",
+                Title = Strings.Dialog_SavePreview_Title,
                 DefaultExtension = "png",
                 FileTypeChoices =
                 [
@@ -1211,7 +1152,7 @@ public partial class MainWindow : Window
                     {
                         Patterns = ["*.png"],
                     },
-                    new FilePickerFileType("All Files") { Patterns = ["*.*"] },
+                    new FilePickerFileType(Strings.Dialog_OpenImage_FilterAll) { Patterns = ["*.*"] },
                 ],
             }
         );
@@ -1323,7 +1264,7 @@ public partial class MainWindow : Window
             $"\n\nCreated by Lucas7yoshi and contributors.\nThis project is Free and Open Source Software licensed under the GPLv3.0 License."
             + $"\nSource code is available on GitHub"
             + $"\n\nThis program is in no way affiliated, endorsed, sponsored or created by Nintendo.";
-        _ = ShowMessageAsync("About TomodachiDrawer", message);
+        _ = ShowMessageAsync(Strings.Dialog_About_Title, message);
     }
 
     private void MenuExit_Click(object? sender, RoutedEventArgs e)

@@ -1,8 +1,9 @@
 <Window xmlns="https://github.com/avaloniaui"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:strings="clr-namespace:TomodachiDrawer.UI.Avalonia"
         x:Class="TomodachiDrawer.UI.Avalonia.ColourToHSVStepsTool"
         Icon="/Assets/Icon.png"
-        Title="Colour to HSV Steps Tool"
+        Title="{x:Static strings:Strings.ColourToHSVStepsTool_Title}"
         Width="300" Height="205"
         CanResize="False"
 		WindowStartupLocation="CenterOwner">
@@ -38,31 +39,31 @@
     <StackPanel Margin="8">
         <Grid Classes="field"
               ColumnDefinitions="75,*">
-            <TextBlock Text="RGB Hex:" />
+            <TextBlock Text="{x:Static strings:Strings.ColourToHSVStepsTool_RGBHex_Label}" />
             <TextBox x:Name="ColourHex"
                      Grid.Column="1"
-                     PlaceholderText="#RRGGBB"
+                     PlaceholderText="{x:Static strings:Strings.ColourToHSVStepsTool_RGBHex_Placeholder}"
                      TextChanged="ColourHex_TextChanged" />
         </Grid>
 
         <Separator Margin="0,10" />
 
         <Grid Classes="field" ColumnDefinitions="75,*">
-            <TextBlock Text="Hue:" />
+            <TextBlock Text="{x:Static strings:Strings.ColourToHSVStepsTool_Hue_Label}" />
             <TextBox x:Name="HueStepsOutput"
                      Grid.Column="1"
                      IsReadOnly="True" />
         </Grid>
 
         <Grid Classes="field" ColumnDefinitions="75,*">
-            <TextBlock Text="Saturation:" />
+            <TextBlock Text="{x:Static strings:Strings.ColourToHSVStepsTool_Saturation_Label}" />
             <TextBox x:Name="SatStepsOutput"
                      Grid.Column="1"
                      IsReadOnly="True" />
         </Grid>
 
         <Grid Classes="field" ColumnDefinitions="75,*">
-            <TextBlock Text="Value:" />
+            <TextBlock Text="{x:Static strings:Strings.ColourToHSVStepsTool_Value_Label}" />
             <TextBox x:Name="ValStepsOutput"
                      Grid.Column="1"
                      IsReadOnly="True" />

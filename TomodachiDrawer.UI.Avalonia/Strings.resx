@@ -1,0 +1,618 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <xsd:schema id="root" xmlns="" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:msdata="urn:schemas-microsoft-com:xml-msdata">
+    <xsd:import namespace="http://www.w3.org/XML/1998/namespace" />
+    <xsd:element name="root" msdata:IsDataSet="true">
+      <xsd:complexType>
+        <xsd:choice maxOccurs="unbounded">
+          <xsd:element name="metadata">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" />
+              </xsd:sequence>
+              <xsd:attribute name="name" use="required" type="xsd:string" />
+              <xsd:attribute name="type" type="xsd:string" />
+              <xsd:attribute name="mimetype" type="xsd:string" />
+              <xsd:attribute ref="xml:space" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="assembly">
+            <xsd:complexType>
+              <xsd:attribute name="alias" type="xsd:string" />
+              <xsd:attribute name="name" type="xsd:string" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="data">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+                <xsd:element name="comment" type="xsd:string" minOccurs="0" msdata:Ordinal="2" />
+              </xsd:sequence>
+              <xsd:attribute name="name" use="required" type="xsd:string" />
+              <xsd:attribute name="type" type="xsd:string" />
+              <xsd:attribute name="mimetype" type="xsd:string" />
+              <xsd:attribute ref="xml:space" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="resheader">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+              </xsd:sequence>
+              <xsd:attribute name="name" use="required" type="xsd:string" />
+            </xsd:complexType>
+          </xsd:element>
+        </xsd:choice>
+      </xsd:complexType>
+    </xsd:element>
+  </xsd:schema>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+
+  <!-- ═══════════════════════════════════════════════════════════════
+       MainWindow — Menu bar
+       Leading underscore denotes the keyboard access key character.
+       ═══════════════════════════════════════════════════════════════ -->
+
+  <data name="Menu_File" xml:space="preserve">
+    <value>_File</value>
+  </data>
+  <data name="Menu_File_SavePreview" xml:space="preserve">
+    <value>_Save Preview...</value>
+  </data>
+  <data name="Menu_File_Exit" xml:space="preserve">
+    <value>_Exit</value>
+  </data>
+
+  <data name="Menu_Settings" xml:space="preserve">
+    <value>_Settings</value>
+  </data>
+  <data name="Menu_Settings_CheckForUpdatesOnStart" xml:space="preserve">
+    <value>_Check For Updates On Start</value>
+  </data>
+  <data name="Menu_Settings_Theme" xml:space="preserve">
+    <value>_Theme</value>
+  </data>
+  <data name="Menu_Settings_Theme_MatchSystem" xml:space="preserve">
+    <value>_Match System</value>
+  </data>
+  <data name="Menu_Settings_Theme_Light" xml:space="preserve">
+    <value>_Light</value>
+  </data>
+  <data name="Menu_Settings_Theme_Dark" xml:space="preserve">
+    <value>_Dark</value>
+  </data>
+  <data name="Menu_Settings_EnableExperimentalFeatures" xml:space="preserve">
+    <value>_Enable Experimental Features</value>
+  </data>
+  <data name="Menu_Settings_OpenTelemetryPrompt" xml:space="preserve">
+    <value>_Open Telemetry Prompt</value>
+  </data>
+
+  <data name="Menu_Templates" xml:space="preserve">
+    <value>_Templates</value>
+  </data>
+
+  <data name="Menu_Tools" xml:space="preserve">
+    <value>_Tools</value>
+  </data>
+  <data name="Menu_Tools_ConvertColourToHSVSteps" xml:space="preserve">
+    <value>_Convert Colour to HSV Steps</value>
+  </data>
+
+  <data name="Menu_Help" xml:space="preserve">
+    <value>_Help</value>
+  </data>
+  <data name="Menu_Help_OpenGitHubRepo" xml:space="preserve">
+    <value>_Open GitHub Repo</value>
+  </data>
+  <data name="Menu_Help_ShowWelcomeAgain" xml:space="preserve">
+    <value>_Show Welcome Again</value>
+  </data>
+  <data name="Menu_Help_CheckForUpdate" xml:space="preserve">
+    <value>Check For Update</value>
+  </data>
+  <data name="Menu_Help_SetupExplanation" xml:space="preserve">
+    <value>_Setup Explanation</value>
+  </data>
+  <data name="Menu_Help_InGameSetupInfo" xml:space="preserve">
+    <value>_In-Game Setup Info</value>
+  </data>
+  <data name="Menu_Help_About" xml:space="preserve">
+    <value>_About</value>
+  </data>
+
+  <!-- ═══════════════════════════════════════════════════════════════
+       MainWindow — Input Image section
+       ═══════════════════════════════════════════════════════════════ -->
+
+  <data name="InputImage_Header" xml:space="preserve">
+    <value>Input Image</value>
+  </data>
+  <data name="InputImage_PathBox_Placeholder" xml:space="preserve">
+    <value>No image loaded…</value>
+  </data>
+  <data name="InputImage_OpenButton" xml:space="preserve">
+    <value>Open...</value>
+  </data>
+
+  <!-- ═══════════════════════════════════════════════════════════════
+       MainWindow — Routing section
+       ═══════════════════════════════════════════════════════════════ -->
+
+  <data name="Routing_Header" xml:space="preserve">
+    <value>Routing</value>
+  </data>
+  <data name="Routing_SwitchCompatibility_Label" xml:space="preserve">
+    <value>Switch Compatibility:</value>
+  </data>
+  <data name="Routing_SwitchComboBox_Placeholder" xml:space="preserve">
+    <value>SELECT YOUR SWITCH!</value>
+  </data>
+  <data name="Routing_Switch1LiteOLED" xml:space="preserve">
+    <value>Switch 1/Lite/OLED</value>
+  </data>
+  <data name="Routing_Switch2" xml:space="preserve">
+    <value>Switch 2</value>
+  </data>
+  <data name="Routing_TSPTimeLimitLabel" xml:space="preserve">
+    <value>TSP Solver Time Limit</value>
+  </data>
+  <data name="Routing_TSPTimeLimitSeconds" xml:space="preserve">
+    <value>seconds</value>
+  </data>
+  <data name="Routing_TSPHelpButton" xml:space="preserve">
+    <value>?</value>
+  </data>
+  <data name="Routing_AutoHomeCanvas" xml:space="preserve">
+    <value>Auto Home Canvas To Top Left (Resets canvas)</value>
+  </data>
+  <data name="Routing_AutoHomeCanvas_Tooltip" xml:space="preserve">
+    <value>At the beginning, the program will zoom out, and set itself at the very very top left of the canvas. This is automatically checked for full size (256x256) images. Additionally, to ensure the bucket tool works for Switch 2 it will clear the canvas.</value>
+  </data>
+
+  <!-- ═══════════════════════════════════════════════════════════════
+       MainWindow — Log section
+       ═══════════════════════════════════════════════════════════════ -->
+
+  <data name="Log_Header" xml:space="preserve">
+    <value>Log</value>
+  </data>
+
+  <!-- ═══════════════════════════════════════════════════════════════
+       MainWindow — Draw time estimate
+       ═══════════════════════════════════════════════════════════════ -->
+
+  <data name="DrawTimeEstimate_Initial" xml:space="preserve">
+    <value>Draw Time Estimate: ???</value>
+  </data>
+  <data name="DrawTimeEstimate_Format" xml:space="preserve">
+    <value>Draw Time Estimate: {0}</value>
+  </data>
+  <data name="DrawTimeEstimate_Tooltip" xml:space="preserve">
+    <value>This is a generally very accurate estimate as to how long the drawing will take, including all actions.</value>
+  </data>
+
+  <!-- ═══════════════════════════════════════════════════════════════
+       MainWindow — Chip tabs (RP2040 / RP2350)
+       ═══════════════════════════════════════════════════════════════ -->
+
+  <data name="Chip_RP2040_TabHeader" xml:space="preserve">
+    <value>RP2040</value>
+  </data>
+  <data name="Chip_RP2040_StatusNotFound" xml:space="preserve">
+    <value>RP2040: Not Found</value>
+  </data>
+  <data name="Chip_RP2040_FlashButton" xml:space="preserve">
+    <value>Flash Base Firmware</value>
+  </data>
+  <data name="Chip_RP2040_FlashButton_Tooltip" xml:space="preserve">
+    <value>Flash the firmware that reads drawing data from the RP2040's flash.</value>
+  </data>
+  <data name="Chip_RP2040_ExportButton" xml:space="preserve">
+    <value>Export To RP2040!</value>
+  </data>
+  <data name="Chip_RP2040_ExportButton_Tooltip" xml:space="preserve">
+    <value>Converts your image to a uf2 and copies it directly to a connected RP2040. Base firmware must be flashed first!</value>
+  </data>
+  <data name="Chip_RP2040_ExportUF2Button" xml:space="preserve">
+    <value>Export to .UF2</value>
+  </data>
+  <data name="Chip_RP2040_ExportUF2Button_Tooltip" xml:space="preserve">
+    <value>Converts your image to a .uf2 file for manual transfer. Use this if auto-detection doesn't find your device.</value>
+  </data>
+
+  <data name="Chip_RP2350_TabHeader" xml:space="preserve">
+    <value>RP2350</value>
+  </data>
+  <data name="Chip_RP2350_StatusNotFound" xml:space="preserve">
+    <value>RP2350: Not Found</value>
+  </data>
+  <data name="Chip_RP2350_FlashButton" xml:space="preserve">
+    <value>Flash Base Firmware</value>
+  </data>
+  <data name="Chip_RP2350_FlashButton_Tooltip" xml:space="preserve">
+    <value>Flash the firmware that reads drawing data from the RP2350's flash.</value>
+  </data>
+  <data name="Chip_RP2350_ExportButton" xml:space="preserve">
+    <value>Export To RP2350!</value>
+  </data>
+  <data name="Chip_RP2350_ExportButton_Tooltip" xml:space="preserve">
+    <value>Converts your image to a uf2 and copies it directly to a connected RP2350. Base firmware must be flashed first!</value>
+  </data>
+  <data name="Chip_RP2350_ExportUF2Button" xml:space="preserve">
+    <value>Export to .UF2</value>
+  </data>
+  <data name="Chip_RP2350_ExportUF2Button_Tooltip" xml:space="preserve">
+    <value>Converts your image to a .uf2 file for manual transfer. Use this if auto-detection doesn't find your device.</value>
+  </data>
+
+  <!-- ═══════════════════════════════════════════════════════════════
+       MainWindow — Preview section
+       ═══════════════════════════════════════════════════════════════ -->
+
+  <data name="Preview_Header" xml:space="preserve">
+    <value>Preview</value>
+  </data>
+  <data name="Preview_Header_WithSize" xml:space="preserve">
+    <value>Preview ({0}x{1})</value>
+  </data>
+  <data name="Preview_ColourMatcher_Label" xml:space="preserve">
+    <value>Colour Matcher:</value>
+  </data>
+  <data name="Preview_ColourMatcherHelp_Button" xml:space="preserve">
+    <value>?</value>
+  </data>
+  <data name="Preview_ColourLimit_Label" xml:space="preserve">
+    <value>Colour Limit:</value>
+  </data>
+  <data name="Preview_Denoising_Label" xml:space="preserve">
+    <value>Denoising:</value>
+  </data>
+
+  <!-- ═══════════════════════════════════════════════════════════════
+       MainWindow — Dialog messages (code-behind)
+       ═══════════════════════════════════════════════════════════════ -->
+
+  <data name="Dialog_SelectSwitchVersion_Title" xml:space="preserve">
+    <value>Select Switch Version</value>
+  </data>
+  <data name="Dialog_SelectSwitchVersion_Message" xml:space="preserve">
+    <value>For compatibility, you must select a switch version in the dropdown.
+
+Switch 1 is more prone to desyncs, so this avoids certain things that are particularly prone to desyncing.
+Please be aware that even with Switch 1 selected, desyncs are unfortunately expected due to inconsistent and unpredictable lag in the drawing UI.</value>
+  </data>
+
+  <data name="Dialog_TSPHelp_Title" xml:space="preserve">
+    <value>TSP Solver Time Limit</value>
+  </data>
+  <data name="Dialog_TSPHelp_Message" xml:space="preserve">
+    <value>TSP Solver Time Limit refers to how much time is alloted to the TSP solver.
+TSP refers to the Travelling Sales Person problem, which is finding the optimal route among a set of points.
+This is used to find the optimal path for the pen tool to take while drawing to minimize drawing time.
+
+For larger images, the TSP solver can take longer to find an optimal route, its also possible it will never even find an optimal route if there is too many points.
+For 64x64, 0.5s is generally fine, anything largest you should consider giving it more time.
+
+This time is how long it is alloted PER colour, so if an image has 30 different colours used, 0.5s will take 15 seconds.
+The TSP solve is not used always, a simpler "snaking" algorithm is used if its quicker, or if TSP didnt find anything in time, which it sometimes is, mostly for large continuous areas of colour.</value>
+  </data>
+
+  <data name="Dialog_ColourMatcherHelp_Title" xml:space="preserve">
+    <value>Colour Matchers</value>
+  </data>
+  <data name="Dialog_ColourMatcherHelp_Message" xml:space="preserve">
+    <value>You have 4 options for colour matchers.
+Euclidean, Redmean, and CieLab work using the Pro modes default palette.
+
+Arbitrary on the other hands works using the full colour range, selecting colours in-game is slower but you can achieve much better results.
+You can tweak the number of colours it has by changing the value to the right of this button.
+Try and pick the lowest number that looks good to your standards to minimize draw time.
+Less colours means quicker drawing, and more opportunities for the solver to find large continous blocks it can draw quickly.
+If time is of the essence, you can also enable Denoising which can increase the number of large spots for the larger brushes.</value>
+  </data>
+
+  <data name="Dialog_ExperimentalFeatures_Title" xml:space="preserve">
+    <value>Experimental Features</value>
+  </data>
+  <data name="Dialog_ExperimentalFeatures_Message" xml:space="preserve">
+    <value>WARNING: Enabling experimental features may induce more common desyncs. Things that are prone to desyncs, but that are desired to be made stable are put here.
+Namely, this includes bucket filling dynamic areas on the switch 2.
+Only enable this if you are okay with the increased chance of desyncs. Having this disabled does not guarantee it will work, but that is the goal and in 99% of cases it will work.</value>
+  </data>
+
+  <data name="Dialog_UpdateAvailable_Title" xml:space="preserve">
+    <value>Update available</value>
+  </data>
+  <data name="Dialog_UpdateAvailable_OpenReleases" xml:space="preserve">
+    <value>Open Releases</value>
+  </data>
+
+  <data name="Dialog_About_Title" xml:space="preserve">
+    <value>About TomodachiDrawer</value>
+  </data>
+
+  <data name="Dialog_SetupExplanation_Message" xml:space="preserve">
+    <value>Your RP2040-Zero (or similar) needs two things in its memory (it's flash):
+- The code that reads the instructions to draw your image and pipe it to the switch
+- The instructions to draw your image.
+
+
+To connect your device for flashing, hold down the "BOOT" button and plug it in, or hold "BOOT" and press "RESET" while it is connected.
+
+You only need to flash the code/"firmware" once.
+
+You then flash the image data onto it for each image, without needing to reflash the firmware.
+
+When you first install the firmware, it'll reset itself, flash yellow 3 times, and then flash red.
+Flashing red is expected, as that means it cannot find the image data.
+Reconnect it using the same "BOOT" button steps as described above, load your image, and hit "Export to RP2040".
+
+Again, it will reboot, but now you can unplug it and plug it into your switch.
+
+YOU MUST HAVE "Pro Controller Wired Commmunication" ENABLED.
+Go to system settings -&gt; Controllers &amp; Accessories -&gt; Pro Controller Wired Communication</value>
+  </data>
+
+  <data name="Dialog_InGameSetup_Title" xml:space="preserve">
+    <value>In Game Setup</value>
+  </data>
+  <data name="Dialog_InGameSetup_Message" xml:space="preserve">
+    <value>Setup in game is fairly straightforward.
+- Navigate to the palette house
+- Ensure you are on the "advanced" drawing UI
+- Ensure your top colour is set to Black (it is by default)
+- Set your cursor to the TOP LEFT of where you want the drawing to be.
+- Ensure the full area of the canvas that will be drawn is on screen.
+
+If the canvas is zoomed in, it will cause the cursor to desync as the canvas moves when the cursor gets on the edges. Zooming out fully avoids this.
+
+If your image is 256x256 or larger, set it all the way in the top left. If your image is smaller, set your cursor to where you want the topleft most pixel of your drawing to be.</value>
+  </data>
+
+  <data name="Dialog_FlashFirmwareError_Title" xml:space="preserve">
+    <value>Error flashing base firmware</value>
+  </data>
+  <data name="Dialog_FlashFirmwareSuccess_Message" xml:space="preserve">
+    <value>Base firmware flashed! You can now use the standard output button to output your images to it!
+If this is your first time, its likely flashing red. Simply hold BOOT and plug it back in, or hold BOOT and press reset if you have it.</value>
+  </data>
+
+  <data name="Dialog_PermissionDenied_Title" xml:space="preserve">
+    <value>Permission Denied</value>
+  </data>
+
+  <data name="Dialog_MissingVCRuntime_Title" xml:space="preserve">
+    <value>WARNING: MISSING LIBRARIES</value>
+  </data>
+  <data name="Dialog_MissingVCRuntime_Message" xml:space="preserve">
+    <value>In order for this program to run, you MUST install the VC Redistributable.
+
+Click the open link button to install it. If you do not install it, this program will probably crash silently.</value>
+  </data>
+  <data name="Dialog_MissingVCRuntime_DownloadButton" xml:space="preserve">
+    <value>Download Redistributable</value>
+  </data>
+
+  <data name="Dialog_OpenSystemSettings" xml:space="preserve">
+    <value>Open System Settings</value>
+  </data>
+  <data name="Dialog_OK" xml:space="preserve">
+    <value>OK</value>
+  </data>
+  <data name="Dialog_OpenLink" xml:space="preserve">
+    <value>Open Link</value>
+  </data>
+
+  <data name="Dialog_OpenImage_Title" xml:space="preserve">
+    <value>Open Image</value>
+  </data>
+  <data name="Dialog_OpenImage_FilterImages" xml:space="preserve">
+    <value>Images</value>
+  </data>
+  <data name="Dialog_OpenImage_FilterAll" xml:space="preserve">
+    <value>All Files</value>
+  </data>
+  <data name="Dialog_SavePreview_Title" xml:space="preserve">
+    <value>Save preview .png</value>
+  </data>
+  <data name="Dialog_SaveUF2_Title" xml:space="preserve">
+    <value>Save .UF2</value>
+  </data>
+  <data name="Dialog_SaveUF2_FilterUF2" xml:space="preserve">
+    <value>UF2 Firmware Image</value>
+  </data>
+
+  <!-- ═══════════════════════════════════════════════════════════════
+       MainWindow — Combo box items (code-behind)
+       ═══════════════════════════════════════════════════════════════ -->
+
+  <data name="ColourMatcher_Arbitrary" xml:space="preserve">
+    <value>Arbitrary</value>
+  </data>
+  <data name="Denoising_None" xml:space="preserve">
+    <value>None</value>
+  </data>
+
+  <!-- ═══════════════════════════════════════════════════════════════
+       TemplateTool window
+       ═══════════════════════════════════════════════════════════════ -->
+
+  <data name="TemplateTool_Information_Header" xml:space="preserve">
+    <value>Information</value>
+  </data>
+  <data name="TemplateTool_Information_Intro" xml:space="preserve">
+    <value>You selected a complex template type.</value>
+  </data>
+  <data name="TemplateTool_Information_StepsHeader" xml:space="preserve">
+    <value>Steps to use:</value>
+  </data>
+  <data name="TemplateTool_Information_Step1" xml:space="preserve">
+    <value>1. Paste the image on your clipboard in an image editor of your choice.</value>
+  </data>
+  <data name="TemplateTool_Information_Step2" xml:space="preserve">
+    <value>2. Add whatever content you want to the image. Anything in the opaque area of the template will not be drawn!</value>
+  </data>
+  <data name="TemplateTool_Information_Step3" xml:space="preserve">
+    <value>3. Once done, click Paste drawing from clipboard (after copying the final version in your editor)</value>
+  </data>
+  <data name="TemplateTool_Information_Step4" xml:space="preserve">
+    <value>4. Press Confirm to return to the main view with this image as the input. This tool will remove all pixels in the undrawable area.</value>
+  </data>
+  <data name="TemplateTool_Information_DisplayScaleNote" xml:space="preserve">
+    <value>Note: If you have a non-100% display scale in Windows, you will need to use the Save and Open buttons due to a bug in Avalonia UI that resizes the template when copied. </value>
+  </data>
+  <data name="TemplateTool_Information_DisplayScaleNote_Link" xml:space="preserve">
+    <value>See GitHub issue.</value>
+  </data>
+
+  <data name="TemplateTool_Options_Header" xml:space="preserve">
+    <value>Options</value>
+  </data>
+  <data name="TemplateTool_CopyClipboardButton" xml:space="preserve">
+    <value>Copy template to clipboard.</value>
+  </data>
+  <data name="TemplateTool_SaveTemplateButton" xml:space="preserve">
+    <value>Save template to file...</value>
+  </data>
+  <data name="TemplateTool_SaveTemplateButton_Tooltip" xml:space="preserve">
+    <value>Saves the template as a png to file. Use this if you have display scaling screwing up the image resolution (it should be 256x256) - or if you just prefer this way.</value>
+  </data>
+  <data name="TemplateTool_PasteButton" xml:space="preserve">
+    <value>Paste drawing from clipboard.</value>
+  </data>
+  <data name="TemplateTool_OpenDrawingButton" xml:space="preserve">
+    <value>Open drawing from file...</value>
+  </data>
+  <data name="TemplateTool_OpenDrawingButton_Tooltip" xml:space="preserve">
+    <value>Opens the completed template, must be 256x256.</value>
+  </data>
+  <data name="TemplateTool_ConfirmButton" xml:space="preserve">
+    <value>Confirm</value>
+  </data>
+  <data name="TemplateTool_ExitButton" xml:space="preserve">
+    <value>Exit</value>
+  </data>
+
+  <data name="TemplateTool_Dialog_SaveTemplate_Title" xml:space="preserve">
+    <value>Save Template</value>
+  </data>
+  <data name="TemplateTool_Dialog_OpenDrawing_Title" xml:space="preserve">
+    <value>Open Drawing</value>
+  </data>
+  <data name="TemplateTool_Dialog_ErrorNotSquare_Title" xml:space="preserve">
+    <value>Error</value>
+  </data>
+  <data name="TemplateTool_Dialog_ErrorNotSquare_Message" xml:space="preserve">
+    <value>The image must be 256x256. You can save the template with the Save Template To File button to use as a starting point.</value>
+  </data>
+  <data name="TemplateTool_Dialog_ErrorClipboardNotSquare_Message" xml:space="preserve">
+    <value>The image you had on your clipboard was not 256x256. You can copy the template again with the Copy Template To Clipboard button.</value>
+  </data>
+  <data name="TemplateTool_Dialog_ErrorNoClipboardImage_Message" xml:space="preserve">
+    <value>Could not find an image on your clipboard. Make sure you copied it.</value>
+  </data>
+
+  <!-- ═══════════════════════════════════════════════════════════════
+       TelemetryPrompt window
+       ═══════════════════════════════════════════════════════════════ -->
+
+  <data name="TelemetryPrompt_Title" xml:space="preserve">
+    <value>Telemetry Opt-In</value>
+  </data>
+  <data name="TelemetryPrompt_Header" xml:space="preserve">
+    <value>Help improve Tomodachi Drawer?</value>
+  </data>
+  <data name="TelemetryPrompt_Description" xml:space="preserve">
+    <value>Anonymous usage data helps me to better understand how the app is used and know where to focus development efforts. No personal data is collected.</value>
+  </data>
+  <data name="TelemetryPrompt_ExpanderHeader" xml:space="preserve">
+    <value>What's collected?</value>
+  </data>
+  <data name="TelemetryPrompt_OnStartup_Header" xml:space="preserve">
+    <value>On startup:</value>
+  </data>
+  <data name="TelemetryPrompt_OnStartup_OS" xml:space="preserve">
+    <value>  - Operating system and version</value>
+  </data>
+  <data name="TelemetryPrompt_OnStartup_CPU" xml:space="preserve">
+    <value>  - CPU architecture</value>
+  </data>
+  <data name="TelemetryPrompt_OnStartup_AppVersion" xml:space="preserve">
+    <value>  - App version</value>
+  </data>
+  <data name="TelemetryPrompt_OnExport_Header" xml:space="preserve">
+    <value>When an image is exported:</value>
+  </data>
+  <data name="TelemetryPrompt_OnExport_Dimensions" xml:space="preserve">
+    <value>  - Image dimensions</value>
+  </data>
+  <data name="TelemetryPrompt_OnExport_ColourCount" xml:space="preserve">
+    <value>  - Number of colours in the image</value>
+  </data>
+  <data name="TelemetryPrompt_OnExport_QuantizerMode" xml:space="preserve">
+    <value>  - Colour quantizer mode and limit</value>
+  </data>
+  <data name="TelemetryPrompt_OnExport_SwitchVersion" xml:space="preserve">
+    <value>  - Selected Switch version</value>
+  </data>
+  <data name="TelemetryPrompt_OnExport_ExperimentalEnabled" xml:space="preserve">
+    <value>  - Whether experimental features are enabled</value>
+  </data>
+  <data name="TelemetryPrompt_OnExport_DrawTimeEstimate" xml:space="preserve">
+    <value>  - Draw time estimate</value>
+  </data>
+  <data name="TelemetryPrompt_OnExport_TSPTimeLimit" xml:space="preserve">
+    <value>  - TSP Time Limit</value>
+  </data>
+  <data name="TelemetryPrompt_ImagesNeverUploaded" xml:space="preserve">
+    <value>Your actual images are never uploaded.</value>
+  </data>
+  <data name="TelemetryPrompt_ChangeMindLater" xml:space="preserve">
+    <value>You can change your mind later through the Settings.</value>
+  </data>
+  <data name="TelemetryPrompt_SureButton" xml:space="preserve">
+    <value>Sure</value>
+  </data>
+  <data name="TelemetryPrompt_NoThanksButton" xml:space="preserve">
+    <value>No Thanks</value>
+  </data>
+  <data name="TelemetryPrompt_ViewSourceButton" xml:space="preserve">
+    <value>View Telemetry Source Code</value>
+  </data>
+
+  <!-- ═══════════════════════════════════════════════════════════════
+       ColourToHSVStepsTool window
+       ═══════════════════════════════════════════════════════════════ -->
+
+  <data name="ColourToHSVStepsTool_Title" xml:space="preserve">
+    <value>Colour to HSV Steps Tool</value>
+  </data>
+  <data name="ColourToHSVStepsTool_RGBHex_Label" xml:space="preserve">
+    <value>RGB Hex:</value>
+  </data>
+  <data name="ColourToHSVStepsTool_RGBHex_Placeholder" xml:space="preserve">
+    <value>#RRGGBB</value>
+  </data>
+  <data name="ColourToHSVStepsTool_Hue_Label" xml:space="preserve">
+    <value>Hue:</value>
+  </data>
+  <data name="ColourToHSVStepsTool_Saturation_Label" xml:space="preserve">
+    <value>Saturation:</value>
+  </data>
+  <data name="ColourToHSVStepsTool_Value_Label" xml:space="preserve">
+    <value>Value:</value>
+  </data>
+
+</root>

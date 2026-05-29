@@ -76,7 +76,7 @@ public partial class TemplateTool : Window
 
         var okButton = new Button
         {
-            Content = "OK",
+            Content = Strings.Dialog_OK,
             Margin = new Thickness(0, 10, 0, 0),
             MinWidth = 80,
         };
@@ -129,7 +129,7 @@ public partial class TemplateTool : Window
         if (_betterMask == null) return;
         var file = await StorageProvider.SaveFilePickerAsync(new FilePickerSaveOptions
         {
-            Title = "Save Template",
+            Title = Strings.TemplateTool_Dialog_SaveTemplate_Title,
             SuggestedFileName = $"{_mask}_template.png",
             DefaultExtension = "png",
             FileTypeChoices = [new FilePickerFileType("PNG Image") { Patterns = ["*.png"] }],
@@ -143,7 +143,7 @@ public partial class TemplateTool : Window
     {
         var files = await StorageProvider.OpenFilePickerAsync(new FilePickerOpenOptions
         {
-            Title = "Open Drawing",
+            Title = Strings.TemplateTool_Dialog_OpenDrawing_Title,
             AllowMultiple = false,
             FileTypeFilter = [new FilePickerFileType("PNG Image") { Patterns = ["*.png"] }],
         });
@@ -155,7 +155,7 @@ public partial class TemplateTool : Window
         var skiaBitmap = ToSKBitmap(bitmap);
         if (skiaBitmap.Width != 256 || skiaBitmap.Height != 256)
         {
-            await ShowMessageAsync("Error", "The image must be 256x256. You can save the template with the Save Template To File button to use as a starting point.");
+            await ShowMessageAsync(Strings.TemplateTool_Dialog_ErrorNotSquare_Title, Strings.TemplateTool_Dialog_ErrorNotSquare_Message);
             return;
         }
         var masked = ImageMasker.MaskImage(skiaBitmap, ImageMasker.GetMask(_mask)!);
@@ -230,7 +230,7 @@ public partial class TemplateTool : Window
                 bitmap.Dispose();
                 if (skiaBitmap.Width != 256 || skiaBitmap.Height != 256)
                 {
-                    await ShowMessageAsync($"Error", "The image you had on your clipboard was not 256x256. You can copy the template again with the Copy Template To Clipboard button.");
+                    await ShowMessageAsync(Strings.TemplateTool_Dialog_ErrorNotSquare_Title, Strings.TemplateTool_Dialog_ErrorClipboardNotSquare_Message);
                 }
                 else
                 {
@@ -244,10 +244,7 @@ public partial class TemplateTool : Window
             }
             else
             {
-                await ShowMessageAsync(
-                    $"Error",
-                    "Could not find an image on your clipboard. Make sure you copied it."
-                );
+                await ShowMessageAsync(Strings.TemplateTool_Dialog_ErrorNotSquare_Title, Strings.TemplateTool_Dialog_ErrorNoClipboardImage_Message);
             }
         }
     }

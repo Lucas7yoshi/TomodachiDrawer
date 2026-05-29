@@ -2,6 +2,7 @@
 		xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
 		xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
 		xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+		xmlns:strings="clr-namespace:TomodachiDrawer.UI.Avalonia"
 		mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450"
 		x:Class="TomodachiDrawer.UI.Avalonia.TemplateTool"
 		Title="Template Tool"
@@ -32,35 +33,35 @@
 			</Grid.RowDefinitions>
 			<Border Grid.Row="0" Classes="group" Margin="0,0,0,6">
 				<StackPanel Spacing="6">
-					<TextBlock Classes="header" Text="Information" />
-					<TextBlock TextWrapping="Wrap" Text="You selected a complex template type." />
-					<TextBlock TextWrapping="Wrap" FontWeight="SemiBold" Text="Steps to use:" />
+					<TextBlock Classes="header" Text="{x:Static strings:Strings.TemplateTool_Information_Header}" />
+					<TextBlock TextWrapping="Wrap" Text="{x:Static strings:Strings.TemplateTool_Information_Intro}" />
+					<TextBlock TextWrapping="Wrap" FontWeight="SemiBold" Text="{x:Static strings:Strings.TemplateTool_Information_StepsHeader}" />
 					<StackPanel Spacing="4" Margin="8,0,0,0">
-						<TextBlock TextWrapping="Wrap" Text="1. Paste the image on your clipboard in an image editor of your choice." />
-						<TextBlock TextWrapping="Wrap" Text="2. Add whatever content you want to the image. Anything in the opaque area of the template will not be drawn!" />
-						<TextBlock TextWrapping="Wrap" Text="3. Once done, click Paste drawing from clipboard (after copying the final version in your editor)" />
-						<TextBlock TextWrapping="Wrap" Text="4. Press Confirm to return to the main view with this image as the input. This tool will remove all pixels in the undrawable area." />
+						<TextBlock TextWrapping="Wrap" Text="{x:Static strings:Strings.TemplateTool_Information_Step1}" />
+						<TextBlock TextWrapping="Wrap" Text="{x:Static strings:Strings.TemplateTool_Information_Step2}" />
+						<TextBlock TextWrapping="Wrap" Text="{x:Static strings:Strings.TemplateTool_Information_Step3}" />
+						<TextBlock TextWrapping="Wrap" Text="{x:Static strings:Strings.TemplateTool_Information_Step4}" />
 					</StackPanel>
 					<TextBlock TextWrapping="Wrap" FontWeight="Normal" >
-						<Run Text="Note: If you have a non-100% display scale in Windows, you will need to use the Save and Open buttons due to a bug in Avalonia UI that resizes the template when copied. "/>
+						<Run Text="{x:Static strings:Strings.TemplateTool_Information_DisplayScaleNote}"/>
 						<LineBreak/>
 						<InlineUIContainer>
-							<HyperlinkButton Content="See GitHub issue." NavigateUri="https://github.com/Lucas7yoshi/TomodachiDrawer/issues/64" Padding="0" BorderThickness="0" FontWeight="Light" />
+							<HyperlinkButton Content="{x:Static strings:Strings.TemplateTool_Information_DisplayScaleNote_Link}" NavigateUri="https://github.com/Lucas7yoshi/TomodachiDrawer/issues/64" Padding="0" BorderThickness="0" FontWeight="Light" />
 						</InlineUIContainer>
 					</TextBlock>
 				</StackPanel>
 			</Border>
 			<Border Grid.Row="1" Classes="group" Margin="0,0,0,6">
 				<StackPanel Spacing="6">
-					<TextBlock Classes="header" Text="Options" />
-					<Button x:Name="CopyClipboardButton" Content="Copy template to clipboard." HorizontalAlignment="Stretch" Click="CopyClipboardButton_Click" />
-					<Button x:Name="SaveTemplateButton" Content="Save template to file..." HorizontalAlignment="Stretch" Click="SaveTemplateButton_Click" ToolTip.Tip="Saves the template as a png to file. Use this if you have display scaling screwing up the image resolution (it should be 256x256) - or if you just prefer this way." />
-					<Button x:Name="PasteButton" Content="Paste drawing from clipboard." HorizontalAlignment="Stretch" Click="PasteButton_Click" />
-					<Button x:Name="OpenDrawingButton" Content="Open drawing from file..." HorizontalAlignment="Stretch" Click="OpenDrawingButton_Click" ToolTip.Tip="Opens the completed template, must be 256x256." />
+					<TextBlock Classes="header" Text="{x:Static strings:Strings.TemplateTool_Options_Header}" />
+					<Button x:Name="CopyClipboardButton" Content="{x:Static strings:Strings.TemplateTool_CopyClipboardButton}" HorizontalAlignment="Stretch" Click="CopyClipboardButton_Click" />
+					<Button x:Name="SaveTemplateButton" Content="{x:Static strings:Strings.TemplateTool_SaveTemplateButton}" HorizontalAlignment="Stretch" Click="SaveTemplateButton_Click" ToolTip.Tip="{x:Static strings:Strings.TemplateTool_SaveTemplateButton_Tooltip}" />
+					<Button x:Name="PasteButton" Content="{x:Static strings:Strings.TemplateTool_PasteButton}" HorizontalAlignment="Stretch" Click="PasteButton_Click" />
+					<Button x:Name="OpenDrawingButton" Content="{x:Static strings:Strings.TemplateTool_OpenDrawingButton}" HorizontalAlignment="Stretch" Click="OpenDrawingButton_Click" ToolTip.Tip="{x:Static strings:Strings.TemplateTool_OpenDrawingButton_Tooltip}" />
 					<Separator />
 					<Grid ColumnDefinitions="*,6,*">
-						<Button x:Name="ConfirmButton" Grid.Column="0" Content="Confirm" HorizontalAlignment="Stretch" Click="ConfirmButton_Click" IsEnabled="False"/>
-						<Button x:Name="ExitButton" Grid.Column="2" Content="Exit" HorizontalAlignment="Stretch" Click="ExitButton_Click" />
+						<Button x:Name="ConfirmButton" Grid.Column="0" Content="{x:Static strings:Strings.TemplateTool_ConfirmButton}" HorizontalAlignment="Stretch" Click="ConfirmButton_Click" IsEnabled="False"/>
+						<Button x:Name="ExitButton" Grid.Column="2" Content="{x:Static strings:Strings.TemplateTool_ExitButton}" HorizontalAlignment="Stretch" Click="ExitButton_Click" />
 					</Grid>
 				</StackPanel>
 			</Border>
