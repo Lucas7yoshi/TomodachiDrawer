@@ -1445,17 +1445,14 @@ public partial class MainWindow : Window
     private void MenuHelpCheckForUpdate_Click(object? sender, RoutedEventArgs e) =>
         _ = PerformAsyncUpdateCheck();
 
-    private void EnableHomeCanvas_IsCheckedChanged(object? sender, RoutedEventArgs e)
-    {
-        // TODO: Notify if non 256x256 image.
-    }
+    private void EnableHomeCanvas_IsCheckedChanged(object? sender, RoutedEventArgs e) { }
 
     private async void OpenTelemetryPrompt_Click(object? sender, RoutedEventArgs e)
     {
         var answer = await new TelemetryPrompt().ShowDialog<bool>(this);
         _currentSettings.EnableTelemetry = answer;
         _telemetry.TelemetryEnabled = answer;
-        // Keep crash reporting in lock-step with the consent answer, no restart needed.
+        // Inform the crash reporter if we change anything
         if (answer)
             CrashReporter.Init();
         else
