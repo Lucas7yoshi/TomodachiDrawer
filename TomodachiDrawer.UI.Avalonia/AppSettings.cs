@@ -1,3 +1,4 @@
+using System.Text.Json;
 using System.Text.Json.Serialization;
 using TomodachiDrawer.Core.Models;
 
@@ -23,6 +24,42 @@ internal class AppSettings
 
     /// <summary>This is null by default to indicate they havent been asked yet.</summary>
     public bool? EnableTelemetry { get; set; } = null;
+
+    internal static string GetSettingsFilePath()
+    {
+        const string settingsFileName = "settings.json";
+
+        if (OperatingSystem.IsMacOS() && AppContext.BaseDirectory.Contains(".app/Contents/MacOS"))
+        {
+            var appDataFolder = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "TomodachiDrawer");
+            if (!Directory.Exists(appDataFolder))
+            {
+                Directory.CreateDirectory(appDataFolder);
+            }
+            return Path.Combine(appDataFolder, settingsFileName);
+        }
+        else
+        {
+            return settingsFileName;
+        }
+    }
+
+    internal static AppSettings? TryLoad()
+    {
+        var path = GetSettingsFilePath();
+        if (!File.Exists(path))
+            return null;
+
+        try
+        {
+            var json = File.ReadAllText(path);
+            return JsonSerializer.Deserialize(json, AppSettingsContext.Default.AppSettings);
+        }
+        catch (Exception)
+        {
+            return null;
+        }
+    }
 }
 
 // Source gen serialization to avoid trimming warnings.

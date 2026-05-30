@@ -194,6 +194,11 @@ public partial class MainWindow : Window
         if (_currentSettings.EnableTelemetry == true)
         {
             _telemetry.TelemetryEnabled = true;
+            // Turn on crash reporting if not already initialized.
+            // We explicitly do NOT start it on first-launch before the user has had a chance to consent.
+            // This does come with the downside that we would probably not be able to receive right-at-start errors, but those
+            // haven't really been an issue and can deal with those the ol fashioned way.
+            CrashReporter.Init();
             // Discard to avoid blocking.
             _ = _telemetry.ReportStart();
         }
@@ -1167,68 +1172,26 @@ public partial class MainWindow : Window
         );
     }
 
-    private static string GetSettingsFilePath()
-    {
-        const string settingsFileName = "settings.json";
-
-        // Check if we're running on macOS and the app is running from the app bundle, not CLI.
-        if (OperatingSystem.IsMacOS() && AppContext.BaseDirectory.Contains(".app/Contents/MacOS"))
-        {
-            // In macOS, when you launch `.app` from Finder, the current working directory is root directory `/` (Gemini said),
-            // which is read-only and not a good place to store our settings file.
-            // We need to place the settings file somewhere else.
-            // `~/Library/Application Support` is a common place to store app data on macOS (like `%APPDATA%` on Windows).
-            // So first, ensure `~/Library/Application Support/TomodachiDrawer` exists
-            var appDataFolder = Path.Combine(
-                Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
-                "TomodachiDrawer"
-            );
-            if (!Directory.Exists(appDataFolder))
-            {
-                Directory.CreateDirectory(appDataFolder);
-            }
-            // Returns `~/Library/Application Support/TomodachiDrawer/settings.json`
-            return Path.Combine(appDataFolder, settingsFileName);
-        }
-        else
-        {
-            // Simply place it in the current working directory
-            return settingsFileName;
-        }
-    }
-
     private void SaveSettings()
     {
         var json = JsonSerializer.Serialize(
             _currentSettings,
             AppSettingsContext.Default.AppSettings
         );
-        File.WriteAllText(GetSettingsFilePath(), json);
+        File.WriteAllText(AppSettings.GetSettingsFilePath(), json);
     }
 
     private void GetSettings()
     {
-        var settingsFilePath = GetSettingsFilePath();
-
-        if (File.Exists(settingsFilePath))
+        var settings = AppSettings.TryLoad();
+        if (settings != null)
         {
-            try
-            {
-                var json = File.ReadAllText(settingsFilePath);
-                var settings = JsonSerializer.Deserialize(
-                    json,
-                    AppSettingsContext.Default.AppSettings
-                );
-
-                if (settings != null)
-                {
-                    _currentSettings = settings;
-                }
-            }
-            catch (Exception)
-            {
-                AppendLog("Failed to load settings. Using defaults.");
-            }
+            _currentSettings = settings;
+        }
+        else if (File.Exists(AppSettings.GetSettingsFilePath()))
+        {
+            // File exists but failed to parse; keep defaults but let the user know.
+            AppendLog("Failed to load settings. Using defaults.");
         }
 
         // if no images or we fail, fall to defaults in the appsettings class.
@@ -1493,6 +1456,11 @@ public partial class MainWindow : Window
         var answer = await new TelemetryPrompt().ShowDialog<bool>(this);
         _currentSettings.EnableTelemetry = answer;
         _telemetry.TelemetryEnabled = answer;
+        // Keep crash reporting in lock-step with the consent answer, no restart needed.
+        if (answer)
+            CrashReporter.Init();
+        else
+            CrashReporter.Disable();
         SaveSettings();
     }
 

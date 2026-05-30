@@ -11,7 +11,7 @@
 	<StackPanel Margin="16" Spacing="12">
 		<TextBlock FontWeight="SemiBold" FontSize="15" Text="Help improve Tomodachi Drawer?" />
 		<TextBlock TextWrapping="Wrap"
-				   Text="Anonymous usage data helps me to better understand how the app is used and know where to focus development efforts. No personal data is collected."
+				   Text="Anonymous usage data and crash reports help me to better understand how the app is used, fix bugs, and know where to focus development efforts. No personal data is collected."
 				   />
 
 		<Expander Header="What's collected?" HorizontalAlignment="Stretch" HorizontalContentAlignment="Stretch">
@@ -29,7 +29,11 @@
 				<TextBlock Text="  - Draw time estimate" />
 				<TextBlock Text="  - TSP Time Limit" />
 				<TextBlock Text="  - Which chip used (RP2040/RP2350)" />
-				<TextBlock Text="  - App version" />	
+				<TextBlock Text="  - App version" />
+				<TextBlock FontWeight="SemiBold" Margin="0,4,0,0" Text="If the app crashes:" />
+				<TextBlock Text="  - The error type, message, and stack trace" />
+				<TextBlock Text="  - App version and operating system" />
+				<TextBlock FontStyle="Italic" TextWrapping="Wrap" Text="  Your username and file paths are removed from crash reports before they are sent. This data is handled by Sentry." />
 			</StackPanel>
 		</Expander>
 
