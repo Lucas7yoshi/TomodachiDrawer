@@ -1,5 +1,6 @@
 using System.Reflection;
 using System.Text.RegularExpressions;
+using Avalonia.Threading;
 
 namespace TomodachiDrawer.UI.Avalonia;
 
@@ -77,6 +78,9 @@ internal static partial class CrashReporter
         SentrySdk.Close();
         _initialized = false;
     }
+
+    public static void CaptureUIThreadExceptions() =>
+        Dispatcher.UIThread.UnhandledException += (_, e) => SentrySdk.CaptureException(e.Exception);
 
     private static SentryEvent? Scrub(SentryEvent e, SentryHint hint)
     {
