@@ -25,7 +25,6 @@ using Button = Avalonia.Controls.Button; // conflict with the Button enum in Sin
 using TomodachiDrawer.DebugTools;
 #endif
 
-
 namespace TomodachiDrawer.UI.Avalonia;
 
 public partial class MainWindow : Window

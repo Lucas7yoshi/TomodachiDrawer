@@ -6,7 +6,8 @@ namespace TomodachiDrawer.UI.Avalonia;
 
 internal static partial class CrashReporter
 {
-    private const string DSN = "https://d21cb41981a5038b6044d62c0dd4deb9@o82037.ingest.us.sentry.io/4511475971325952";
+    private const string DSN =
+        "https://d21cb41981a5038b6044d62c0dd4deb9@o82037.ingest.us.sentry.io/4511475971325952";
 
     private static bool _initialized;
 
@@ -15,14 +16,15 @@ internal static partial class CrashReporter
     [GeneratedRegex(@"([A-Za-z]:\\Users\\|[/\\]home[/\\]|/Users/)[^\\/]+", RegexOptions.IgnoreCase)]
     private static partial Regex UserPathRegex();
 
-    private static readonly string HomeDir =
-        Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
+    private static readonly string HomeDir = Environment.GetFolderPath(
+        Environment.SpecialFolder.UserProfile
+    );
 
     public static void Init()
     {
         if (_initialized)
             return;
-        if (string.IsNullOrEmpty(DSN) )
+        if (string.IsNullOrEmpty(DSN))
             return;
 
         var version =
