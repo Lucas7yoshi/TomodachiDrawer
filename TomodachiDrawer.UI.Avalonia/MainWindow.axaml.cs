@@ -333,6 +333,23 @@ public partial class MainWindow : Window
         base.OnClosed(e);
     }
 
+    private async Task ShowMacAccessError(string drivePath, bool retryBlurb = false)
+    {
+        var additional = retryBlurb ? "\n\nYou should grant permission, then click Ok and the app will try to write again." : string.Empty;
+        await ShowMessageAsync(
+            "Permission Denied",
+            $"Permission to access the microcontrollers drive ({drivePath}) was denied.\n\n"
+                + "Please open System Settings -> Privacy & Security -> Files & Folders, find \"TomodachiDrawer\", and make sure \"Removable Volumes\" is enabled.\n\n"
+                + "This is required for the app to write the firmware directly to your Pico drive.\r"
+                + $"Or you can manually copy the .uf2 file to {drivePath} if you want to avoid granting permissions."
+                + additional,
+            new Uri(
+                "x-apple.systempreferences:com.apple.preference.security?Privacy_FilesAndFolders"
+            ),
+            "Open System Settings"
+        );
+    }
+
     // Check if we can access a RP2040 or RP2350 drive.
     // Also triggers the permission prompt on macOS if permissions haven't been granted yet.
     private bool CanAccessPicoDrive(string drivePath)
@@ -349,17 +366,7 @@ public partial class MainWindow : Window
             // macOS: User (probably) clicked "Don't Allow".
             if (OperatingSystem.IsMacOS())
             {
-                _ = ShowMessageAsync(
-                    "Permission Denied",
-                    $"Permission to access the microcontrollers drive ({drivePath}) was denied.\n\n"
-                        + "Please open System Settings -> Privacy & Security -> Files & Folders, find \"TomodachiDrawer\", and make sure \"Removable Volumes\" is enabled.\n\n"
-                        + "This is required for the app to write the firmware directly to your Pico drive.\r"
-                        + $"Or you can manually copy the .uf2 file to {drivePath} if you want to avoid granting permissions.",
-                    new Uri(
-                        "x-apple.systempreferences:com.apple.preference.security?Privacy_FilesAndFolders"
-                    ),
-                    "Open System Settings"
-                );
+                _ = ShowMacAccessError(drivePath);
             }
             AppendLog($"Permission to access microcontrollers drive ({drivePath}) was denied");
             return false;
@@ -795,10 +802,110 @@ public partial class MainWindow : Window
                 var drivePath = UF2Flasher.FindDriveForChip(chip);
                 if (drivePath != null && CanAccessPicoDrive(drivePath))
                 {
-                    File.WriteAllBytes(Path.Combine(drivePath, "tdld_image.uf2"), uf2Bytes);
-                    AppendLog(
-                        $"Wrote to {chipName} flash. Unplug it and plug it into the switch without holding any button."
-                    );
+                    // Per Sentry, seems sometimes this still throws for Mac Users in spoite of CanAccessPicoDrive passing so we wrap this up
+                    // Added 2026-06-01 for further debugging in next release.
+                    // THIS SHOULD BE REMOVED ONCE WE FIX THINGS :)
+                    // Also there was a weird one that came in 6 times from 2 users that the target was a directory??
+                    // That might be some bizzaro behaviour so we are matching that as well for more debugging info.
+
+                    bool wroteToFlash = false;
+
+                    try
+                    {
+                        File.WriteAllBytes(Path.Combine(drivePath, "tdld_image.uf2"), uf2Bytes);
+                        wroteToFlash = true;
+                    }
+                    catch (Exception firstEx) when (firstEx is UnauthorizedAccessException or IOException)
+                    {
+                        // Already we are diverging from expectations because CanAccessPicoDrive returned true... Capturing
+                        SentrySdk.CaptureException(
+                            firstEx,
+                            scope =>
+                            {
+                                scope.SetFingerprint(new[] { "uf2-write", "first-attempt-failed", firstEx.GetType().Name });
+                                scope.Level = SentryLevel.Warning;
+                                scope.SetTag("export.phase", "first-attempt-failed");
+                                scope.SetTag("export.error_type", firstEx.GetType().Name);
+                                scope.SetTag("export.chip", chipName);
+                                scope.SetExtra("uf2_size", uf2Bytes.Length);
+                            }
+                        );
+                        // Leaving a trail.. i think this is useful. will see. all temporary anyhow.
+                        SentrySdk.AddBreadcrumb(
+                            $"First flash write failed ({firstEx.GetType().Name}), showing retry prompt.",
+                            category: "export",
+                            type: "error",
+                            level: BreadcrumbLevel.Warning
+                        );
+
+                        // We'll try again, if we fail again, just prompt to save the file manually.
+                        await ShowMacAccessError(drivePath, true);
+                        // try again
+                        try
+                        {
+                            File.WriteAllBytes(Path.Combine(drivePath, "tdld_image.uf2"), uf2Bytes);
+                            wroteToFlash = true;
+                        }
+                        catch (Exception retryEx) when (retryEx is UnauthorizedAccessException or IOException)
+                        {
+                            // retry failed too. capture...
+                            SentrySdk.CaptureException(
+                                retryEx,
+                                scope =>
+                                {
+                                    scope.SetFingerprint(new[] { "uf2-write", "retry-failed", retryEx.GetType().Name });
+                                    scope.Level = SentryLevel.Warning;
+                                    scope.SetTag("export.phase", "retry-failed");
+                                    scope.SetTag("export.error_type", retryEx.GetType().Name);
+                                    scope.SetTag("export.chip", chipName);
+                                    scope.SetExtra("uf2_size", uf2Bytes.Length);
+                                }
+                            );
+
+                            await ShowMessageAsync("Still can't write", "We still can't write to the drive. A save prompt will appear after this prompt to save it somewhere else." +
+                                "\nYou can drag and drop this .uf2 file onto the RPI-RP2/RP2350 drive manually.");
+
+                            var outputPath = await UF2SaveFilePicker();
+                            if (outputPath == null)
+                                return;
+
+                            try
+                            {
+                                File.WriteAllBytes(outputPath, uf2Bytes);
+                                AppendLog(
+                                    $"Saved the .uf2 file. Drag and drop it onto the {chipName} drive manually."
+                                );
+                            }
+                            catch (Exception saveEx) when (saveEx is UnauthorizedAccessException or IOException)
+                            {
+                                // We can't even write where they wanted us to save to >:|
+                                SentrySdk.CaptureException(
+                                    saveEx,
+                                    scope =>
+                                    {
+                                        scope.SetFingerprint(new[] { "uf2-write", "manual-save-failed", saveEx.GetType().Name });
+                                        scope.Level = SentryLevel.Error;
+                                        scope.SetTag("export.phase", "manual-save-failed");
+                                        scope.SetTag("export.error_type", saveEx.GetType().Name);
+                                        scope.SetTag("export.chip", chipName);
+                                        // output path is only relevant here, its always the RPI device above.
+                                        scope.SetTag("export.path_scrubbed", CrashReporter.ScrubText(outputPath) ?? "null");
+                                        scope.SetExtra("uf2_size", uf2Bytes.Length);
+                                    }
+                                );
+                                // at this point we weep, but atleast we don't crash out.
+                                AppendLog("Couldn't save the .uf2 file. Please try saving to a different location.");
+                            }
+
+                        }
+                    }
+
+                    if (wroteToFlash)
+                    {
+                        AppendLog(
+                            $"Wrote to {chipName} flash. Unplug it and plug it into the switch without holding any button."
+                        );
+                    }
                 }
             }
 
@@ -910,6 +1017,24 @@ public partial class MainWindow : Window
         return pixels.Count;
     }
 
+    private async Task<string?> UF2SaveFilePicker()
+    {
+        var file = await StorageProvider.SaveFilePickerAsync(
+                new FilePickerSaveOptions
+                {
+                    Title = "Save .UF2",
+                    DefaultExtension = "uf2",
+                    FileTypeChoices =
+                    [
+                        new FilePickerFileType("UF2 Firmware Image") { Patterns = ["*.uf2"] },
+                                new FilePickerFileType("All Files") { Patterns = ["*.*"] },
+                    ],
+                }
+            );
+
+        return file?.TryGetLocalPath();
+
+    }
     private async void ExportUF2Button_Click(object sender, RoutedEventArgs e)
     {
         if (_currentImage == null)
@@ -931,20 +1056,7 @@ public partial class MainWindow : Window
             chip == RPChipType.RP2350 ? RP2350ExportUF2Button : RP2040ExportUF2Button;
         var chipName = chip == RPChipType.RP2350 ? "RP2350" : "RP2040";
 
-        var file = await StorageProvider.SaveFilePickerAsync(
-            new FilePickerSaveOptions
-            {
-                Title = "Save .UF2",
-                DefaultExtension = "uf2",
-                FileTypeChoices =
-                [
-                    new FilePickerFileType("UF2 Firmware Image") { Patterns = ["*.uf2"] },
-                    new FilePickerFileType("All Files") { Patterns = ["*.*"] },
-                ],
-            }
-        );
-
-        var outputPath = file?.TryGetLocalPath();
+        var outputPath = await UF2SaveFilePicker();
         if (outputPath == null)
             return;
 

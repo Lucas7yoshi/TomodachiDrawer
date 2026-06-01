@@ -111,7 +111,8 @@ internal static partial class CrashReporter
         return e;
     }
 
-    private static string? ScrubText(string? input)
+    /// <summary>Scrubs username and homepath from text.</summary>
+    public static string? ScrubText(string? input)
     {
         if (string.IsNullOrEmpty(input))
             return input;
