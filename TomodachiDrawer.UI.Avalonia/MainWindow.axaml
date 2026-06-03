@@ -1,5 +1,6 @@
 <Window xmlns="https://github.com/avaloniaui"
 		xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+		xmlns:local="clr-namespace:TomodachiDrawer.UI.Avalonia"
 		x:Class="TomodachiDrawer.UI.Avalonia.MainWindow"
 		Icon="/Assets/Icon.png"
 		Title="Tomodachi Drawer"
@@ -153,7 +154,8 @@
 						<StackPanel Orientation="Horizontal" Spacing="6">
 							<TextBlock Text="TSP Solver Time Limit"
 									   VerticalAlignment="Center" />
-							<NumericUpDown x:Name="TSPTimeLimitUpDown"
+							<!-- TODO: revert to NumericUpDown once Avalonia#21491 is fixed -->
+							<local:SafeNumericUpDown x:Name="TSPTimeLimitUpDown"
 										   Minimum="0.1" Maximum="30"
 										   Increment="0.1" Value="0.5"
 											Width="110" />
@@ -294,7 +296,8 @@
 								   Text="Colour Limit:"
 								   VerticalAlignment="Center"
 								   Margin="0,0,4,0" />
-						<NumericUpDown Grid.Column="4"
+						<!-- TODO: revert to NumericUpDown once Avalonia#21491 is fixed -->
+							<local:SafeNumericUpDown Grid.Column="4"
 									   x:Name="ColourLimitUpDown"
 									   Minimum="1" Maximum="256"
 									   Increment="1" Value="16"
