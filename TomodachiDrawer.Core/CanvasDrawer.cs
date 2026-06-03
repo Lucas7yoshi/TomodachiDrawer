@@ -31,7 +31,7 @@ namespace TomodachiDrawer.Core
         {
             _realOutput = outputSink;
             _palette = new(outputSink);
-            _toolbar = new(outputSink);
+            _toolbar = new(outputSink, switchVersion);
             _log = logger ?? Console.WriteLine;
 
             if (switchVersion == SwitchVersion.None)

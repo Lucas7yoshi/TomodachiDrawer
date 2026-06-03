@@ -1,8 +1,9 @@
-﻿using TomodachiDrawer.Core.OutputSinks;
+﻿using TomodachiDrawer.Core.Models;
+using TomodachiDrawer.Core.OutputSinks;
 
 namespace TomodachiDrawer.Core
 {
-    public class CanvasToolbar(ISwitchOutput output)
+    public class CanvasToolbar(ISwitchOutput output, SwitchVersion switchVersion)
     {
         // Toolbar
         // 0: Undo
@@ -53,6 +54,7 @@ namespace TomodachiDrawer.Core
         };
 
         private readonly ISwitchOutput _realOutput = output;
+        private readonly SwitchVersion _switchVersion = switchVersion;
 
         private void HomeToolbar(ISwitchOutput output)
         {
@@ -159,9 +161,16 @@ namespace TomodachiDrawer.Core
                 for (int i = 0; i < 5; i++)
                     output.Tap(DPad.RIGHT);
                 output.Tap(Button.A); // Select a brush that we dont actually use so we KNOW we will need two A presses. avoids a accidental click through draw
-                output.Delay(350);
+                output.Delay(_switchVersion == SwitchVersion.Switch1 ? 500: 350);
+
+                // Switch 1 lags with the largest sphere brush, because of course it does, so we more generously delay the taps back to the left.
+                // This doesn't happen on my Switch 1 which is annoying but whatever...
+                int tapDuration = _switchVersion == SwitchVersion.Switch1 ? 75 : 25;
+
                 for (int i = 0; i < 5; i++)
-                    output.Tap(DPad.LEFT);
+                    output.Tap(DPad.LEFT, tapDuration, tapDuration);
+                if (_switchVersion == SwitchVersion.Switch1)
+                    output.Tap(Button.A, 75, 200); // Select smallest circle brush to avoid lag... hopefully
                 output.Tap(DPad.DOWN);
                 currentColumn = 0;
                 output.Delay(100);
