@@ -161,7 +161,7 @@ namespace TomodachiDrawer.Core
                 for (int i = 0; i < 5; i++)
                     output.Tap(DPad.RIGHT);
                 output.Tap(Button.A); // Select a brush that we dont actually use so we KNOW we will need two A presses. avoids a accidental click through draw
-                output.Delay(_switchVersion == SwitchVersion.Switch1 ? 500: 350);
+                output.Delay(_switchVersion == SwitchVersion.Switch1 ? 500 : 350);
 
                 // Switch 1 lags with the largest sphere brush, because of course it does, so we more generously delay the taps back to the left.
                 // This doesn't happen on my Switch 1 which is annoying but whatever...

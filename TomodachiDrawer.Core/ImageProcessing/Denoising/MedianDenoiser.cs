@@ -7,19 +7,27 @@ namespace TomodachiDrawer.Core.ImageProcessing.Denoising
     {
         public SKBitmap DenoiseImage(SKBitmap source)
         {
+            // RGB are all treated equally so order does not matter, but we do assume a alpha channel exists.
+            bool needToConvert = source.ColorType != SKColorType.Bgra8888 && source.ColorType != SKColorType.Rgba8888;
+
+            using var inputBgra = needToConvert ? source.Copy(SKColorType.Bgra8888) : source;
+
+            if (inputBgra == null)
+                throw new InvalidOperationException("Failed to convert image to BGRA format.");
+
             var result = new SKBitmap(
-                source.Width,
-                source.Height,
-                source.ColorType,
-                source.AlphaType
+                inputBgra.Width,
+                inputBgra.Height,
+                inputBgra.ColorType,
+                inputBgra.AlphaType
             );
 
-            var srcBytes = source.GetPixelSpan();
+            var srcBytes = inputBgra.GetPixelSpan();
             var dstBytes = result.GetPixelSpan();
 
-            int width = source.Width;
-            int height = source.Height;
-            int bpp = source.BytesPerPixel;
+            int width = inputBgra.Width;
+            int height = inputBgra.Height;
+            int bpp = inputBgra.BytesPerPixel;
 
             Span<byte> window = stackalloc byte[9];
 
