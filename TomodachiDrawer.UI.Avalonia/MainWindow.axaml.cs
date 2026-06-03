@@ -1206,7 +1206,7 @@ public partial class MainWindow : Window
 
     private async void ExportTDLDButton_Click(object? sender, RoutedEventArgs e)
     {
-        if (string.IsNullOrEmpty(_currentImagePath))
+        if (_currentImage == null)
             return;
 
         if (_currentSettings.SelectedSwitchVersion == SwitchVersion.None)
@@ -1237,7 +1237,7 @@ public partial class MainWindow : Window
         if (outputPath == null)
             return;
 
-        var imagePath = _currentImagePath;
+        var imageSnapshot = _currentImage.Copy();
         var denoiser = DenoisingComboBox.SelectedItem?.ToString();
         var tspLimit = (float)(TSPTimeLimitUpDown.Value ?? 0.5m);
 
@@ -1272,7 +1272,7 @@ public partial class MainWindow : Window
                 EnableExperimentalFeatures = enableExperimental,
                 HomeToTopLeft = enableHome,
             };
-            await drawer.DrawImage(SKBitmap.Decode(imagePath), drawSettings);
+            await drawer.DrawImage(imageSnapshot, drawSettings);
             AppendLog($"True complete overall time is: {timingSink.TotalTime.TotalSeconds}s");
 
             var fileSink = new FileControllerSink(outputPath);
@@ -1291,7 +1291,7 @@ public partial class MainWindow : Window
 
     private async void ExportESP32Button_Click(object? sender, RoutedEventArgs e)
     {
-        if (string.IsNullOrEmpty(_currentImagePath))
+        if (_currentImage == null)
             return;
         if (_detectedESP32 == null || _bundledEsptoolPath == null)
             return;
@@ -1315,7 +1315,7 @@ public partial class MainWindow : Window
             return;
         }
 
-        var imagePath = _currentImagePath;
+        var imageSnapshot = _currentImage.Copy();
         var denoiser = DenoisingComboBox.SelectedItem?.ToString();
         var tspLimit = (float)(TSPTimeLimitUpDown.Value ?? 0.5m);
         var board = _detectedESP32;
@@ -1353,7 +1353,7 @@ public partial class MainWindow : Window
                 EnableExperimentalFeatures = enableExperimental,
                 HomeToTopLeft = enableHome,
             };
-            await drawer.DrawImage(SKBitmap.Decode(imagePath), drawSettings);
+            await drawer.DrawImage(imageSnapshot, drawSettings);
             AppendLog($"True complete overall time is: {timingSink.TotalTime.TotalSeconds}s");
 
             var fileSink = new FileControllerSink(tempPath);
