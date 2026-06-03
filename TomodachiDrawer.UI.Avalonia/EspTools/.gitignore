@@ -1,0 +1,6 @@
+# Bundled esptool binaries are platform-specific blobs we don't track in git.
+# Drop them here manually for local development, or CI fetches them before
+# publishing. Only the README.md is checked in.
+*
+!.gitignore
+!README.md

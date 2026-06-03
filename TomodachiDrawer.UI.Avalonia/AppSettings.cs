@@ -22,6 +22,8 @@ internal class AppSettings
 
     public int FirstStartId { get; set; } = 0;
 
+    public string SelectedESP32BoardId { get; set; } = "devkitc_1_r38";
+
     /// <summary>This is null by default to indicate they havent been asked yet.</summary>
     public bool? EnableTelemetry { get; set; } = null;
 

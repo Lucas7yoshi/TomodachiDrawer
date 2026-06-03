@@ -1,0 +1,55 @@
+menu "TomodachiDrawer Configuration"
+
+    choice TDD_BOARD
+        prompt "Target board"
+        default TDD_BOARD_DEVKITC_1_R38
+        help
+            Pre-fills the LED GPIO for known boards. Pick "Custom" to set the
+            GPIO manually below.
+
+        config TDD_BOARD_DEVKITC_1_R38
+            bool "ESP32-S3-DevKitC-1 (older rev, LED on GPIO 38)"
+
+        config TDD_BOARD_DEVKITC_1_R48
+            bool "ESP32-S3-DevKitC-1 (later rev, LED on GPIO 48)"
+
+        config TDD_BOARD_S3_ZERO
+            bool "Waveshare ESP32-S3-Zero (LED on GPIO 21)"
+
+        config TDD_BOARD_DEVKITM_1
+            bool "ESP32-S3-DevKitM-1 (LED on GPIO 48)"
+
+        config TDD_BOARD_QTPY_S3
+            bool "Adafruit QT Py ESP32-S3 (LED on GPIO 39)"
+
+        config TDD_BOARD_LOLIN_S3_MINI
+            bool "Lolin S3 Mini (LED on GPIO 47)"
+
+        config TDD_BOARD_ATOM_S3
+            bool "M5Stack AtomS3 / AtomS3 Lite (LED on GPIO 35)"
+
+        config TDD_BOARD_CUSTOM
+            bool "Custom - set TDD_LED_GPIO manually"
+    endchoice
+
+    config TDD_LED_GPIO
+        int "Onboard WS2812 RGB LED GPIO"
+        default 38 if TDD_BOARD_DEVKITC_1_R38
+        default 48 if TDD_BOARD_DEVKITC_1_R48
+        default 21 if TDD_BOARD_S3_ZERO
+        default 48 if TDD_BOARD_DEVKITM_1
+        default 39 if TDD_BOARD_QTPY_S3
+        default 47 if TDD_BOARD_LOLIN_S3_MINI
+        default 35 if TDD_BOARD_ATOM_S3
+        default 38
+        range 0 48
+
+    config TDD_BOOT_BUTTON_GPIO
+        int "Replay (BOOT) button GPIO"
+        default 0
+        range 0 48
+        help
+            Active-low. Default 0 = the BOOT button on every standard S3
+            dev board.
+
+endmenu

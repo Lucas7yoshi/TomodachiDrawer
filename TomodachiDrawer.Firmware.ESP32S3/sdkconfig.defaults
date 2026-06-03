@@ -1,0 +1,33 @@
+# Target chip
+CONFIG_IDF_TARGET="esp32s3"
+
+# Flash size on the DevKitC-1 is 4MB minimum (also fits 8MB / 16MB variants;
+# the unused tail is simply left blank on bigger chips).
+CONFIG_ESPTOOLPY_FLASHSIZE_4MB=y
+CONFIG_ESPTOOLPY_FLASHSIZE="4MB"
+
+# Use our custom partition table.
+CONFIG_PARTITION_TABLE_CUSTOM=y
+CONFIG_PARTITION_TABLE_CUSTOM_FILENAME="partitions.csv"
+
+# Stdout (printf / ESP_LOGx) goes out UART0 on the CP2102 USB-UART bridge - that
+# is the LEFT USB-C labeled "UART" on the DevKitC-1. This keeps the right "USB"
+# port (native USB on GPIO 19/20) fully free for TinyUSB HID once we wire it up.
+CONFIG_ESP_CONSOLE_UART_DEFAULT=y
+CONFIG_ESP_CONSOLE_SECONDARY_NONE=y
+
+# Run at 240MHz so report timing has plenty of headroom.
+CONFIG_ESP_DEFAULT_CPU_FREQ_MHZ_240=y
+CONFIG_ESP_DEFAULT_CPU_FREQ_MHZ=240
+
+# TinyUSB: one HID interface (the Pokken-spoofed Switch gamepad). The native
+# USB peripheral on the right USB-C port hosts this; CDC/MSC are off since we
+# do not need them.
+CONFIG_TINYUSB_HID_COUNT=1
+CONFIG_TINYUSB_CDC_ENABLED=n
+CONFIG_TINYUSB_MSC_ENABLED=n
+
+# 1ms FreeRTOS tick. The HID polling interval is 8ms so we want to be able to
+# push a fresh report at sub-tick-granularity during delays - the default
+# 100Hz tick gives 10ms slices and would miss polls.
+CONFIG_FREERTOS_HZ=1000

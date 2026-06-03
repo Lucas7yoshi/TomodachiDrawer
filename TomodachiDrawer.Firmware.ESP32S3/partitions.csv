@@ -1,0 +1,15 @@
+# ESP32-S3 partition table for TomodachiDrawer firmware.
+#
+# - factory: 2MB app slot (the firmware itself; well clear of the ~600KB it actually needs,
+#   sized up so we don't have to revisit the layout if it grows).
+# - tdld:    1MB custom data partition that the host UI writes the TDLD image into. The
+#            firmware looks this up by name at runtime (esp_partition_find_first), so this
+#            offset can change without rebuilding the UI's flash-write path.
+#
+# Layout fits in 4MB flash; on 8/16MB variants the trailing space is just unused.
+#
+# Name,     Type, SubType, Offset,   Size,  Flags
+nvs,        data, nvs,     0x9000,   0x6000,
+phy_init,   data, phy,     0xf000,   0x1000,
+factory,    app,  factory, 0x10000,  2M,
+tdld,       data, 0x40,    ,         1M,
