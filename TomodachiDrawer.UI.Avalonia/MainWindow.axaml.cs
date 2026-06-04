@@ -405,10 +405,9 @@ public partial class MainWindow : Window
                     await Dispatcher.UIThread.InvokeAsync(() =>
                     {
                         bool hasImage = _currentImage != null;
-                        // .tdld export buttons only need an image, not a chip -
-                        // gate them on image presence + non-busy state.
-                        ExportTDLDButton.IsEnabled = hasImage && !BusyExporting;
-                        ExportTDLDButtonESP.IsEnabled = hasImage && !BusyExporting;
+                        // .tdld export only needs an image, not a chip -
+                        // gate it on image presence + non-busy state.
+                        MenuExportTDLD.IsEnabled = hasImage && !BusyExporting;
 
                         lastRp2040 = UpdateChipUI(
                             RPChipType.RP2040,
@@ -965,29 +964,14 @@ public partial class MainWindow : Window
         if (_currentImage == null)
             return;
 
-        if (_currentSettings.SelectedSwitchVersion == SwitchVersion.None)
-        {
-            _ = ShowMessageAsync(
-                "Select Switch Version",
-                "For compatibility, you must select a switch version in the dropdown."
-                    + "\n\nSwitch 1 is more prone to desyncs, so this avoids certain things that are particularly prone to desyncing."
-                    + "\nPlease be aware that even with Switch 1 selected, desyncs are unfortunately expected due to inconsistent and unpredictable lag in the drawing UI."
-            );
+        if (!EnsureSwitchVersionSelected())
             return;
-        }
 
         var chip = sender == RP2350ExportButton ? RPChipType.RP2350 : RPChipType.RP2040;
         var exportButton = chip == RPChipType.RP2350 ? RP2350ExportButton : RP2040ExportButton;
         string chipName = chip == RPChipType.RP2350 ? "RP2350" : "RP2040";
 
-        var colourCount = CountDistinctColours(_currentImage);
-        var imageWidth = _currentImage.Width;
-        var imageHeight = _currentImage.Height;
-        var imageSnapshot = _currentImage!.Copy();
-        var drawSettings = GetDrawImageSettings();
-        string quantizerName = ColourMatcherComboBox.SelectedItem!.ToString()!;
-        int? colourLimit =
-            quantizerName == "Arbitrary" ? (int)(ColourLimitUpDown.Value ?? 32) : (int?)null;
+        var ctx = CaptureExportContext();
 
         BusyExporting = true;
         exportButton.IsEnabled = false;
@@ -996,8 +980,8 @@ public partial class MainWindow : Window
         {
             var (uf2Bytes, totalTime) = await GenerateUF2Async(
                 chip,
-                imageSnapshot,
-                drawSettings,
+                ctx.Snapshot,
+                ctx.DrawSettings,
                 $"Exporting to {chipName} flash"
             );
 
@@ -1113,21 +1097,7 @@ public partial class MainWindow : Window
                 }
             }
 
-            _ = _telemetry.ReportImage(
-                new ImageEventDto(
-                    imageWidth,
-                    imageHeight,
-                    colourCount,
-                    quantizerName,
-                    colourLimit,
-                    _currentSettings.SelectedSwitchVersion.ToString(),
-                    drawSettings.EnableExperimentalFeatures,
-                    totalTime.TotalSeconds,
-                    drawSettings.TSPTimeLimit,
-                    GetVersionString(true),
-                    chipName
-                )
-            );
+            ReportImageExport(ctx, totalTime, chipName);
 
             SetEstimate(totalTime);
         }
@@ -1151,7 +1121,19 @@ public partial class MainWindow : Window
         string logPrefix
     )
     {
-        byte[]? uf2Bytes = null;
+        var (tdldBytes, totalTime) = await GenerateTdldAsync(imageSnapshot, drawSettings, logPrefix);
+        var uf2Bytes = await Task.Run(() => UF2Flasher.BuildTDLDUF2(tdldBytes, chip));
+        return (uf2Bytes, totalTime);
+    }
+
+    // Used by every export, including TDLD export.
+    private async Task<(byte[] tdldBytes, TimeSpan totalTime)> GenerateTdldAsync(
+        SKBitmap imageSnapshot,
+        DrawImageSettings drawSettings,
+        string logPrefix
+    )
+    {
+        byte[] tdldBytes = [];
         TimeSpan totalTime = TimeSpan.MaxValue;
 
         await Task.Run(async () =>
@@ -1159,7 +1141,7 @@ public partial class MainWindow : Window
             using var img = imageSnapshot;
             string tempPath = Path.Combine(
                 Path.GetTempPath(),
-                $"rp2040output{System.Random.Shared.Next(1000000, 9999999)}.tdld"
+                $"tdldoutput{System.Random.Shared.Next(1000000, 9999999)}.tdld"
             );
 
             AppendLog($"{logPrefix} ({Path.GetFileName(tempPath)})");
@@ -1178,8 +1160,7 @@ public partial class MainWindow : Window
             timingSink.ReplayTo(fileSink);
             fileSink.Dispose();
 
-            var tdldBytes = File.ReadAllBytes(tempPath);
-            uf2Bytes = UF2Flasher.BuildTDLDUF2(tdldBytes, chip);
+            tdldBytes = File.ReadAllBytes(tempPath);
 
 #if !DEBUG
             if (File.Exists(tempPath))
@@ -1188,7 +1169,69 @@ public partial class MainWindow : Window
             totalTime = timingSink.TotalTime;
         });
 
-        return (uf2Bytes, totalTime);
+        return (tdldBytes, totalTime);
+    }
+
+    // Used to capture the state and settings off without any
+    // direct link to the sources to avoid race conditions
+    // or otherwise stuff that could disrupt it. Also cleans up some code.
+    private readonly record struct ExportContext(
+        SKBitmap Snapshot,
+        DrawImageSettings DrawSettings,
+        int ColourCount,
+        int Width,
+        int Height,
+        string QuantizerName,
+        int? ColourLimit
+    );
+
+    private ExportContext CaptureExportContext()
+    {
+        string quantizerName = ColourMatcherComboBox.SelectedItem!.ToString()!;
+        return new ExportContext(
+            _currentImage!.Copy(),
+            GetDrawImageSettings(),
+            CountDistinctColours(_currentImage),
+            _currentImage.Width,
+            _currentImage.Height,
+            quantizerName,
+            quantizerName == "Arbitrary" ? (int)(ColourLimitUpDown.Value ?? 32) : (int?)null
+        );
+    }
+
+    // Telemetry that takes in export context and other data needed for report.
+    // This is a no-op in the telemetryservice if its disabled.
+    private void ReportImageExport(ExportContext ctx, TimeSpan totalTime, string deviceName)
+    {
+        _ = _telemetry.ReportImage(
+            new ImageEventDto(
+                ctx.Width,
+                ctx.Height,
+                ctx.ColourCount,
+                ctx.QuantizerName,
+                ctx.ColourLimit,
+                _currentSettings.SelectedSwitchVersion.ToString(),
+                ctx.DrawSettings.EnableExperimentalFeatures,
+                totalTime.TotalSeconds,
+                ctx.DrawSettings.TSPTimeLimit,
+                GetVersionString(true),
+                deviceName
+            )
+        );
+    }
+
+    private bool EnsureSwitchVersionSelected()
+    {
+        if (_currentSettings.SelectedSwitchVersion != SwitchVersion.None)
+            return true;
+
+        _ = ShowMessageAsync(
+            "Select Switch Version",
+            "For compatibility, you must select a switch version in the dropdown."
+                + "\n\nSwitch 1 is more prone to desyncs, so this avoids certain things that are particularly prone to desyncing."
+                + "\nPlease be aware that even with Switch 1 selected, desyncs are unfortunately expected due to inconsistent and unpredictable lag in the drawing UI."
+        );
+        return false;
     }
 
     private DrawImageSettings GetDrawImageSettings()
@@ -1244,16 +1287,8 @@ public partial class MainWindow : Window
         if (_currentImage == null)
             return;
 
-        if (_currentSettings.SelectedSwitchVersion == SwitchVersion.None)
-        {
-            _ = ShowMessageAsync(
-                "Select Switch Version",
-                "For compatibility, you must select a switch version in the dropdown."
-                    + "\n\nSwitch 1 is more prone to desyncs, so this avoids certain things that are particularly prone to desyncing."
-                    + "\nPlease be aware that even with Switch 1 selected, desyncs are unfortunately expected due to inconsistent and unpredictable lag in the drawing UI."
-            );
+        if (!EnsureSwitchVersionSelected())
             return;
-        }
 
         var chip = sender == RP2350ExportUF2Button ? RPChipType.RP2350 : RPChipType.RP2040;
         var exportUF2Button =
@@ -1264,14 +1299,7 @@ public partial class MainWindow : Window
         if (outputPath == null)
             return;
 
-        var colourCount = CountDistinctColours(_currentImage);
-        var imageWidth = _currentImage.Width;
-        var imageHeight = _currentImage.Height;
-        var imageSnapshot = _currentImage!.Copy();
-        var drawSettings = GetDrawImageSettings();
-        string quantizerName = ColourMatcherComboBox.SelectedItem!.ToString()!;
-        int? colourLimit =
-            quantizerName == "Arbitrary" ? (int)(ColourLimitUpDown.Value ?? 32) : (int?)null;
+        var ctx = CaptureExportContext();
 
         exportUF2Button.IsEnabled = false;
         BusyExporting = true;
@@ -1280,8 +1308,8 @@ public partial class MainWindow : Window
         {
             var (uf2Bytes, totalTime) = await GenerateUF2Async(
                 chip,
-                imageSnapshot,
-                drawSettings,
+                ctx.Snapshot,
+                ctx.DrawSettings,
                 "Exporting to UF2"
             );
 
@@ -1291,21 +1319,7 @@ public partial class MainWindow : Window
                 AppendLog($"Saved UF2 to {outputPath}");
             }
 
-            _ = _telemetry.ReportImage(
-                new ImageEventDto(
-                    imageWidth,
-                    imageHeight,
-                    colourCount,
-                    quantizerName,
-                    colourLimit,
-                    _currentSettings.SelectedSwitchVersion.ToString(),
-                    drawSettings.EnableExperimentalFeatures,
-                    totalTime.TotalSeconds,
-                    drawSettings.TSPTimeLimit,
-                    GetVersionString(true),
-                    chipName
-                )
-            );
+            ReportImageExport(ctx, totalTime, chipName);
 
             SetEstimate(totalTime);
         }
@@ -1321,16 +1335,8 @@ public partial class MainWindow : Window
         if (_currentImage == null)
             return;
 
-        if (_currentSettings.SelectedSwitchVersion == SwitchVersion.None)
-        {
-            _ = ShowMessageAsync(
-                "Select Switch Version",
-                "For compatibility, you must select a switch version in the dropdown."
-                    + "\n\nSwitch 1 is more prone to desyncs, so this avoids certain things that are particularly prone to desyncing."
-                    + "\nPlease be aware that even with Switch 1 selected, desyncs are unfortunately expected due to inconsistent and unpredictable lag in the drawing UI."
-            );
+        if (!EnsureSwitchVersionSelected())
             return;
-        }
 
         var file = await StorageProvider.SaveFilePickerAsync(
             new FilePickerSaveOptions
@@ -1349,56 +1355,29 @@ public partial class MainWindow : Window
         if (outputPath == null)
             return;
 
-        var imageSnapshot = _currentImage.Copy();
-        var denoiser = DenoisingComboBox.SelectedItem?.ToString();
-        var tspLimit = (float)(TSPTimeLimitUpDown.Value ?? 0.5m);
+        var ctx = CaptureExportContext();
 
-        ExportTDLDButton.IsEnabled = false;
-        ExportTDLDButtonESP.IsEnabled = false;
+        MenuExportTDLD.IsEnabled = false;
         BusyExporting = true;
-        TimeSpan totalTime = TimeSpan.MaxValue;
-        var settings = GetQuantizerSettings();
-        var enableExperimental = EnableExperimentalMenuItem.IsChecked;
-        var enableHome = EnableHomeCanvas.IsChecked ?? false;
-
-        await Task.Run(async () =>
+        try
         {
-            // FileControllerSink writes its output directly to disk, so we point
-            // it at the user's chosen path and skip the temp-file + copy dance the
-            // other export buttons do.
-            AppendLog($"Exporting TDLD to {outputPath}");
-            var timingSink = new TimingSink();
-            var drawer = new CanvasDrawer(
-                timingSink,
-                _currentSettings.SelectedSwitchVersion,
-                AppendLog
+            var (tdldBytes, totalTime) = await GenerateTdldAsync(
+                ctx.Snapshot,
+                ctx.DrawSettings,
+                $"Exporting TDLD to {outputPath}"
             );
-            drawer.ConnectAndConfirmController();
-            AppendLog("Starting to generate inputs...");
-            var drawSettings = new DrawImageSettings()
-            {
-                QuantizerSettings = settings,
-                DenoiserName = denoiser,
-                TSPTimeLimit = tspLimit,
-                DisableLargeBrush = false,
-                EnableExperimentalFeatures = enableExperimental,
-                HomeToTopLeft = enableHome,
-            };
-            await drawer.DrawImage(imageSnapshot, drawSettings);
-            AppendLog($"True complete overall time is: {timingSink.TotalTime.TotalSeconds}s");
 
-            var fileSink = new FileControllerSink(outputPath);
-            timingSink.ReplayTo(fileSink);
-            fileSink.Dispose();
-
+            File.WriteAllBytes(outputPath, tdldBytes);
             AppendLog($"Saved TDLD to {outputPath}");
-            totalTime = timingSink.TotalTime;
-        });
 
-        ExportTDLDButton.IsEnabled = true;
-        ExportTDLDButtonESP.IsEnabled = true;
-        BusyExporting = false;
-        SetEstimate(totalTime);
+            ReportImageExport(ctx, totalTime, "tdld");
+            SetEstimate(totalTime);
+        }
+        finally
+        {
+            MenuExportTDLD.IsEnabled = true;
+            BusyExporting = false;
+        }
     }
 
     private async void ExportESP32Button_Click(object? sender, RoutedEventArgs e)
@@ -1416,73 +1395,35 @@ public partial class MainWindow : Window
             );
             return;
         }
-        if (_currentSettings.SelectedSwitchVersion == SwitchVersion.None)
-        {
-            _ = ShowMessageAsync(
-                "Select Switch Version",
-                "For compatibility, you must select a switch version in the dropdown."
-                    + "\n\nSwitch 1 is more prone to desyncs, so this avoids certain things that are particularly prone to desyncing."
-                    + "\nPlease be aware that even with Switch 1 selected, desyncs are unfortunately expected due to inconsistent and unpredictable lag in the drawing UI."
-            );
+        if (!EnsureSwitchVersionSelected())
             return;
-        }
 
-        var imageSnapshot = _currentImage.Copy();
-        var denoiser = DenoisingComboBox.SelectedItem?.ToString();
-        var tspLimit = (float)(TSPTimeLimitUpDown.Value ?? 0.5m);
+        var ctx = CaptureExportContext();
         var board = _detectedESP32;
         var esptoolPath = _bundledEsptoolPath;
-        var settings = GetQuantizerSettings();
-        var enableExperimental = EnableExperimentalMenuItem.IsChecked;
-        var enableHome = EnableHomeCanvas.IsChecked ?? false;
 
         BusyExporting = true;
         ExportESP32Button.IsEnabled = false;
-        TimeSpan totalTime = TimeSpan.MaxValue;
-
-        await Task.Run(async () =>
+        try
         {
-            string tempPath = Path.Combine(
-                Path.GetTempPath(),
-                $"esp32output{System.Random.Shared.Next(1000000, 9999999)}.tdld"
+            var (tdldBytes, totalTime) = await GenerateTdldAsync(
+                ctx.Snapshot,
+                ctx.DrawSettings,
+                "Exporting to ESP32-S3"
             );
 
-            AppendLog($"Exporting to ESP32-S3 ({Path.GetFileName(tempPath)})");
-            var timingSink = new TimingSink();
-            var drawer = new CanvasDrawer(
-                timingSink,
-                _currentSettings.SelectedSwitchVersion,
-                AppendLog
+            await Task.Run(
+                () => ESP32S3Flasher.WriteTdldImageAsync(board, tdldBytes, esptoolPath, AppendLog)
             );
-            drawer.ConnectAndConfirmController();
-            AppendLog("Starting to generate inputs...");
-            var drawSettings = new DrawImageSettings()
-            {
-                QuantizerSettings = settings,
-                DenoiserName = denoiser,
-                TSPTimeLimit = tspLimit,
-                DisableLargeBrush = false,
-                EnableExperimentalFeatures = enableExperimental,
-                HomeToTopLeft = enableHome,
-            };
-            await drawer.DrawImage(imageSnapshot, drawSettings);
-            AppendLog($"True complete overall time is: {timingSink.TotalTime.TotalSeconds}s");
 
-            var fileSink = new FileControllerSink(tempPath);
-            timingSink.ReplayTo(fileSink);
-            fileSink.Dispose();
-
-            var tdldBytes = File.ReadAllBytes(tempPath);
-            await ESP32S3Flasher.WriteTdldImageAsync(board, tdldBytes, esptoolPath, AppendLog);
-
-            if (File.Exists(tempPath))
-                File.Delete(tempPath);
-            totalTime = timingSink.TotalTime;
-        });
-
-        BusyExporting = false;
-        UpdateESP32UI();
-        SetEstimate(totalTime);
+            ReportImageExport(ctx, totalTime, "ESP32-S3");
+            SetEstimate(totalTime);
+        }
+        finally
+        {
+            BusyExporting = false;
+            UpdateESP32UI();
+        }
     }
 
     private static string GetBaseFirmwareFilePath(RPChipType chip)
