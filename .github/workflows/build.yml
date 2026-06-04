@@ -193,19 +193,6 @@ jobs:
         fi
         cp "$LICENSE_SRC" "$DEST/LICENSE.esptool"
         ls -la "$DEST"
-    - name: Download esptool source tarball for licence compliance
-      shell: bash
-      run: |
-        set -euo pipefail
-        DEST=TomodachiDrawer.UI.Avalonia/EspTools
-        SRC_NAME="esptool-v${ESPTOOL_VERSION}-source.tar.gz"
-        SRC_URL="https://github.com/espressif/esptool/archive/refs/tags/v${ESPTOOL_VERSION}.tar.gz"
-        # Ships corresponding source under GPLv2 §3(a) / GPLv3 §6(a). This is
-        # the same tarball GitHub generates from the v${ESPTOOL_VERSION} tag.
-        # Runs per matrix runtime so every platform's release zip gets a copy.
-        echo "Downloading $SRC_URL"
-        curl -fLsS -o "$DEST/$SRC_NAME" "$SRC_URL"
-        ls -la "$DEST/$SRC_NAME"
     - name: Build
       working-directory: TomodachiDrawer.UI.Avalonia
       run: |
