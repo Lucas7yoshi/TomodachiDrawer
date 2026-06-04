@@ -319,9 +319,10 @@ public partial class MainWindow : Window
                             + $"\nCurrent Version: {ourVersion}"
                             + $"\nLatest Version: {releaseVersionTag}"
                             + $"\nVersion title: {responseJsonObject.RootElement.GetProperty("name").GetString() ?? "N/A"}"
-                            + $"\n\nDownload at:\nhttps://github.com/Lucas7yoshi/TomodachiDrawer",
+                            + $"\n\nDownload at:\nhttps://github.com/Lucas7yoshi/TomodachiDrawer"
+                            + $"\n\n(If desired, you can disable update checks in the Settings toolbar)",
                         new Uri("https://github.com/Lucas7yoshi/TomodachiDrawer/releases"),
-                        "Open Releases"
+                        "Open GitHub Releases"
                     );
                 }
                 else
@@ -1613,14 +1614,7 @@ public partial class MainWindow : Window
         );
     }
 
-    private void SaveSettings()
-    {
-        var json = JsonSerializer.Serialize(
-            _currentSettings,
-            AppSettingsContext.Default.AppSettings
-        );
-        File.WriteAllText(AppSettings.GetSettingsFilePath(), json);
-    }
+    private void SaveSettings() => _currentSettings.Save();
 
     private void GetSettings()
     {
