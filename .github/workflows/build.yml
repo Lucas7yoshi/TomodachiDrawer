@@ -98,27 +98,6 @@ jobs:
       IDF_VERSION: v6.0
     steps:
     - uses: actions/checkout@v6
-    - name: Free up disk space
-      # The ESP-IDF docker image is ~5GB and ubuntu-latest only ships ~14GB
-      # free. We've seen intermittent "no space left on device" failures during
-      # docker load when the runner happens to ship with more preinstalled
-      # cruft than usual. Evicting the toolchains we don't use buys ~25GB.
-      run: |
-        sudo rm -rf /usr/share/dotnet
-        sudo rm -rf /usr/local/lib/android
-        sudo rm -rf /opt/ghc
-        sudo rm -rf /opt/hostedtoolcache/CodeQL
-        sudo docker image prune --all --force
-        df -h
-    - name: Restore cached ESP-IDF docker image
-      id: idf-docker-cache
-      uses: actions/cache@v5
-      with:
-        path: /tmp/idf-docker-image.tar
-        key: idf-docker-${{ env.IDF_VERSION }}
-    - name: Load ESP-IDF docker image from cache
-      if: steps.idf-docker-cache.outputs.cache-hit == 'true'
-      run: docker load -i /tmp/idf-docker-image.tar
     - name: Build firmware
       uses: espressif/esp-idf-ci-action@v1
       with:
@@ -126,10 +105,6 @@ jobs:
         target: esp32s3
         path: 'TomodachiDrawer.Firmware.ESP32S3'
         command: idf.py -DSDKCONFIG_DEFAULTS="sdkconfig.defaults;sdkconfig.defaults.${{ matrix.board }}" build
-    - name: Save ESP-IDF docker image for next run
-      # Only one matrix entry saves to avoid 7 jobs racing on the same cache key.
-      if: steps.idf-docker-cache.outputs.cache-hit != 'true' && matrix.board == 'devkitc_1_r38'
-      run: docker save espressif/idf:${{ env.IDF_VERSION }} -o /tmp/idf-docker-image.tar
     - name: Stage firmware artifacts
       run: |
         mkdir firmware_artifacts
@@ -218,19 +193,6 @@ jobs:
         fi
         cp "$LICENSE_SRC" "$DEST/LICENSE.esptool"
         ls -la "$DEST"
-    - name: Download esptool source tarball for licence compliance
-      shell: bash
-      run: |
-        set -euo pipefail
-        DEST=TomodachiDrawer.UI.Avalonia/EspTools
-        SRC_NAME="esptool-v${ESPTOOL_VERSION}-source.tar.gz"
-        SRC_URL="https://github.com/espressif/esptool/archive/refs/tags/v${ESPTOOL_VERSION}.tar.gz"
-        # Ships corresponding source under GPLv2 §3(a) / GPLv3 §6(a). This is
-        # the same tarball GitHub generates from the v${ESPTOOL_VERSION} tag.
-        # Runs per matrix runtime so every platform's release zip gets a copy.
-        echo "Downloading $SRC_URL"
-        curl -fLsS -o "$DEST/$SRC_NAME" "$SRC_URL"
-        ls -la "$DEST/$SRC_NAME"
     - name: Build
       working-directory: TomodachiDrawer.UI.Avalonia
       run: |

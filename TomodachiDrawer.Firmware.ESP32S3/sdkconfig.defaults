@@ -31,3 +31,7 @@ CONFIG_TINYUSB_MSC_ENABLED=n
 # push a fresh report at sub-tick-granularity during delays - the default
 # 100Hz tick gives 10ms slices and would miss polls.
 CONFIG_FREERTOS_HZ=1000
+
+# We aren't using networking at the moment so to speed up actions builds, disable what we can.
+CONFIG_MBEDTLS_TLS_ENABLED=n
+CONFIG_MBEDTLS_CERTIFICATE_BUNDLE=n
