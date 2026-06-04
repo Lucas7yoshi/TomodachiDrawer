@@ -10,10 +10,12 @@ namespace TomodachiDrawer.Core.ImageProcessing.Denoising
             // RGB are all treated equally so order does not matter, but we do assume a alpha channel exists.
             bool needToConvert = source.ColorType != SKColorType.Bgra8888 && source.ColorType != SKColorType.Rgba8888;
 
-            using var inputBgra = needToConvert ? source.Copy(SKColorType.Bgra8888) : source;
+            using var converted = needToConvert ? source.Copy(SKColorType.Bgra8888) : null;
 
-            if (inputBgra == null)
+            if (needToConvert && converted == null)
                 throw new InvalidOperationException("Failed to convert image to BGRA format.");
+
+            var inputBgra = converted ?? source;
 
             var result = new SKBitmap(
                 inputBgra.Width,

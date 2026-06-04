@@ -774,7 +774,7 @@ public partial class MainWindow : Window
 
         var quantizerSettings = GetQuantizerSettings();
         var denoiser = DenoisingComboBox.SelectedItem?.ToString();
-        var source = _currentImage;
+        using var source = _currentImage!.Copy();
 
         var preview = await Task.Run(() => GetPreview(source, quantizerSettings, denoiser))
             .ConfigureAwait(true);
@@ -1809,7 +1809,7 @@ public partial class MainWindow : Window
         // very scientific — capture UI state before going async
         var quantizerSettings = GetQuantizerSettings();
         var denoiser = DenoisingComboBox.SelectedItem?.ToString();
-        var source = _currentImage;
+        using var source = _currentImage!.Copy();
         var img = await Task.Run(() => GetPreview(source, quantizerSettings, denoiser));
         // save it to disk... wherever desired.
         var file = await StorageProvider.SaveFilePickerAsync(
