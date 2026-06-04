@@ -29,7 +29,11 @@ internal class AppSettings
 
     internal static string GetSettingsFilePath()
     {
+#if DEBUG
+        const string settingsFileName = "settings_debug.json";
+#else
         const string settingsFileName = "settings.json";
+#endif
 
         if (OperatingSystem.IsMacOS() && AppContext.BaseDirectory.Contains(".app/Contents/MacOS"))
         {
