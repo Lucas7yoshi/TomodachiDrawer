@@ -216,15 +216,15 @@ public partial class MainWindow : Window
 
     // Welcome message stuff. For important changes, the ID is incremented by one by hand whenever something notable changes.
     // This is only really needed for Mac since its settings are saved in a way that persists more readily.
-    private const int CURRENT_WELCOME_ID = 3;
+    private const int CURRENT_WELCOME_ID = 4;
 
     private async Task ShowWelcomeMessage()
     {
         await ShowMessageAsync(
             "Welcome to TomodachiDrawer!",
-            "0.6.0 has added support for RP2350 based boards (RP2350-Zero, Raspberry Pi Pico 2, etc) on top of the RP2040 support."
-                + "\n\n0.5.0 added a tool for helping you with more complex, non square templates."
-                + "\nAt the top menu bar, select \"Templates\" and choose the item type you want, it will open an editor with a preview of the layout, and copy it to your clipboard for you to easily edit in other image editing software."
+            "0.7.0 has added support for ESP32-S3 based boards for those who happen to have one."
+                + "\n\n-0.6.0 added support for RP2350 based boards (RP2350-Zero, Raspberry Pi Pico 2, Pico 2W, etc)" +
+                "\n-0.5.0 added support for templates, accessible from the top menu bar."
         );
     }
 
