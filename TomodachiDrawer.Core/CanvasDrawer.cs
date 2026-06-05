@@ -3,7 +3,6 @@ using Google.OrTools.ConstraintSolver;
 using SkiaSharp;
 using TomodachiDrawer.Core.ImageProcessing;
 using TomodachiDrawer.Core.ImageProcessing.Denoising;
-using TomodachiDrawer.Core.ImageProcessing.Quantizers;
 using TomodachiDrawer.Core.Models;
 using TomodachiDrawer.Core.OutputSinks;
 

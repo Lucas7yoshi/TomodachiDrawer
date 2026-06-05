@@ -223,8 +223,8 @@ public partial class MainWindow : Window
         await ShowMessageAsync(
             "Welcome to TomodachiDrawer!",
             "0.7.0 has added support for ESP32-S3 based boards for those who happen to have one."
-                + "\n\n-0.6.0 added support for RP2350 based boards (RP2350-Zero, Raspberry Pi Pico 2, Pico 2W, etc)" +
-                "\n-0.5.0 added support for templates, accessible from the top menu bar."
+                + "\n\n-0.6.0 added support for RP2350 based boards (RP2350-Zero, Raspberry Pi Pico 2, Pico 2W, etc)"
+                + "\n-0.5.0 added support for templates, accessible from the top menu bar."
         );
     }
 
@@ -345,7 +345,9 @@ public partial class MainWindow : Window
 
     private async Task ShowMacAccessError(string drivePath, bool retryBlurb = false)
     {
-        var additional = retryBlurb ? "\n\nYou should grant permission, then click Ok and the app will try to write again." : string.Empty;
+        var additional = retryBlurb
+            ? "\n\nYou should grant permission, then click Ok and the app will try to write again."
+            : string.Empty;
         await ShowMessageAsync(
             "Permission Denied",
             $"Permission to access the microcontrollers drive ({drivePath}) was denied.\n\n"
@@ -515,8 +517,7 @@ public partial class MainWindow : Window
         // ESP32BoardComboBox_SelectionChanged, which is what actually resolves
         // _bundledFirmware against the chosen board's bin.
         ESP32BoardComboBox.ItemsSource = ESP32S3Flasher.SupportedBoards;
-        var savedBoardId = _currentSettings.SelectedESP32BoardId
-                           ?? ESP32S3Flasher.DefaultBoardId;
+        var savedBoardId = _currentSettings.SelectedESP32BoardId ?? ESP32S3Flasher.DefaultBoardId;
         int savedIdx = 0;
         for (int i = 0; i < ESP32S3Flasher.SupportedBoards.Count; i++)
         {
@@ -532,7 +533,7 @@ public partial class MainWindow : Window
         {
             AppendLog(
                 "ESP32-S3 disabled - esptool not bundled. CI populates EspTools/ on "
-                + "release; for local dev drop esptool.exe in there or have ESP-IDF on PATH."
+                    + "release; for local dev drop esptool.exe in there or have ESP-IDF on PATH."
             );
         }
         UpdateESP32UI();
@@ -575,8 +576,10 @@ public partial class MainWindow : Window
             string fw = _detectedFirmware is { } d
                 ? $"   →   {d.ProjectName} v{d.Version}"
                 : "   →   no recognized firmware (flash base firmware to install)";
-            ESP32StatusLabel.Text = $"ESP32-S3 on {_detectedESP32.Port} ({_detectedESP32.ChipFamily}{rev}){fw}";
-            ESP32StatusLabel.Foreground = _detectedFirmware != null ? Brushes.Green : Brushes.Orange;
+            ESP32StatusLabel.Text =
+                $"ESP32-S3 on {_detectedESP32.Port} ({_detectedESP32.ChipFamily}{rev}){fw}";
+            ESP32StatusLabel.Foreground =
+                _detectedFirmware != null ? Brushes.Green : Brushes.Orange;
             ready = true;
         }
         else
@@ -587,8 +590,7 @@ public partial class MainWindow : Window
 
         ExportESP32Button.IsEnabled = ready && hasImage && !BusyExporting;
         RefreshESP32Button.IsEnabled = _bundledEsptoolPath != null && !BusyExporting;
-        FlashESP32FirmwareButton.IsEnabled =
-            ready && _bundledFirmware != null && !BusyExporting;
+        FlashESP32FirmwareButton.IsEnabled = ready && _bundledFirmware != null && !BusyExporting;
     }
 
     private void ESP32BoardComboBox_SelectionChanged(object? sender, SelectionChangedEventArgs e)
@@ -600,9 +602,11 @@ public partial class MainWindow : Window
         _bundledFirmware = ESP32S3Flasher.FindBundledFirmware(board.Id, out var firmwareMissing);
         if (_bundledFirmware == null)
         {
-            AppendLog($"ESP32-S3 base-firmware flash disabled - {firmwareMissing}. "
-                + "Build TomodachiDrawer.Firmware.ESP32S3 (idf.py build) so the bins land "
-                + "in build/ and the next UI build auto-copies them.");
+            AppendLog(
+                $"ESP32-S3 base-firmware flash disabled - {firmwareMissing}. "
+                    + "Build TomodachiDrawer.Firmware.ESP32S3 (idf.py build) so the bins land "
+                    + "in build/ and the next UI build auto-copies them."
+            );
         }
         UpdateESP32UI();
     }
@@ -654,9 +658,13 @@ public partial class MainWindow : Window
         {
             _detectedFirmware = await ESP32S3Flasher.ReadAppDescriptorAsync(found, esptool);
             if (_detectedFirmware != null)
-                AppendLog($"  firmware on board: {_detectedFirmware.ProjectName} v{_detectedFirmware.Version} (built with {_detectedFirmware.IdfVersion})");
+                AppendLog(
+                    $"  firmware on board: {_detectedFirmware.ProjectName} v{_detectedFirmware.Version} (built with {_detectedFirmware.IdfVersion})"
+                );
             else
-                AppendLog($"  no recognized firmware on {found.Port} - run Flash Base Firmware to install");
+                AppendLog(
+                    $"  no recognized firmware on {found.Port} - run Flash Base Firmware to install"
+                );
         }
         UpdateESP32UI();
     }
@@ -680,14 +688,17 @@ public partial class MainWindow : Window
         BusyExporting = true;
         UpdateESP32UI();
         bool ok = await Task.Run(async () =>
-            await ESP32S3Flasher.FlashBaseFirmwareAsync(board, firmware, esptool, AppendLog));
+            await ESP32S3Flasher.FlashBaseFirmwareAsync(board, firmware, esptool, AppendLog)
+        );
         if (ok)
         {
             // Re-read the descriptor so the status label shows the newly-flashed
             // project name and version instead of the stale pre-flash state.
             _detectedFirmware = await ESP32S3Flasher.ReadAppDescriptorAsync(board, esptool);
             if (_detectedFirmware != null)
-                AppendLog($"Confirmed: {_detectedFirmware.ProjectName} v{_detectedFirmware.Version}");
+                AppendLog(
+                    $"Confirmed: {_detectedFirmware.ProjectName} v{_detectedFirmware.Version}"
+                );
         }
         BusyExporting = false;
         UpdateESP32UI();
@@ -1004,14 +1015,22 @@ public partial class MainWindow : Window
                         File.WriteAllBytes(Path.Combine(drivePath, "tdld_image.uf2"), uf2Bytes);
                         wroteToFlash = true;
                     }
-                    catch (Exception firstEx) when (firstEx is UnauthorizedAccessException or IOException)
+                    catch (Exception firstEx)
+                        when (firstEx is UnauthorizedAccessException or IOException)
                     {
                         // Already we are diverging from expectations because CanAccessPicoDrive returned true... Capturing
                         SentrySdk.CaptureException(
                             firstEx,
                             scope =>
                             {
-                                scope.SetFingerprint(new[] { "uf2-write", "first-attempt-failed", firstEx.GetType().Name });
+                                scope.SetFingerprint(
+                                    new[]
+                                    {
+                                        "uf2-write",
+                                        "first-attempt-failed",
+                                        firstEx.GetType().Name,
+                                    }
+                                );
                                 scope.Level = SentryLevel.Warning;
                                 scope.SetTag("export.phase", "first-attempt-failed");
                                 scope.SetTag("export.error_type", firstEx.GetType().Name);
@@ -1035,14 +1054,22 @@ public partial class MainWindow : Window
                             File.WriteAllBytes(Path.Combine(drivePath, "tdld_image.uf2"), uf2Bytes);
                             wroteToFlash = true;
                         }
-                        catch (Exception retryEx) when (retryEx is UnauthorizedAccessException or IOException)
+                        catch (Exception retryEx)
+                            when (retryEx is UnauthorizedAccessException or IOException)
                         {
                             // retry failed too. capture...
                             SentrySdk.CaptureException(
                                 retryEx,
                                 scope =>
                                 {
-                                    scope.SetFingerprint(new[] { "uf2-write", "retry-failed", retryEx.GetType().Name });
+                                    scope.SetFingerprint(
+                                        new[]
+                                        {
+                                            "uf2-write",
+                                            "retry-failed",
+                                            retryEx.GetType().Name,
+                                        }
+                                    );
                                     scope.Level = SentryLevel.Warning;
                                     scope.SetTag("export.phase", "retry-failed");
                                     scope.SetTag("export.error_type", retryEx.GetType().Name);
@@ -1051,8 +1078,11 @@ public partial class MainWindow : Window
                                 }
                             );
 
-                            await ShowMessageAsync("Still can't write", "We still can't write to the drive. A save prompt will appear after this prompt to save it somewhere else." +
-                                "\nYou can drag and drop this .uf2 file onto the RPI-RP2/RP2350 drive manually.");
+                            await ShowMessageAsync(
+                                "Still can't write",
+                                "We still can't write to the drive. A save prompt will appear after this prompt to save it somewhere else."
+                                    + "\nYou can drag and drop this .uf2 file onto the RPI-RP2/RP2350 drive manually."
+                            );
 
                             var outputPath = await UF2SaveFilePicker();
                             if (outputPath == null)
@@ -1065,27 +1095,39 @@ public partial class MainWindow : Window
                                     $"Saved the .uf2 file. Drag and drop it onto the {chipName} drive manually."
                                 );
                             }
-                            catch (Exception saveEx) when (saveEx is UnauthorizedAccessException or IOException)
+                            catch (Exception saveEx)
+                                when (saveEx is UnauthorizedAccessException or IOException)
                             {
                                 // We can't even write where they wanted us to save to >:|
                                 SentrySdk.CaptureException(
                                     saveEx,
                                     scope =>
                                     {
-                                        scope.SetFingerprint(new[] { "uf2-write", "manual-save-failed", saveEx.GetType().Name });
+                                        scope.SetFingerprint(
+                                            new[]
+                                            {
+                                                "uf2-write",
+                                                "manual-save-failed",
+                                                saveEx.GetType().Name,
+                                            }
+                                        );
                                         scope.Level = SentryLevel.Error;
                                         scope.SetTag("export.phase", "manual-save-failed");
                                         scope.SetTag("export.error_type", saveEx.GetType().Name);
                                         scope.SetTag("export.chip", chipName);
                                         // output path is only relevant here, its always the RPI device above.
-                                        scope.SetTag("export.path_scrubbed", CrashReporter.ScrubText(outputPath) ?? "null");
+                                        scope.SetTag(
+                                            "export.path_scrubbed",
+                                            CrashReporter.ScrubText(outputPath) ?? "null"
+                                        );
                                         scope.SetExtra("uf2_size", uf2Bytes.Length);
                                     }
                                 );
                                 // at this point we weep, but atleast we don't crash out.
-                                AppendLog("Couldn't save the .uf2 file. Please try saving to a different location.");
+                                AppendLog(
+                                    "Couldn't save the .uf2 file. Please try saving to a different location."
+                                );
                             }
-
                         }
                     }
 
@@ -1122,7 +1164,11 @@ public partial class MainWindow : Window
         string logPrefix
     )
     {
-        var (tdldBytes, totalTime) = await GenerateTdldAsync(imageSnapshot, drawSettings, logPrefix);
+        var (tdldBytes, totalTime) = await GenerateTdldAsync(
+            imageSnapshot,
+            drawSettings,
+            logPrefix
+        );
         var uf2Bytes = await Task.Run(() => UF2Flasher.BuildTDLDUF2(tdldBytes, chip));
         return (uf2Bytes, totalTime);
     }
@@ -1268,21 +1314,21 @@ public partial class MainWindow : Window
     private async Task<string?> UF2SaveFilePicker()
     {
         var file = await StorageProvider.SaveFilePickerAsync(
-                new FilePickerSaveOptions
-                {
-                    Title = "Save .UF2",
-                    DefaultExtension = "uf2",
-                    FileTypeChoices =
-                    [
-                        new FilePickerFileType("UF2 Firmware Image") { Patterns = ["*.uf2"] },
-                                new FilePickerFileType("All Files") { Patterns = ["*.*"] },
-                    ],
-                }
-            );
+            new FilePickerSaveOptions
+            {
+                Title = "Save .UF2",
+                DefaultExtension = "uf2",
+                FileTypeChoices =
+                [
+                    new FilePickerFileType("UF2 Firmware Image") { Patterns = ["*.uf2"] },
+                    new FilePickerFileType("All Files") { Patterns = ["*.*"] },
+                ],
+            }
+        );
 
         return file?.TryGetLocalPath();
-
     }
+
     private async void ExportUF2Button_Click(object sender, RoutedEventArgs e)
     {
         if (_currentImage == null)
@@ -1413,8 +1459,8 @@ public partial class MainWindow : Window
                 "Exporting to ESP32-S3"
             );
 
-            await Task.Run(
-                () => ESP32S3Flasher.WriteTdldImageAsync(board, tdldBytes, esptoolPath, AppendLog)
+            await Task.Run(() =>
+                ESP32S3Flasher.WriteTdldImageAsync(board, tdldBytes, esptoolPath, AppendLog)
             );
 
             ReportImageExport(ctx, totalTime, "ESP32-S3");

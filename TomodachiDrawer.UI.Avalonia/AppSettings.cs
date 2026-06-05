@@ -83,7 +83,7 @@ internal class AppSettings
     // candidates are AV or something else grabbing the file... So we just retry a few times and hope it writes.
     // If it doesn't, a stale version may be on disk but the app will continue working with it's settings
     // and if anything changes, try writing again.
-    private static readonly object _writeLock = new();
+    private static readonly Lock _writeLock = new();
 
     internal void Save()
     {

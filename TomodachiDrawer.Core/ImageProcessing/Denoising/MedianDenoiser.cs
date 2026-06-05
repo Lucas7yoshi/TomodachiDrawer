@@ -8,7 +8,9 @@ namespace TomodachiDrawer.Core.ImageProcessing.Denoising
         public SKBitmap DenoiseImage(SKBitmap source)
         {
             // RGB are all treated equally so order does not matter, but we do assume a alpha channel exists.
-            bool needToConvert = source.ColorType != SKColorType.Bgra8888 && source.ColorType != SKColorType.Rgba8888;
+            bool needToConvert =
+                source.ColorType != SKColorType.Bgra8888
+                && source.ColorType != SKColorType.Rgba8888;
 
             using var converted = needToConvert ? source.Copy(SKColorType.Bgra8888) : null;
 

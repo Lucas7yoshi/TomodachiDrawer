@@ -11,7 +11,7 @@ internal static class ESP32S3Flasher
     // tdld partition offset = factory app size (2MB) + bootloader/nvs/phy
     // headers (0x10000). Must match partitions.csv on the firmware side.
     public const uint TdldPartitionOffset = 0x210000;
-    public const int TdldMaxBytes = 1 * 1024 * 1024;  // 1MB partition
+    public const int TdldMaxBytes = 1 * 1024 * 1024; // 1MB partition
 
     public record DetectedBoard(string Port, string ChipFamily, string? ChipRevision);
 
@@ -67,22 +67,35 @@ internal static class ESP32S3Flasher
         try
         {
             using var proc = Process.Start(psi);
-            if (proc == null) return null;
+            if (proc == null)
+                return null;
             var stdout = new StringBuilder();
-            proc.OutputDataReceived += (_, e) => { if (e.Data != null) stdout.AppendLine(e.Data); };
-            proc.ErrorDataReceived += (_, e) => { if (e.Data != null) stdout.AppendLine(e.Data); };
+            proc.OutputDataReceived += (_, e) =>
+            {
+                if (e.Data != null)
+                    stdout.AppendLine(e.Data);
+            };
+            proc.ErrorDataReceived += (_, e) =>
+            {
+                if (e.Data != null)
+                    stdout.AppendLine(e.Data);
+            };
             proc.BeginOutputReadLine();
             proc.BeginErrorReadLine();
 
             var completed = await Task.Run(() => proc.WaitForExit((int)to.TotalMilliseconds));
             if (!completed)
             {
-                try { proc.Kill(entireProcessTree: true); } catch { }
+                try
+                {
+                    proc.Kill(entireProcessTree: true);
+                }
+                catch { }
                 log?.Invoke($"esptool chip-id timed out on {port}");
                 return null;
             }
             if (proc.ExitCode != 0)
-                return null;  // port busy, no chip, or not an Espressif chip
+                return null; // port busy, no chip, or not an Espressif chip
 
             string? chip = null;
             string? revision = null;
@@ -133,8 +146,14 @@ internal static class ESP32S3Flasher
 
     public static string[] EnumeratePorts()
     {
-        try { return SerialPort.GetPortNames(); }
-        catch { return Array.Empty<string>(); }
+        try
+        {
+            return SerialPort.GetPortNames();
+        }
+        catch
+        {
+            return Array.Empty<string>();
+        }
     }
 
     // Base-firmware files we expect under EspFirmware/. The flash offsets
@@ -187,19 +206,23 @@ internal static class ESP32S3Flasher
             psi.ArgumentList.Add(tmpPath);
 
             using var proc = Process.Start(psi);
-            if (proc == null) return null;
+            if (proc == null)
+                return null;
             // discard esptool's chatter for this internal read
             proc.OutputDataReceived += (_, _) => { };
             proc.ErrorDataReceived += (_, _) => { };
             proc.BeginOutputReadLine();
             proc.BeginErrorReadLine();
             await proc.WaitForExitAsync();
-            if (proc.ExitCode != 0) return null;
+            if (proc.ExitCode != 0)
+                return null;
 
             var bytes = await File.ReadAllBytesAsync(tmpPath);
-            if (bytes.Length < 144) return null;
+            if (bytes.Length < 144)
+                return null;
             var magic = BitConverter.ToUInt32(bytes, 0);
-            if (magic != AppDescriptorMagic) return null;
+            if (magic != AppDescriptorMagic)
+                return null;
 
             // Field offsets in esp_app_desc_t (see esp_app_format.h):
             //   u32 magic_word     0
@@ -216,10 +239,18 @@ internal static class ESP32S3Flasher
                 IdfVersion: ReadCString(bytes, 112, 32)
             );
         }
-        catch { return null; }
+        catch
+        {
+            return null;
+        }
         finally
         {
-            try { if (File.Exists(tmpPath)) File.Delete(tmpPath); } catch { }
+            try
+            {
+                if (File.Exists(tmpPath))
+                    File.Delete(tmpPath);
+            }
+            catch { }
         }
     }
 
@@ -227,7 +258,8 @@ internal static class ESP32S3Flasher
     {
         int end = offset;
         int limit = Math.Min(buf.Length, offset + maxLen);
-        while (end < limit && buf[end] != 0) end++;
+        while (end < limit && buf[end] != 0)
+            end++;
         return Encoding.UTF8.GetString(buf, offset, end - offset);
     }
 
@@ -247,13 +279,13 @@ internal static class ESP32S3Flasher
 
     public static readonly IReadOnlyList<BoardInfo> SupportedBoards = new[]
     {
-        new BoardInfo("devkitc_1_r38",  "ESP32-S3-DevKitC-1 (older rev, LED on GPIO 38)", 38),
-        new BoardInfo("devkitc_1_r48",  "ESP32-S3-DevKitC-1 (later rev, LED on GPIO 48)", 48),
-        new BoardInfo("s3_zero",        "Waveshare ESP32-S3-Zero (LED on GPIO 21)",        21),
-        new BoardInfo("devkitm_1",      "ESP32-S3-DevKitM-1 (LED on GPIO 48)",             48),
-        new BoardInfo("qtpy_s3",        "Adafruit QT Py ESP32-S3 (LED on GPIO 39)",        39),
-        new BoardInfo("lolin_s3_mini",  "Lolin S3 Mini (LED on GPIO 47)",                  47),
-        new BoardInfo("atom_s3",        "M5Stack AtomS3 / AtomS3 Lite (LED on GPIO 35)",   35),
+        new BoardInfo("devkitc_1_r38", "ESP32-S3-DevKitC-1 (older rev, LED on GPIO 38)", 38),
+        new BoardInfo("devkitc_1_r48", "ESP32-S3-DevKitC-1 (later rev, LED on GPIO 48)", 48),
+        new BoardInfo("s3_zero", "Waveshare ESP32-S3-Zero (LED on GPIO 21)", 21),
+        new BoardInfo("devkitm_1", "ESP32-S3-DevKitM-1 (LED on GPIO 48)", 48),
+        new BoardInfo("qtpy_s3", "Adafruit QT Py ESP32-S3 (LED on GPIO 39)", 39),
+        new BoardInfo("lolin_s3_mini", "Lolin S3 Mini (LED on GPIO 47)", 47),
+        new BoardInfo("atom_s3", "M5Stack AtomS3 / AtomS3 Lite (LED on GPIO 35)", 35),
     };
 
     public const string DefaultBoardId = "devkitc_1_r38";
@@ -271,14 +303,18 @@ internal static class ESP32S3Flasher
         // it but warn that whichever board is picked must match what was
         // actually compiled.
         var unsuffixedApp = Path.Combine(dir, "TomodachiDrawer_FW_ESP32S3.bin");
-        string? appPath = File.Exists(suffixedApp) ? suffixedApp
-                       : File.Exists(unsuffixedApp) ? unsuffixedApp
-                       : null;
+        string? appPath =
+            File.Exists(suffixedApp) ? suffixedApp
+            : File.Exists(unsuffixedApp) ? unsuffixedApp
+            : null;
 
         var missing = new List<string>();
-        if (!File.Exists(boot)) missing.Add("bootloader.bin");
-        if (!File.Exists(ptab)) missing.Add("partition-table.bin");
-        if (appPath == null) missing.Add(suffixedAppName);
+        if (!File.Exists(boot))
+            missing.Add("bootloader.bin");
+        if (!File.Exists(ptab))
+            missing.Add("partition-table.bin");
+        if (appPath == null)
+            missing.Add(suffixedAppName);
         if (missing.Count == 0)
         {
             missingReason = null;
@@ -326,8 +362,16 @@ internal static class ESP32S3Flasher
             log?.Invoke("Failed to start esptool process.");
             return false;
         }
-        proc.OutputDataReceived += (_, e) => { if (e.Data != null) log?.Invoke(e.Data); };
-        proc.ErrorDataReceived += (_, e) => { if (e.Data != null) log?.Invoke(e.Data); };
+        proc.OutputDataReceived += (_, e) =>
+        {
+            if (e.Data != null)
+                log?.Invoke(e.Data);
+        };
+        proc.ErrorDataReceived += (_, e) =>
+        {
+            if (e.Data != null)
+                log?.Invoke(e.Data);
+        };
         proc.BeginOutputReadLine();
         proc.BeginErrorReadLine();
         await proc.WaitForExitAsync();
@@ -352,7 +396,7 @@ internal static class ESP32S3Flasher
         {
             log?.Invoke(
                 $"TDLD image is {tdldBytes.Length} bytes, exceeds {TdldMaxBytes} byte"
-                + " partition limit. Use a smaller image or fewer colours."
+                    + " partition limit. Use a smaller image or fewer colours."
             );
             return false;
         }
@@ -383,7 +427,7 @@ internal static class ESP32S3Flasher
 
             log?.Invoke(
                 $"Running: esptool --chip esp32s3 --port {board.Port} "
-                + $"write-flash 0x{TdldPartitionOffset:X} <{tdldBytes.Length} bytes>"
+                    + $"write-flash 0x{TdldPartitionOffset:X} <{tdldBytes.Length} bytes>"
             );
 
             using var proc = Process.Start(psi);
@@ -392,8 +436,16 @@ internal static class ESP32S3Flasher
                 log?.Invoke("Failed to start esptool process.");
                 return false;
             }
-            proc.OutputDataReceived += (_, e) => { if (e.Data != null) log?.Invoke(e.Data); };
-            proc.ErrorDataReceived += (_, e) => { if (e.Data != null) log?.Invoke(e.Data); };
+            proc.OutputDataReceived += (_, e) =>
+            {
+                if (e.Data != null)
+                    log?.Invoke(e.Data);
+            };
+            proc.ErrorDataReceived += (_, e) =>
+            {
+                if (e.Data != null)
+                    log?.Invoke(e.Data);
+            };
             proc.BeginOutputReadLine();
             proc.BeginErrorReadLine();
 
@@ -405,7 +457,7 @@ internal static class ESP32S3Flasher
             }
             log?.Invoke(
                 "Wrote TDLD to ESP32-S3 tdld partition. The board has reset and is"
-                + " replaying the drawing - unplug from this PC and connect to the Switch."
+                    + " replaying the drawing - unplug from this PC and connect to the Switch."
             );
             return true;
         }
