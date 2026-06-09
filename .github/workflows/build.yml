@@ -99,7 +99,7 @@ jobs:
     steps:
     - uses: actions/checkout@v6
     - name: Build firmware
-      uses: espressif/esp-idf-ci-action@v1
+      uses: espressif/esp-idf-ci-action@9d38657f3d789ca759b2b37aaf5ceffbc42c4f0d
       with:
         esp_idf_version: ${{ env.IDF_VERSION }}
         target: esp32s3
