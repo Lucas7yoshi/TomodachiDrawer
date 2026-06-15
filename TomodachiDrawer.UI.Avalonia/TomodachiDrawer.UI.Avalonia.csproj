@@ -17,17 +17,13 @@
     <PackageReference Include="Avalonia.Themes.Fluent" Version="12.0.4" />
     <PackageReference Include="Avalonia.Fonts.Inter" Version="12.0.4" />
     <!-- SerialPort APIs for ESP32-S3 board detection (not in netcore base). -->
-    <PackageReference Include="System.IO.Ports" Version="10.0.8" />
+    <PackageReference Include="System.IO.Ports" Version="10.0.9" />
     <PackageReference Include="Sentry" Version="6.6.0" />
   </ItemGroup>
   <ItemGroup>
     <!-- Bundled esptool binaries for ESP32-S3 flashing. CI downloads these
          per-runtime; local dev drops them in manually. -->
-    <None
-      Include="EspTools\**\*"
-      Exclude="EspTools\**\*.md;EspTools\**\.gitignore"
-      Condition="Exists('EspTools')"
-    >
+    <None Include="EspTools\**\*" Exclude="EspTools\**\*.md;EspTools\**\.gitignore" Condition="Exists('EspTools')">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
       <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
       <Link>EspTools\%(RecursiveDir)%(Filename)%(Extension)</Link>
@@ -62,36 +58,16 @@
       <ESP32S3BuildDir>$(ProjectDir)..\TomodachiDrawer.Firmware.ESP32S3\build</ESP32S3BuildDir>
     </PropertyGroup>
     <ItemGroup>
-      <ESP32S3FirmwareBins
-        Include="$(ESP32S3BuildDir)\bootloader\bootloader.bin"
-        Condition="Exists('$(ESP32S3BuildDir)\bootloader\bootloader.bin')"
-      />
-      <ESP32S3FirmwareBins
-        Include="$(ESP32S3BuildDir)\partition_table\partition-table.bin"
-        Condition="Exists('$(ESP32S3BuildDir)\partition_table\partition-table.bin')"
-      />
-      <ESP32S3FirmwareBins
-        Include="$(ESP32S3BuildDir)\TomodachiDrawer_FW_ESP32S3.bin"
-        Condition="Exists('$(ESP32S3BuildDir)\TomodachiDrawer_FW_ESP32S3.bin')"
-      />
+      <ESP32S3FirmwareBins Include="$(ESP32S3BuildDir)\bootloader\bootloader.bin" Condition="Exists('$(ESP32S3BuildDir)\bootloader\bootloader.bin')" />
+      <ESP32S3FirmwareBins Include="$(ESP32S3BuildDir)\partition_table\partition-table.bin" Condition="Exists('$(ESP32S3BuildDir)\partition_table\partition-table.bin')" />
+      <ESP32S3FirmwareBins Include="$(ESP32S3BuildDir)\TomodachiDrawer_FW_ESP32S3.bin" Condition="Exists('$(ESP32S3BuildDir)\TomodachiDrawer_FW_ESP32S3.bin')" />
     </ItemGroup>
-    <MakeDir
-      Directories="$(ProjectDir)EspFirmware"
-      Condition="@(ESP32S3FirmwareBins->Count()) &gt; 0"
-    />
-    <Copy
-      SourceFiles="@(ESP32S3FirmwareBins)"
-      DestinationFolder="$(ProjectDir)EspFirmware\"
-      SkipUnchangedFiles="true"
-      Condition="@(ESP32S3FirmwareBins->Count()) &gt; 0"
-    />
+    <MakeDir Directories="$(ProjectDir)EspFirmware" Condition="@(ESP32S3FirmwareBins-&gt;Count()) &gt; 0" />
+    <Copy SourceFiles="@(ESP32S3FirmwareBins)" DestinationFolder="$(ProjectDir)EspFirmware\" SkipUnchangedFiles="true" Condition="@(ESP32S3FirmwareBins-&gt;Count()) &gt; 0" />
   </Target>
   <ItemGroup>
     <ProjectReference Include="..\TomodachiDrawer.Core\TomodachiDrawer.Core.csproj" />
-    <ProjectReference
-      Condition="'$(Configuration)' == 'Debug'"
-      Include="..\TomodachiDrawer.DebugTools\TomodachiDrawer.DebugTools.csproj"
-    />
+    <ProjectReference Condition="'$(Configuration)' == 'Debug'" Include="..\TomodachiDrawer.DebugTools\TomodachiDrawer.DebugTools.csproj" />
   </ItemGroup>
   <ItemGroup>
     <!-- publish trimming thing-->
@@ -131,23 +107,11 @@
          routes via PublishSingleFile silently dropped esptool.exe, so we copy
          post-publish. Exclude .md and .gitignore - those are dev-only. -->
     <ItemGroup>
-      <ESPToolsBundle
-        Include="EspTools\**\*"
-        Exclude="EspTools\**\*.md;EspTools\**\.gitignore"
-        Condition="Exists('EspTools')"
-      />
+      <ESPToolsBundle Include="EspTools\**\*" Exclude="EspTools\**\*.md;EspTools\**\.gitignore" Condition="Exists('EspTools')" />
       <ESPFirmwareBundle Include="EspFirmware\**\*.bin" Condition="Exists('EspFirmware')" />
     </ItemGroup>
-    <Copy
-      SourceFiles="@(ESPToolsBundle)"
-      DestinationFiles="@(ESPToolsBundle->'$(PublishDir)EspTools\%(RecursiveDir)%(Filename)%(Extension)')"
-      SkipUnchangedFiles="true"
-    />
-    <Copy
-      SourceFiles="@(ESPFirmwareBundle)"
-      DestinationFiles="@(ESPFirmwareBundle->'$(PublishDir)EspFirmware\%(RecursiveDir)%(Filename)%(Extension)')"
-      SkipUnchangedFiles="true"
-    />
+    <Copy SourceFiles="@(ESPToolsBundle)" DestinationFiles="@(ESPToolsBundle->'$(PublishDir)EspTools\%(RecursiveDir)%(Filename)%(Extension)')" SkipUnchangedFiles="true" />
+    <Copy SourceFiles="@(ESPFirmwareBundle)" DestinationFiles="@(ESPFirmwareBundle->'$(PublishDir)EspFirmware\%(RecursiveDir)%(Filename)%(Extension)')" SkipUnchangedFiles="true" />
   </Target>
   <!-- macOS .app bundling `-p:BundleMacOSApp=true` -->
   <PropertyGroup Condition="'$(BundleMacOSApp)' == 'true' And $(RuntimeIdentifier.StartsWith('osx'))">
@@ -157,11 +121,7 @@
     <IncludeNativeLibrariesForSelfExtract>false</IncludeNativeLibrariesForSelfExtract>
     <PublishTrimmed>true</PublishTrimmed>
   </PropertyGroup>
-  <Target
-    Name="BundleMacOS"
-    AfterTargets="Publish"
-    Condition="'$(BundleMacOSApp)' == 'true' And $(RuntimeIdentifier.StartsWith('osx'))"
-  >
+  <Target Name="BundleMacOS" AfterTargets="Publish" Condition="'$(BundleMacOSApp)' == 'true' And $(RuntimeIdentifier.StartsWith('osx'))">
     <PropertyGroup>
       <AppBundleDir>$([System.IO.Path]::Combine('$(PublishDir)', 'TomodachiDrawer.app'))</AppBundleDir>
       <ContentsDir>$([System.IO.Path]::Combine('$(AppBundleDir)', 'Contents'))</ContentsDir>
@@ -170,22 +130,13 @@
     </PropertyGroup>
     <ItemGroup>
       <FirmwareFiles Include="$(PublishDir)TomodachiDrawer.Firmware.*.uf2" />
-      <PublishFiles
-        Include="$(PublishDir)**\*.*"
-        Exclude="$(AppBundleDir)\**\*.*;$(PublishDir)TomodachiDrawer.Firmware.*.uf2"
-      />
+      <PublishFiles Include="$(PublishDir)**\*.*" Exclude="$(AppBundleDir)\**\*.*;$(PublishDir)TomodachiDrawer.Firmware.*.uf2" />
     </ItemGroup>
     <MakeDir Directories="$(AppBundleDir);$(ContentsDir);$(MacOsDir);$(ResourcesDir)" />
     <Move SourceFiles="@(PublishFiles)" DestinationFolder="$(MacOsDir)\%(RecursiveDir)" />
     <Copy SourceFiles="@(FirmwareFiles)" DestinationFolder="$(MacOsDir)" />
-    <Copy
-      SourceFiles="$(ProjectDir)Packaging/macOS/AppIcon.icns"
-      DestinationFolder="$(ResourcesDir)"
-    />
-    <Copy
-      SourceFiles="$(ProjectDir)Packaging/macOS/MAC_USER_MUST_README-IMPORTANT.txt"
-      DestinationFolder="$(PublishDir)"
-    />
+    <Copy SourceFiles="$(ProjectDir)Packaging/macOS/AppIcon.icns" DestinationFolder="$(ResourcesDir)" />
+    <Copy SourceFiles="$(ProjectDir)Packaging/macOS/MAC_USER_MUST_README-IMPORTANT.txt" DestinationFolder="$(PublishDir)" />
     <PropertyGroup>
       <PlistSource>$(ProjectDir)Packaging/macOS/Info.plist</PlistSource>
       <PlistDestination>$([System.IO.Path]::Combine('$(ContentsDir)', 'Info.plist'))</PlistDestination>
