@@ -9,8 +9,9 @@
 #define NEOPIXEL_PIO pio0
 #define NEOPIXEL_SM  0
 
-#define NEOPIXEL_BRIGHT 127 // Its surprisingly bright lol
-#define RAINBOW_DIVISOR 4 // because again, its really bright
+#define NEOPIXEL_BRIGHT 100 // Its surprisingly bright lol
+#define NEOPIXEL_LESSBRIGHT 10
+#define RAINBOW_DIVISOR 3 // because again, its really bright
 
 // We store the instructions in the top half of our flash.
 // Reality is we could probably do 1.75MB since this program is teeny tiny but 1MB seems to be enough.
@@ -163,12 +164,15 @@ static void send_report_raw(void) {
 // send report and update neopixel. used during actual playback.
 static void push_report(void) {
     send_report_raw();
-    // Mirror the Python firmware: green while any button is held, dim-white when idle
+    // green while any button is held (top priority), blue for dpad-only, dim-white when idle
     if (current_report[0] != 0 || current_report[1] != 0) {
         neopixel_set_rgb(0, NEOPIXEL_BRIGHT, 0);
         boringpixel_set(true);
+    } else if (current_report[2] != DPAD_NEUTRAL) {
+        neopixel_set_rgb(0, 0, NEOPIXEL_LESSBRIGHT);
+        boringpixel_set(true);
     } else {
-        neopixel_set_rgb(10, 10, 10);
+        neopixel_set_rgb(NEOPIXEL_LESSBRIGHT, NEOPIXEL_LESSBRIGHT, NEOPIXEL_LESSBRIGHT);
         boringpixel_set(false);
     }
 }
@@ -187,7 +191,7 @@ static void error_flash(int interval_ms) {
 }
 
 // new and improved rainbow from like, the hsv thing. but no s,v for simplicity.
-void get_good_rainbow(uint8_t hue, uint8_t *r, uint8_t *g, uint8_t *b) {
+static void get_good_rainbow(uint8_t hue, uint8_t *r, uint8_t *g, uint8_t *b) {
     if (hue < 85) {
         *r = 255 - hue * 3;
         *g = hue * 3;
