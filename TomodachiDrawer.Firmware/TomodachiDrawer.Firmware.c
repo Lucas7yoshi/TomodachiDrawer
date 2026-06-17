@@ -10,6 +10,7 @@
 #define NEOPIXEL_SM  0
 
 #define NEOPIXEL_BRIGHT 100 // Its surprisingly bright lol
+#define NEOPIXEL_ABITLESSBRIGHT 20
 #define NEOPIXEL_LESSBRIGHT 10
 #define RAINBOW_DIVISOR 3 // because again, its really bright
 
@@ -169,7 +170,7 @@ static void push_report(void) {
         neopixel_set_rgb(0, NEOPIXEL_BRIGHT, 0);
         boringpixel_set(true);
     } else if (current_report[2] != DPAD_NEUTRAL) {
-        neopixel_set_rgb(0, 0, NEOPIXEL_LESSBRIGHT);
+        neopixel_set_rgb(0, 0, NEOPIXEL_ABITLESSBRIGHT);
         boringpixel_set(true);
     } else {
         neopixel_set_rgb(NEOPIXEL_LESSBRIGHT, NEOPIXEL_LESSBRIGHT, NEOPIXEL_LESSBRIGHT);
