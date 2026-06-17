@@ -36,6 +36,23 @@ namespace TomodachiDrawer.Core
             };
         }
 
+        /// <summary>
+        /// Number of inputs for a colour, but also collapses identical colours to optimize colour picking and navigation.
+        /// Mostly done as a result of black and colours very very close to it, but also extended to grey.
+        /// </summary>
+        public static (int Hue, int Sat, int Val) CanonicalKey(SKColor skColor)
+        {
+            var (hue, sat, val) = FromColour(skColor);
+
+            if (val == FCR_VALUE_STEP_COUNT - 1) // v=0 is black, hue & sat don't matter at all for this.
+                return (0, 0, val);
+
+            if (sat == FCR_SATURATION_STEP_COUNT - 1) // s=0 is grey scale, hue has no impact.
+                return (0, sat, val);
+
+            return (hue, sat, val);
+        }
+
         private static float ToLinear(byte srgb8)
         {
             float c = srgb8 / 255.0f;

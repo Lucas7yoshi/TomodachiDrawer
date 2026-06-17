@@ -192,12 +192,20 @@ namespace TomodachiDrawer.Core
                 );
                 SKColor[] pixels = quantized.Pixels;
 
-                var skToPalette = pixels
-                    .Where(c => c.Alpha > 128)
-                    .Distinct()
-                    .ToDictionary(
-                        d => d,
-                        d => new PaletteColour(
+                // Colours are mapped to the number of HSV steps
+                // So that extremely similar RGB codes that result in the same HSV inputs (and thus, the same colour in game)
+                // are combined to avoid redundant layers.
+                // Technically, this can cause the number of Arbitrary colours set to not equal the resulting number
+                // of layers but the end result would be the same anyway, so we take the savings.
+                var keyToPalette = new Dictionary<(int, int, int), PaletteColour>();
+                var skToPalette = new Dictionary<SKColor, PaletteColour>();
+
+                foreach (var d in pixels.Where(c => c.Alpha > 128).Distinct())
+                {
+                    var key = ColourPickerRouter.CanonicalKey(d);
+                    if (!keyToPalette.TryGetValue(key, out var canonical))
+                    {
+                        canonical = new PaletteColour(
                             $"({d.Red}, {d.Green}, {d.Blue})",
                             d.Red,
                             d.Green,
@@ -206,8 +214,11 @@ namespace TomodachiDrawer.Core
                             null,
                             d,
                             true
-                        )
-                    );
+                        );
+                        keyToPalette[key] = canonical;
+                    }
+                    skToPalette[d] = canonical;
+                }
 
                 var output = new PaletteColour?[width, height];
                 for (int y = 0; y < height; y++)
