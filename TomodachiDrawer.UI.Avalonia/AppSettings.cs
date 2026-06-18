@@ -12,6 +12,8 @@ internal class AppSettings
 
     public bool EnableExperimentalFeatures { get; set; } = false;
 
+    public bool EnableEarlyTspExit { get; set; } = true;
+
     public bool CheckForUpdatesOnStart { get; set; } = true;
 
     public string SelectedColourMatcher { get; set; } = "Arbitrary";

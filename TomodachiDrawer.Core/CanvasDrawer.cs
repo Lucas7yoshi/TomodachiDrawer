@@ -8,7 +8,7 @@ using TomodachiDrawer.Core.OutputSinks;
 
 namespace TomodachiDrawer.Core
 {
-    public class CanvasDrawer
+    public partial class CanvasDrawer
     {
         public const int CanvasWidth = 256;
         public const int CanvasHeight = 256;
@@ -21,6 +21,7 @@ namespace TomodachiDrawer.Core
         private readonly CanvasToolbar _toolbar;
         private readonly Action<string> _log;
         private readonly SwitchVersion _switchVersion;
+        private bool _earlyExitEnabled = true;
 
         public CanvasDrawer(
             ISwitchOutput outputSink,
@@ -42,28 +43,6 @@ namespace TomodachiDrawer.Core
             _switchVersion = switchVersion;
         }
 
-        public static float GetRecommendedTSPSolveTime(int width, int height)
-        {
-            const int squared64 = 64 * 64;
-            const int squared128 = 128 * 128;
-            const int squared192 = 192 * 192;
-            const int squared256 = 256 * 256;
-
-            int pixels = width * height;
-            if (pixels <= squared64)
-                return 0.5f;
-            else if (pixels <= squared128)
-                return 1.5f;
-            else if (pixels <= squared192)
-                return 2.75f;
-            else if (pixels <= squared256)
-                return 4.0f;
-            else
-            {
-                return 5.0f; // should ever reach here...
-            }
-        }
-
         public async Task DrawImage(SKBitmap image, DrawImageSettings settings)
         {
             if (image.Width > CanvasWidth || image.Height > CanvasHeight)
@@ -75,6 +54,8 @@ namespace TomodachiDrawer.Core
                 0.0f,
                 nameof(settings.TSPTimeLimit)
             );
+
+            _earlyExitEnabled = settings.EarlyExitEnabled;
 
             // Stages:
             // 1: Perform Color quantization to the tomodachi life pallete
@@ -233,7 +214,6 @@ namespace TomodachiDrawer.Core
                         else if (pointCount > 100)
                             tspTime = 1.0f;
                         var optimizedRoute = PerformTSP(dumbRoute, tspTime); // half a sec per stamp size per colour is prob reasonable?
-                        optimizedRoute ??= dumbRoute;
 
                         foreach (var point in optimizedRoute)
                         {
@@ -297,7 +277,7 @@ namespace TomodachiDrawer.Core
                         ? $"{tspSink.TotalTime.TotalSeconds:F3}s"
                         : "no solution";
                     _log(
-                        $"[{layerNumber}/{totalLayers}] {l.Colour.DisplayName}: snake={snakeSink.TotalTime.TotalSeconds:F3}s, tsp={tspPart} -> {(usedSnake ? "snake" : "tsp")}"
+                        $"[{layerNumber}/{totalLayers}] {l.Colour.DisplayName} ({l.FineDetailPoints.Count} pts): snake={snakeSink.TotalTime.TotalSeconds:F3}s, tsp={tspPart} -> {(usedSnake ? "snake" : "tsp")}"
                     );
                 }
 
@@ -315,7 +295,7 @@ namespace TomodachiDrawer.Core
                         l.BucketClicks.ToList(),
                         bucketClickRouteTimeout
                     );
-                    foreach (var click in optimizedBucketClickRoute ?? l.BucketClicks.ToList()) // in case somehow it fails
+                    foreach (var click in optimizedBucketClickRoute)
                     {
                         NavigateTo(_realOutput, click);
                         _realOutput.Tap(Button.A);
@@ -749,12 +729,6 @@ namespace TomodachiDrawer.Core
 
             var optimizedRoute = PerformTSP(pointsList, timeLimitSeconds);
 
-            if (optimizedRoute == null)
-            {
-                _log($"\tTSP timed out. Performing naive routing for TSP instead...");
-                optimizedRoute = FineDetailRoughTSP(pointsList);
-            }
-
             // Navigate through the optimised route.
             // A is held across consecutive points that are exactly 1 step apart (Chebyshev == 1).
             // For isolated points (no adjacent neighbour) a plain Tap is used.
@@ -795,154 +769,6 @@ namespace TomodachiDrawer.Core
                     output.Tap(Button.A);
                 }
             }
-        }
-
-        /// <summary>Very rough TSP, one pass just repeatedly finds the closest point until its done. Fallback for FineDetailTsp if it times out</summary>
-        /// <param name="output"></param>
-        /// <param name="l">Colour layer to route</param>
-        /// <returns>Ordered list of points as the route</returns>
-        private List<CanvasPoint> FineDetailRoughTSP(List<CanvasPoint> inputPoints)
-        {
-#if DEBUG
-            var sw = Stopwatch.StartNew();
-#endif
-            var points = inputPoints.ToArray();
-
-            var ordered = new List<CanvasPoint>(points.Length);
-
-            if (inputPoints.Count == 0)
-            {
-                return ordered;
-            }
-            else if (inputPoints.Count == 1)
-            {
-                ordered.Add(points[0]);
-                return ordered;
-            }
-
-            var closestPointIndex = 0;
-            var closestPointDist = MeasureDistanceToFromCurrent(points[0].X, points[0].Y);
-            for (int i = 0; i < points.Length; i++)
-            {
-                var p = points[i];
-                var distance = MeasureDistanceToFromCurrent(p.X, p.Y);
-                if (distance < closestPointDist)
-                {
-                    closestPointIndex = i;
-                    closestPointDist = distance;
-                }
-            }
-
-            // We are just going to go to the nearest point repeatedly.
-            var currentIndex = closestPointIndex;
-            ordered.Add(points[currentIndex]);
-            var visited = new bool[points.Length];
-            visited[currentIndex] = true;
-
-            for (int i = 0; i < points.Length - 1; i++)
-            {
-                var cur = points[currentIndex];
-                int nearestIndex = -1;
-                int nearestDist = int.MaxValue;
-
-                for (int j = 0; j < points.Length; j++)
-                {
-                    if (visited[j])
-                        continue;
-                    int dist = Math.Max(
-                        Math.Abs(points[j].X - cur.X),
-                        Math.Abs(points[j].Y - cur.Y)
-                    );
-                    if (dist < nearestDist)
-                    {
-                        nearestDist = dist;
-                        nearestIndex = j;
-                    }
-                }
-
-                visited[nearestIndex] = true;
-                ordered.Add(points[nearestIndex]);
-                currentIndex = nearestIndex;
-            }
-#if DEBUG
-            sw.Stop();
-            _log($"\tNaive TSP took {sw.ElapsedMilliseconds}ms");
-#endif
-
-            return ordered;
-        }
-
-        private List<CanvasPoint>? PerformTSP(List<CanvasPoint> inputPoints, float timeLimitSeconds)
-        {
-            var points = inputPoints.ToArray();
-            var closestPointIndex = 0;
-            var closestPointDist = MeasureDistanceToFromCurrent(points[0].X, points[0].Y);
-            for (int i = 0; i < points.Length; i++)
-            {
-                var p = points[i];
-                var distance = MeasureDistanceToFromCurrent(p.X, p.Y);
-                if (distance < closestPointDist)
-                {
-                    closestPointIndex = i;
-                    closestPointDist = distance;
-                }
-            }
-
-            var manager = new RoutingIndexManager(points.Length, 1, closestPointIndex);
-            var routing = new RoutingModel(manager);
-
-            int transitCallbackIndex = routing.RegisterTransitCallback(
-                (fromIndex, toIndex) =>
-                {
-                    var fromNode = manager.IndexToNode(fromIndex);
-                    var toNode = manager.IndexToNode(toIndex);
-                    // A note: during testing I made a change trying to incentivize adjacent things
-                    // since it can just hold A during... but the lowest value this can return is 1
-                    // so there was no gain, it was already trying to do that lol.
-                    return Math.Max(
-                        Math.Abs(points[fromNode].X - points[toNode].X),
-                        Math.Abs(points[fromNode].Y - points[toNode].Y)
-                    );
-                }
-            );
-
-            routing.SetArcCostEvaluatorOfAllVehicles(transitCallbackIndex);
-
-            var searchParameters =
-                operations_research_constraint_solver.DefaultRoutingSearchParameters();
-            searchParameters.FirstSolutionStrategy = FirstSolutionStrategy
-                .Types
-                .Value
-                .PathCheapestArc;
-            searchParameters.LocalSearchMetaheuristic = LocalSearchMetaheuristic
-                .Types
-                .Value
-                .GuidedLocalSearch;
-            // need to get int seconds and int nanoseconds because... google.
-            int seconds = (int)timeLimitSeconds;
-            int nanoseconds = (int)((timeLimitSeconds - seconds) * 1_000_000_000);
-            searchParameters.TimeLimit = new Google.Protobuf.WellKnownTypes.Duration
-            {
-                Seconds = seconds,
-                Nanos = nanoseconds,
-            };
-
-            var sw = Stopwatch.StartNew();
-            var solution = routing.SolveWithParameters(searchParameters);
-            sw.Stop();
-
-            if (solution is null)
-                return null;
-
-            var optimizedRoute = new List<CanvasPoint>(points.Length);
-            long index = routing.Start(0);
-            while (routing.IsEnd(index) == false)
-            {
-                optimizedRoute.Add(points[manager.IndexToNode(index)]);
-                index = solution.Value(routing.NextVar(index));
-            }
-
-            return optimizedRoute;
         }
 
         private void NavigateTo(ISwitchOutput output, CanvasPoint p) =>

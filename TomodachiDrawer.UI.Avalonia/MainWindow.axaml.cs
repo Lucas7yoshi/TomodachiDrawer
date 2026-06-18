@@ -949,11 +949,11 @@ public partial class MainWindow : Window
             "TSP Solver Time Limit refers to how much time is alloted to the TSP solver.\n"
             + "TSP refers to the Travelling Sales Person problem, which is finding the optimal route among a set of points.\n"
             + "This is used to find the optimal path for the pen tool to take while drawing to minimize drawing time.\n\n"
-            + "For larger images, the TSP solver can take longer to find an optimal route, its also possible it will never even find an optimal route if there is too many points.\n"
-            + "For 64x64, 0.5s is generally fine, anything largest you should consider giving it more time.\n\n"
-            + "This time is how long it is alloted PER colour, so if an image has 30 different colours used, 0.5s will take 15 seconds.\n"
-            + "The TSP solve is not used always, a simpler \"snaking\" algorithm is used if its quicker, or if TSP didnt find anything in time, which it sometimes is, mostly for large continuous areas of colour.";
-
+            + "When you open an image, a sensible default value is set.\n"
+            + "If you have a colour with a lot of points all over (i.e, its noisy), the TSP solver might struggle, in which case it will fall to a generally much less optimal solve"
+            + "In that case, you could consider raising the time limit. For most cases, the default will suffice.\n"
+            + "\n\nAdditionally, an option in the Settings Menu lets you disable the \"early converge\", this is a shortcut the solver takes when it thinks its basically 95% of the way to an optimal solve, with little left to realistically gain.\n"
+            + "During the export you can find some info in the log about what is going on.";
         _ = ShowMessageAsync("TSP Solver Time Limit", message);
     }
 
@@ -1299,6 +1299,7 @@ public partial class MainWindow : Window
             EnableExperimentalFeatures = enableExperimental,
             HomeToTopLeft = enableHome,
             ReverseColourOrder = reverseColourOrder,
+            EarlyExitEnabled = EarlyTspExitMenuItem.IsChecked,
         };
     }
 
@@ -1688,6 +1689,7 @@ public partial class MainWindow : Window
             ThemeDarkMenuItem.IsChecked = _currentSettings.SelectedThemeIndex == 2;
 
             EnableExperimentalMenuItem.IsChecked = _currentSettings.EnableExperimentalFeatures;
+            EarlyTspExitMenuItem.IsChecked = _currentSettings.EnableEarlyTspExit;
             CheckForUpdatesCheckBox.IsChecked = _currentSettings.CheckForUpdatesOnStart;
 
             SelectComboBoxItem(ColourMatcherComboBox, _currentSettings.SelectedColourMatcher);
@@ -1774,6 +1776,12 @@ public partial class MainWindow : Window
             );
         }
         _currentSettings.EnableExperimentalFeatures = EnableExperimentalMenuItem.IsChecked;
+        SaveSettings();
+    }
+
+    private void EarlyTspExitMenuItem_Click(object? sender, RoutedEventArgs e)
+    {
+        _currentSettings.EnableEarlyTspExit = EarlyTspExitMenuItem.IsChecked;
         SaveSettings();
     }
 

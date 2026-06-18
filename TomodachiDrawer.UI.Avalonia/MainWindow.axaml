@@ -57,6 +57,14 @@
 				Click="EnableExperimentalMenuItem_Click"
 				/>
 				<MenuItem
+				x:Name="EarlyTspExitMenuItem"
+				Header="Early TSP _Convergence"
+				ToggleType="CheckBox"
+				IsChecked="True"
+				Click="EarlyTspExitMenuItem_Click"
+				ToolTip.Tip="Lets the TSP solver exit early if it believes theres very minimal gain to be had, even in worst case having this off saves only seconds in the end result, but speeds up export."
+				/>
+				<MenuItem
 				x:Name="OpenTelemetryPrompt"
 				Header="_Open Telemetry Prompt"
 				Click="OpenTelemetryPrompt_Click"

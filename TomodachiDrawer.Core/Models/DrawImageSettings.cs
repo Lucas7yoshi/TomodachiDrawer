@@ -10,6 +10,9 @@ namespace TomodachiDrawer.Core.Models
 
         public float TSPTimeLimit { get; set; } = 1.0f;
 
+        /// <summary>Toggles the TSP early-convergence exit (OrTools improvement limit). On by default.</summary>
+        public bool EarlyExitEnabled { get; set; } = true;
+
         /// <summary>Disables "stamp" detection, which is areas that could be drawn with 3x3, 5x5, 9x9, etc brushes to save time.</summary>
         public bool DisableLargeBrush { get; set; } = false;
 
