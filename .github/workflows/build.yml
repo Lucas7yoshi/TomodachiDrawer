@@ -21,7 +21,7 @@ jobs:
         configuration: [Debug, Release]
 
     steps:
-    - uses: actions/checkout@v6
+    - uses: actions/checkout@v7
     - uses: actions/setup-dotnet@v5
       with:
         dotnet-version: '10.0.x'
@@ -44,7 +44,7 @@ jobs:
           - platform: rp2350
             board: waveshare_rp2350_zero
     steps:
-    - uses: actions/checkout@v6
+    - uses: actions/checkout@v7
     - name: Install toolchain
       run: |
         sudo apt-get update
@@ -57,7 +57,7 @@ jobs:
         key: pico-sdk-2.2.0
     - name: Checkout pico-sdk
       if: steps.cache-pico-sdk.outputs.cache-hit != 'true'
-      uses: actions/checkout@v6
+      uses: actions/checkout@v7
       with:
         repository: raspberrypi/pico-sdk
         ref: '2.2.0'
@@ -97,7 +97,7 @@ jobs:
     env:
       IDF_VERSION: v6.0
     steps:
-    - uses: actions/checkout@v6
+    - uses: actions/checkout@v7
     - name: Build firmware
       uses: espressif/esp-idf-ci-action@9d38657f3d789ca759b2b37aaf5ceffbc42c4f0d
       with:
@@ -132,7 +132,7 @@ jobs:
     env:
       ESPTOOL_VERSION: 5.2.0
     steps:
-    - uses: actions/checkout@v6
+    - uses: actions/checkout@v7
     - uses: actions/setup-dotnet@v5
       with:
         dotnet-version: '10.0.x'
@@ -220,7 +220,7 @@ jobs:
     if: startsWith(github.ref, 'refs/tags/')
 
     steps:
-    - uses: actions/checkout@v6
+    - uses: actions/checkout@v7
     - name: Download artifacts
       uses: actions/download-artifact@v8
       with:
