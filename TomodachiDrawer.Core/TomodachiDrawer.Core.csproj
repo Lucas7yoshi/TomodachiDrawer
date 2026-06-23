@@ -11,6 +11,6 @@
   <ItemGroup>
     <PackageReference Include="Google.OrTools" Version="9.15.6755" />
     <PackageReference Include="JeremyAnsel.ColorQuant" Version="3.0.74" />
-    <PackageReference Include="SkiaSharp" Version="3.119.4" />
+    <PackageReference Include="SkiaSharp" Version="4.148.0" />
   </ItemGroup>
 </Project>
