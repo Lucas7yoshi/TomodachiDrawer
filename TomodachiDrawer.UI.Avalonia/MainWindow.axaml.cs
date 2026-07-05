@@ -39,7 +39,19 @@ public partial class MainWindow : Window
     private readonly CancellationTokenSource _cts = new();
     private readonly TelemetryService _telemetry;
 
-    private bool BusyExporting = false;
+    // Cancels the in-progress draw generation (the DrawImage call inside GenerateTdldAsync).
+    private CancellationTokenSource? _drawCts;
+
+    private bool _busyExporting = false;
+    private bool BusyExporting
+    {
+        get => _busyExporting;
+        set
+        {
+            _busyExporting = value;
+            CancelDrawButton.IsEnabled = value;
+        }
+    }
 
     // Cached ESP32-S3 detection. Probing is invasive (resets the chip on
     // connect) so we only do it on user-triggered Re-scan and reuse the
@@ -971,6 +983,15 @@ public partial class MainWindow : Window
     // Common Click method for Export to [device] buttons.
     // Diverges based on sender.
     // to avoid repeated code.
+    private void CancelDrawButton_Click(object? sender, RoutedEventArgs e)
+    {
+        if (_drawCts is { IsCancellationRequested: false })
+        {
+            AppendLog("Cancelling draw...");
+            _drawCts.Cancel();
+        }
+    }
+
     private async void ExportToDeviceButton_Click(object? sender, RoutedEventArgs e)
     {
         if (_currentImage == null)
@@ -1144,6 +1165,10 @@ public partial class MainWindow : Window
 
             SetEstimate(totalTime);
         }
+        catch (OperationCanceledException)
+        {
+            AppendLog("Draw cancelled.");
+        }
         finally
         {
             BusyExporting = false;
@@ -1183,38 +1208,49 @@ public partial class MainWindow : Window
         byte[] tdldBytes = [];
         TimeSpan totalTime = TimeSpan.MaxValue;
 
-        await Task.Run(async () =>
+        // Shared Cts for cancellation
+        _drawCts = new CancellationTokenSource();
+        var token = _drawCts.Token;
+        try
         {
-            using var img = imageSnapshot;
-            string tempPath = Path.Combine(
-                Path.GetTempPath(),
-                $"tdldoutput{System.Random.Shared.Next(1000000, 9999999)}.tdld"
-            );
+            await Task.Run(async () =>
+            {
+                using var img = imageSnapshot;
+                string tempPath = Path.Combine(
+                    Path.GetTempPath(),
+                    $"tdldoutput{System.Random.Shared.Next(1000000, 9999999)}.tdld"
+                );
 
-            AppendLog($"{logPrefix} ({Path.GetFileName(tempPath)})");
-            var timingSink = new TimingSink();
-            var drawer = new CanvasDrawer(
-                timingSink,
-                _currentSettings.SelectedSwitchVersion,
-                AppendLog
-            );
-            drawer.ConnectAndConfirmController();
-            AppendLog("Starting to generate inputs...");
-            await drawer.DrawImage(img, drawSettings);
-            AppendLog($"True complete overall time is: {timingSink.TotalTime.TotalSeconds}s");
+                AppendLog($"{logPrefix} ({Path.GetFileName(tempPath)})");
+                var timingSink = new TimingSink();
+                var drawer = new CanvasDrawer(
+                    timingSink,
+                    _currentSettings.SelectedSwitchVersion,
+                    AppendLog
+                );
+                drawer.ConnectAndConfirmController();
+                AppendLog("Starting to generate inputs...");
+                await drawer.DrawImage(img, drawSettings, token);
+                AppendLog($"True complete overall time is: {timingSink.TotalTime.TotalSeconds}s");
 
-            var fileSink = new FileControllerSink(tempPath);
-            timingSink.ReplayTo(fileSink);
-            fileSink.Dispose();
+                var fileSink = new FileControllerSink(tempPath);
+                timingSink.ReplayTo(fileSink);
+                fileSink.Dispose();
 
-            tdldBytes = File.ReadAllBytes(tempPath);
+                tdldBytes = File.ReadAllBytes(tempPath);
 
 #if !DEBUG
-            if (File.Exists(tempPath))
-                File.Delete(tempPath);
+                if (File.Exists(tempPath))
+                    File.Delete(tempPath);
 #endif
-            totalTime = timingSink.TotalTime;
-        });
+                totalTime = timingSink.TotalTime;
+            });
+        }
+        finally
+        {
+            _drawCts.Dispose();
+            _drawCts = null;
+        }
 
         return (tdldBytes, totalTime);
     }
@@ -1371,6 +1407,10 @@ public partial class MainWindow : Window
 
             SetEstimate(totalTime);
         }
+        catch (OperationCanceledException)
+        {
+            AppendLog("Draw cancelled.");
+        }
         finally
         {
             exportUF2Button.IsEnabled = true;
@@ -1421,6 +1461,10 @@ public partial class MainWindow : Window
             ReportImageExport(ctx, totalTime, "tdld");
             SetEstimate(totalTime);
         }
+        catch (OperationCanceledException)
+        {
+            AppendLog("Draw cancelled.");
+        }
         finally
         {
             MenuExportTDLD.IsEnabled = true;
@@ -1466,6 +1510,10 @@ public partial class MainWindow : Window
 
             ReportImageExport(ctx, totalTime, "ESP32-S3");
             SetEstimate(totalTime);
+        }
+        catch (OperationCanceledException)
+        {
+            AppendLog("Draw cancelled.");
         }
         finally
         {

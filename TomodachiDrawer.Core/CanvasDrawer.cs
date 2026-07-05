@@ -43,7 +43,11 @@ namespace TomodachiDrawer.Core
             _switchVersion = switchVersion;
         }
 
-        public async Task DrawImage(SKBitmap image, DrawImageSettings settings)
+        public async Task DrawImage(
+            SKBitmap image,
+            DrawImageSettings settings,
+            CancellationToken cancellationToken = default
+        )
         {
             if (image.Width > CanvasWidth || image.Height > CanvasHeight)
                 throw new InvalidDataException(
@@ -190,6 +194,8 @@ namespace TomodachiDrawer.Core
             int layerNumber = 0;
             foreach (var l in layers)
             {
+                // Lowest code-change means to pull this off :p
+                cancellationToken.ThrowIfCancellationRequested();
                 layerNumber++;
 
                 _palette.SelectColour(l.Colour, 25.0);

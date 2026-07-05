@@ -198,13 +198,21 @@
 								 ScrollViewer.VerticalScrollBarVisibility="Auto" />
 					</DockPanel>
 				</Border>
-				<TextBlock Grid.Row="3"
-						   x:Name="DrawTimeLabel"
-						   Text="Draw Time Estimate: ???"
-						   ToolTip.Tip="This is a generally very accurate estimate as to how long the drawing will take, including all actions."
-						   FontSize="17"
-						   FontWeight="Bold"
-						   Margin="2,0,2,6" />
+				<DockPanel Grid.Row="3" Margin="2,0,2,6">
+					<Button DockPanel.Dock="Right"
+							x:Name="CancelDrawButton"
+							Content="Cancel Draw"
+							IsEnabled="False"
+							ToolTip.Tip="Cancels the image draw generation currently in progress."
+							VerticalAlignment="Center"
+							Click="CancelDrawButton_Click" />
+					<TextBlock x:Name="DrawTimeLabel"
+							   Text="Draw Time Estimate: ???"
+							   ToolTip.Tip="This is a generally very accurate estimate as to how long the drawing will take, including all actions."
+							   FontSize="17"
+							   FontWeight="Bold"
+							   VerticalAlignment="Center" />
+				</DockPanel>
 				<Border Grid.Row="4" Classes="group">
 					<TabControl x:Name="ChipTabControl">
 						<TabItem x:Name="RP2040Tab" Header="RP2040">
