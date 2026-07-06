@@ -22,6 +22,8 @@ namespace TomodachiDrawer.Core
         private readonly Action<string> _log;
         private readonly SwitchVersion _switchVersion;
         private bool _earlyExitEnabled = true;
+        private double _earlyExitRateCoefficient = EarlyExitRateCoefficient;
+        private int _earlyExitSolutionsDistance = EarlyExitSolutionsDistance;
 
         public CanvasDrawer(
             ISwitchOutput outputSink,
@@ -60,6 +62,8 @@ namespace TomodachiDrawer.Core
             );
 
             _earlyExitEnabled = settings.EarlyExitEnabled;
+            _earlyExitRateCoefficient = settings.EarlyExitRateCoefficient;
+            _earlyExitSolutionsDistance = settings.EarlyExitSolutionsDistance;
 
             // Stages:
             // 1: Perform Color quantization to the tomodachi life pallete

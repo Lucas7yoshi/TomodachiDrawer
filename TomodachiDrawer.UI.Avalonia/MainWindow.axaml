@@ -58,11 +58,9 @@
 				/>
 				<MenuItem
 				x:Name="EarlyTspExitMenuItem"
-				Header="Early TSP _Convergence"
-				ToggleType="CheckBox"
-				IsChecked="True"
+				Header="Early TSP _Convergence..."
 				Click="EarlyTspExitMenuItem_Click"
-				ToolTip.Tip="Lets the TSP solver exit early if it believes theres very minimal gain to be had, even in worst case having this off saves only seconds in the end result, but speeds up export."
+				ToolTip.Tip="Lets the TSP solver exit early if it believes theres very minimal gain to be had, even in worst case having this off saves only seconds in the end result, but speeds up export. Opens the tuning knobs."
 				/>
 				<MenuItem
 				x:Name="OpenTelemetryPrompt"

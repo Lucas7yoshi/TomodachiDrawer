@@ -1335,7 +1335,9 @@ public partial class MainWindow : Window
             EnableExperimentalFeatures = enableExperimental,
             HomeToTopLeft = enableHome,
             ReverseColourOrder = reverseColourOrder,
-            EarlyExitEnabled = EarlyTspExitMenuItem.IsChecked,
+            EarlyExitEnabled = _currentSettings.EarlyTspConvergenceEnabled,
+            EarlyExitRateCoefficient = _currentSettings.EarlyTspExitThreshold,
+            EarlyExitSolutionsDistance = _currentSettings.EarlyTspExitSolutionsDistance,
         };
     }
 
@@ -1737,7 +1739,6 @@ public partial class MainWindow : Window
             ThemeDarkMenuItem.IsChecked = _currentSettings.SelectedThemeIndex == 2;
 
             EnableExperimentalMenuItem.IsChecked = _currentSettings.EnableExperimentalFeatures;
-            EarlyTspExitMenuItem.IsChecked = _currentSettings.EnableEarlyTspExit;
             CheckForUpdatesCheckBox.IsChecked = _currentSettings.CheckForUpdatesOnStart;
 
             SelectComboBoxItem(ColourMatcherComboBox, _currentSettings.SelectedColourMatcher);
@@ -1827,11 +1828,8 @@ public partial class MainWindow : Window
         SaveSettings();
     }
 
-    private void EarlyTspExitMenuItem_Click(object? sender, RoutedEventArgs e)
-    {
-        _currentSettings.EnableEarlyTspExit = EarlyTspExitMenuItem.IsChecked;
-        SaveSettings();
-    }
+    private void EarlyTspExitMenuItem_Click(object? sender, RoutedEventArgs e) =>
+        new EarlyTspExitTool(_currentSettings, SaveSettings).Show(this);
 
     private void CheckForUpdatesCheckBox_Click(object? sender, RoutedEventArgs e)
     {

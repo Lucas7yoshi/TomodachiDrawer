@@ -10,8 +10,16 @@ namespace TomodachiDrawer.Core.Models
 
         public float TSPTimeLimit { get; set; } = 1.0f;
 
-        /// <summary>Toggles the TSP early-convergence exit (OrTools improvement limit). On by default.</summary>
-        public bool EarlyExitEnabled { get; set; } = true;
+        /// <summary>Toggles the TSP early-convergence exit (OrTools improvement limit). Off by default.</summary>
+        public bool EarlyExitEnabled { get; set; } = false;
+
+        // To be real i dont fully understand what these numbers do so we are disabling it by default until i get a better idea and can
+        // be more confident in the savings over a large range of image types.
+        /// <summary>OrTools improvement-rate coefficient for early-exit.</summary>
+        public double EarlyExitRateCoefficient { get; set; } = 0.05;
+
+        /// <summary>OrTools improvement-rate solutions distance for the early-exit.</summary>
+        public int EarlyExitSolutionsDistance { get; set; } = 10;
 
         /// <summary>Disables "stamp" detection, which is areas that could be drawn with 3x3, 5x5, 9x9, etc brushes to save time.</summary>
         public bool DisableLargeBrush { get; set; } = false;

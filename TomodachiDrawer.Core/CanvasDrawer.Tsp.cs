@@ -266,8 +266,8 @@ namespace TomodachiDrawer.Core
                 searchParameters.ImprovementLimitParameters =
                     new RoutingSearchParameters.Types.ImprovementSearchLimitParameters
                     {
-                        ImprovementRateCoefficient = EarlyExitRateCoefficient,
-                        ImprovementRateSolutionsDistance = EarlyExitSolutionsDistance,
+                        ImprovementRateCoefficient = _earlyExitRateCoefficient,
+                        ImprovementRateSolutionsDistance = _earlyExitSolutionsDistance,
                     };
 
             var sw = Stopwatch.StartNew();
