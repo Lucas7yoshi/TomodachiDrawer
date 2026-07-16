@@ -19,7 +19,7 @@
     <PackageReference Include="SkiaSharp.NativeAssets.Linux" Version="4.150.0" />
     <!-- SerialPort APIs for ESP32-S3 board detection (not in netcore base). -->
     <PackageReference Include="System.IO.Ports" Version="10.0.9" />
-    <PackageReference Include="Sentry" Version="6.6.0" />
+    <PackageReference Include="Sentry" Version="6.7.0" />
   </ItemGroup>
   <ItemGroup>
     <!-- Bundled esptool binaries for ESP32-S3 flashing. CI downloads these
