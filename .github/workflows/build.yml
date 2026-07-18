@@ -22,7 +22,7 @@ jobs:
 
     steps:
     - uses: actions/checkout@v7
-    - uses: actions/setup-dotnet@v5
+    - uses: actions/setup-dotnet@v6
       with:
         dotnet-version: '10.0.x'
         cache: true
@@ -133,7 +133,7 @@ jobs:
       ESPTOOL_VERSION: 5.2.0
     steps:
     - uses: actions/checkout@v7
-    - uses: actions/setup-dotnet@v5
+    - uses: actions/setup-dotnet@v6
       with:
         dotnet-version: '10.0.x'
         cache: true
