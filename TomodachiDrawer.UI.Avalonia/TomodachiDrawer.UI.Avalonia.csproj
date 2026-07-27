@@ -16,7 +16,7 @@
     <PackageReference Include="Avalonia.Desktop" Version="12.1.0" />
     <PackageReference Include="Avalonia.Themes.Fluent" Version="12.1.0" />
     <PackageReference Include="Avalonia.Fonts.Inter" Version="12.1.0" />
-    <PackageReference Include="SkiaSharp.NativeAssets.Linux" Version="4.150.0" />
+    <PackageReference Include="SkiaSharp.NativeAssets.Linux" Version="4.150.1" />
     <!-- SerialPort APIs for ESP32-S3 board detection (not in netcore base). -->
     <PackageReference Include="System.IO.Ports" Version="10.0.9" />
     <PackageReference Include="Sentry" Version="6.8.0" />
