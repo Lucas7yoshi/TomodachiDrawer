@@ -8,6 +8,9 @@ using Avalonia.Media.Imaging;
 using Avalonia.Platform;
 using Avalonia.Platform.Storage;
 using SkiaSharp;
+
+using System.IO.Compression;
+
 using TomodachiDrawer.Core.Extensions;
 using TomodachiDrawer.Core.ImageProcessing;
 
@@ -133,7 +136,7 @@ public partial class TemplateTool : Window
         );
         var path = file?.TryGetLocalPath();
         if (path != null)
-            _betterMask.Save(path);
+            _betterMask.Save(path, new PngBitmapEncoderOptions() { CompressionLevel = CompressionLevel.NoCompression});
     }
 
     private async void OpenDrawingButton_Click(object? sender, RoutedEventArgs e)
@@ -209,7 +212,7 @@ public partial class TemplateTool : Window
     {
         ArgumentNullException.ThrowIfNull(avaloniaBitmap);
         using var stream = new MemoryStream();
-        avaloniaBitmap.Save(stream);
+        avaloniaBitmap.Save(stream, new PngBitmapEncoderOptions() { CompressionLevel = CompressionLevel.NoCompression });
         stream.Seek(0, SeekOrigin.Begin);
         return SKBitmap.Decode(stream);
     }
