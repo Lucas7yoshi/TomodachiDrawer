@@ -1,41 +1,58 @@
-<Window xmlns="https://github.com/avaloniaui"
-        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        xmlns:local="clr-namespace:TomodachiDrawer.UI.Avalonia"
-        x:Class="TomodachiDrawer.UI.Avalonia.EarlyTspExitTool"
-        Icon="/Assets/Icon.png"
-        Title="Early TSP Convergence"
-        Width="360" Height="245"
-        CanResize="False"
-        WindowStartupLocation="CenterOwner">
-    <StackPanel Margin="12" Spacing="10">
-        <CheckBox x:Name="EnabledCheckBox"
-                  Content="Enable Early TSP Convergence"
-                  IsCheckedChanged="EnabledCheckBox_IsCheckedChanged"
-                  ToolTip.Tip="Lets the TSP solver exit early if it believes theres very minimal gain to be had. Even in worst case, having this off saves only seconds in the end result, but speeds up export." />
+<Window
+  xmlns="https://github.com/avaloniaui"
+  xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+  xmlns:local="clr-namespace:TomodachiDrawer.UI.Avalonia"
+  x:Class="TomodachiDrawer.UI.Avalonia.EarlyTspExitTool"
+  Icon="/Assets/Icon.png"
+  Title="Early TSP Convergence"
+  Width="360"
+  Height="245"
+  CanResize="False"
+  WindowStartupLocation="CenterOwner"
+>
+  <StackPanel Margin="12" Spacing="10">
+    <CheckBox
+      x:Name="EnabledCheckBox"
+      Content="Enable Early TSP Convergence"
+      IsCheckedChanged="EnabledCheckBox_IsCheckedChanged"
+      ToolTip.Tip="Lets the TSP solver exit early if it believes theres very minimal gain to be had. Even in worst case, having this off saves only seconds in the end result, but speeds up export."
+    />
 
-        <Grid ColumnDefinitions="Auto,*" RowDefinitions="Auto,Auto" ColumnSpacing="8" RowSpacing="8">
-            <TextBlock Grid.Row="0" Grid.Column="0" Text="Threshold" VerticalAlignment="Center" />
-            <!-- TODO: revert to NumericUpDown once Avalonia#21491 is fixed -->
-            <local:SafeNumericUpDown Grid.Row="0" Grid.Column="1"
-                           x:Name="ThresholdUpDown"
-                           Minimum="0.001" Maximum="1"
-                           Increment="0.01" Value="0.05"
-                           ValueChanged="ThresholdUpDown_ValueChanged"
-                           ToolTip.Tip="OrTools improvement-rate coefficient. Higher exits sooner (faster export, rougher paths); lower runs longer for tighter routes." />
+    <Grid ColumnDefinitions="Auto,*" RowDefinitions="Auto,Auto" ColumnSpacing="8" RowSpacing="8">
+      <TextBlock Grid.Row="0" Grid.Column="0" Text="Threshold" VerticalAlignment="Center" />
+      <!-- TODO: revert to NumericUpDown once Avalonia#21491 is fixed -->
+      <local:SafeNumericUpDown
+        Grid.Row="0"
+        Grid.Column="1"
+        x:Name="ThresholdUpDown"
+        Minimum="0.001"
+        Maximum="1"
+        Increment="0.01"
+        Value="0.05"
+        ValueChanged="ThresholdUpDown_ValueChanged"
+        ToolTip.Tip="OrTools improvement-rate coefficient. Higher exits sooner (faster export, rougher paths); lower runs longer for tighter routes."
+      />
 
-            <TextBlock Grid.Row="1" Grid.Column="0" Text="Distance" VerticalAlignment="Center" />
-            <!-- TODO: revert to NumericUpDown once Avalonia#21491 is fixed -->
-            <local:SafeNumericUpDown Grid.Row="1" Grid.Column="1"
-                           x:Name="DistanceUpDown"
-                           Minimum="1" Maximum="1000"
-                           Increment="1" Value="10"
-                           ValueChanged="DistanceUpDown_ValueChanged"
-                           ToolTip.Tip="OrTools improvement-rate solutions distance. Higher runs longer before it's allowed to exit." />
-        </Grid>
+      <TextBlock Grid.Row="1" Grid.Column="0" Text="Distance" VerticalAlignment="Center" />
+      <!-- TODO: revert to NumericUpDown once Avalonia#21491 is fixed -->
+      <local:SafeNumericUpDown
+        Grid.Row="1"
+        Grid.Column="1"
+        x:Name="DistanceUpDown"
+        Minimum="1"
+        Maximum="1000"
+        Increment="1"
+        Value="10"
+        ValueChanged="DistanceUpDown_ValueChanged"
+        ToolTip.Tip="OrTools improvement-rate solutions distance. Higher runs longer before it's allowed to exit."
+      />
+    </Grid>
 
-        <TextBlock Text="These are wonky numbers that control the Google.OrTools TSP solver's early exit. To be completely candid, I have no real clue how these work or influence the changes, which is why its off by default for the moment. Modify at your peril."
-                   TextWrapping="Wrap"
-                   FontStyle="Italic"
-                   Opacity="0.75" />
-    </StackPanel>
+    <TextBlock
+      Text="These are wonky numbers that control the Google.OrTools TSP solver's early exit. To be completely candid, I have no real clue how these work or influence the changes, which is why its off by default for the moment. Modify at your peril."
+      TextWrapping="Wrap"
+      FontStyle="Italic"
+      Opacity="0.75"
+    />
+  </StackPanel>
 </Window>

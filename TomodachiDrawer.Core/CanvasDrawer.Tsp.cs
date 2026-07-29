@@ -11,7 +11,7 @@ namespace TomodachiDrawer.Core
 
         // Early-exit (improvement limit) tuning. See PerformTSP.
         // Testing seemed to suggest this provided atleast some improvements, not for all image sizes or point counts.
-        // I genuinely have no idea what these numbers mean. 
+        // I genuinely have no idea what these numbers mean.
         private const double EarlyExitRateCoefficient = 0.05;
         private const int EarlyExitSolutionsDistance = 10;
 
@@ -84,11 +84,11 @@ namespace TomodachiDrawer.Core
             var parent = new int[full, n];
 
             for (int mask = 0; mask < full; mask++)
-                for (int j = 0; j < n; j++)
-                {
-                    dp[mask, j] = INF;
-                    parent[mask, j] = -1;
-                }
+            for (int j = 0; j < n; j++)
+            {
+                dp[mask, j] = INF;
+                parent[mask, j] = -1;
+            }
 
             dp[1, 0] = 0; // just the start
 

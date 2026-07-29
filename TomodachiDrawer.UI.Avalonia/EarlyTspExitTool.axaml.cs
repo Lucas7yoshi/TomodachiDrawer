@@ -32,7 +32,10 @@ public partial class EarlyTspExitTool : Window
         DistanceUpDown.IsEnabled = enabled;
     }
 
-    private void EnabledCheckBox_IsCheckedChanged(object? sender, global::Avalonia.Interactivity.RoutedEventArgs e)
+    private void EnabledCheckBox_IsCheckedChanged(
+        object? sender,
+        global::Avalonia.Interactivity.RoutedEventArgs e
+    )
     {
         UpdateKnobState();
         _settings.EarlyTspConvergenceEnabled = EnabledCheckBox.IsChecked ?? false;

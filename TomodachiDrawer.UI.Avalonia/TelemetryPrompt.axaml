@@ -1,64 +1,86 @@
-<Window xmlns="https://github.com/avaloniaui"
-		xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-		x:Class="TomodachiDrawer.UI.Avalonia.TelemetryPrompt"
-		Title="Telemetry Opt-In"
-		Width="420"
-		MinWidth="420" MinHeight="240"
-		CanResize="False"
-		SizeToContent="Height"
-		WindowStartupLocation="CenterOwner">
+<Window
+  xmlns="https://github.com/avaloniaui"
+  xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+  x:Class="TomodachiDrawer.UI.Avalonia.TelemetryPrompt"
+  Title="Telemetry Opt-In"
+  Width="420"
+  MinWidth="420"
+  MinHeight="240"
+  CanResize="False"
+  SizeToContent="Height"
+  WindowStartupLocation="CenterOwner"
+>
+  <StackPanel Margin="16" Spacing="12">
+    <TextBlock FontWeight="SemiBold" FontSize="15" Text="Help improve Tomodachi Drawer?" />
+    <TextBlock
+      TextWrapping="Wrap"
+      Text="Anonymous usage data and crash reports help me to better understand how the app is used, fix bugs, and know where to focus development efforts. No personal data is collected."
+    />
 
-	<StackPanel Margin="16" Spacing="12">
-		<TextBlock FontWeight="SemiBold" FontSize="15" Text="Help improve Tomodachi Drawer?" />
-		<TextBlock TextWrapping="Wrap"
-				   Text="Anonymous usage data and crash reports help me to better understand how the app is used, fix bugs, and know where to focus development efforts. No personal data is collected."
-				   />
+    <Expander
+      Header="What's collected?"
+      HorizontalAlignment="Stretch"
+      HorizontalContentAlignment="Stretch"
+    >
+      <StackPanel Spacing="2" Margin="4,4,0,4">
+        <TextBlock FontWeight="SemiBold" Text="On startup:" />
+        <TextBlock Text="  - Operating system and version" />
+        <TextBlock Text="  - CPU architecture" />
+        <TextBlock Text="  - App version" />
+        <TextBlock FontWeight="SemiBold" Margin="0,4,0,0" Text="When an image is exported:" />
+        <TextBlock Text="  - Image dimensions" />
+        <TextBlock Text="  - Number of colours in the image" />
+        <TextBlock Text="  - Colour quantizer mode and limit" />
+        <TextBlock Text="  - Selected Switch version" />
+        <TextBlock Text="  - Whether experimental features are enabled" />
+        <TextBlock Text="  - Draw time estimate" />
+        <TextBlock Text="  - TSP Time Limit" />
+        <TextBlock Text="  - Which chip used (RP2040/RP2350)" />
+        <TextBlock Text="  - App version" />
+        <TextBlock FontWeight="SemiBold" Margin="0,4,0,0" Text="When the app starts and exits:" />
+        <TextBlock Text="  - Whether the session ended normally or via a crash" />
+        <TextBlock FontWeight="SemiBold" Margin="0,4,0,0" Text="If the app crashes:" />
+        <TextBlock Text="  - The error type, message, and stack trace" />
+        <TextBlock Text="  - App version and operating system" />
+        <TextBlock
+          FontStyle="Italic"
+          TextWrapping="Wrap"
+          Text="  Your username and file paths are removed from crash reports before they are sent. This data is handled by Sentry."
+        />
+      </StackPanel>
+    </Expander>
 
-		<Expander Header="What's collected?" HorizontalAlignment="Stretch" HorizontalContentAlignment="Stretch">
-			<StackPanel Spacing="2" Margin="4,4,0,4">
-				<TextBlock FontWeight="SemiBold" Text="On startup:" />
-				<TextBlock Text="  - Operating system and version" />
-				<TextBlock Text="  - CPU architecture" />
-				<TextBlock Text="  - App version" />
-				<TextBlock FontWeight="SemiBold" Margin="0,4,0,0" Text="When an image is exported:" />
-				<TextBlock Text="  - Image dimensions" />
-				<TextBlock Text="  - Number of colours in the image" />
-				<TextBlock Text="  - Colour quantizer mode and limit" />
-				<TextBlock Text="  - Selected Switch version" />
-				<TextBlock Text="  - Whether experimental features are enabled" />
-				<TextBlock Text="  - Draw time estimate" />
-				<TextBlock Text="  - TSP Time Limit" />
-				<TextBlock Text="  - Which chip used (RP2040/RP2350)" />
-				<TextBlock Text="  - App version" />
-				<TextBlock FontWeight="SemiBold" Margin="0,4,0,0" Text="When the app starts and exits:" />
-				<TextBlock Text="  - Whether the session ended normally or via a crash" />
-				<TextBlock FontWeight="SemiBold" Margin="0,4,0,0" Text="If the app crashes:" />
-				<TextBlock Text="  - The error type, message, and stack trace" />
-				<TextBlock Text="  - App version and operating system" />
-				<TextBlock FontStyle="Italic" TextWrapping="Wrap" Text="  Your username and file paths are removed from crash reports before they are sent. This data is handled by Sentry." />
-			</StackPanel>
-		</Expander>
+    <TextBlock
+      FontWeight="Bold"
+      TextDecorations="Underline"
+      Text="Your actual images are never uploaded."
+    />
+    <TextBlock FontStyle="Italic" Text="You can change your mind later through the Settings." />
 
-		<TextBlock 
-				FontWeight="Bold" TextDecorations="Underline" 
-				Text="Your actual images are never uploaded." 
-				/>
-		<TextBlock FontStyle="Italic" Text="You can change your mind later through the Settings."/>
-
-		<StackPanel Orientation="Horizontal" Spacing="8" HorizontalAlignment="Right">
-			<Button x:Name="SureButton" FontWeight="SemiBold" Click="SureButton_Click"
-					Background="#2E7D32" Foreground="White">
-				<TextBlock 
-						FontWeight="SemiBold"
-						Text="Sure"
-						TextDecorations="Underline"
-					/>
-			</Button>
-			<Button x:Name="NoThanksButton" Content="No Thanks" Click="NoThanksButton_Click"
-					Background="#C62828" Foreground="White" />
-			<Button x:Name="OpenSourceButton" Content="View Telemetry Source Code" Click="OpenSourceButton_Click"
-					Background="#1565C0" Foreground="White" />
-		</StackPanel>
-	</StackPanel>
-
+    <StackPanel Orientation="Horizontal" Spacing="8" HorizontalAlignment="Right">
+      <Button
+        x:Name="SureButton"
+        FontWeight="SemiBold"
+        Click="SureButton_Click"
+        Background="#2E7D32"
+        Foreground="White"
+      >
+        <TextBlock FontWeight="SemiBold" Text="Sure" TextDecorations="Underline" />
+      </Button>
+      <Button
+        x:Name="NoThanksButton"
+        Content="No Thanks"
+        Click="NoThanksButton_Click"
+        Background="#C62828"
+        Foreground="White"
+      />
+      <Button
+        x:Name="OpenSourceButton"
+        Content="View Telemetry Source Code"
+        Click="OpenSourceButton_Click"
+        Background="#1565C0"
+        Foreground="White"
+      />
+    </StackPanel>
+  </StackPanel>
 </Window>
