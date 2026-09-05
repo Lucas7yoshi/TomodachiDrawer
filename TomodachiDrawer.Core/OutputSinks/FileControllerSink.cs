@@ -10,6 +10,7 @@ namespace TomodachiDrawer.Core.OutputSinks
         private const double DefaultReleaseDuration = 25.0;
 
         // opcodes, packed into high nibble.
+        // the low nibble stores a 4 bit value, some opcodes use that as 4 bits and an additional byte.
         // max of 16 courtesy of that.
         public static class Opcode
         {
@@ -29,8 +30,8 @@ namespace TomodachiDrawer.Core.OutputSinks
             // compression opcodes, simply repeats the last record N times.
             // For now, this is only done on single byte records, not ones like delay or SetStick but those are compartively
             // rare in practice.
-            public const byte RepeatLast1 = 0xE; // Run Length Encoding. 4 bits for repeat count. Max 15 repeats.
-            public const byte RepeatLast2 = 0xF; // Run Length Encoding. 12 bits for repeat count. Max 4095 repeats.
+            public const byte RepeatLast1 = 0xE; // Run Length Encoding. 4 bits for repeat count within the opcode/value byte. Max 15 repeats.
+            public const byte RepeatLast2 = 0xF; // Run Length Encoding. Additional byte following for 12 bits for repeat count. Max 4095 repeats.
         }
 
         private readonly BinaryWriter _writer;
@@ -189,9 +190,9 @@ namespace TomodachiDrawer.Core.OutputSinks
         public void Dispose()
         {
             FlushRle();
-            // we mark the end of the file for convenience in the flash reading logic on the RP2040 with the invalid opcode.
+            // Mark end of file with 0x00, triggers rainbow on RP2040/RP2350
             _writer.Write((byte)(Opcode.Invalid << 4)); // this is just 0x00 but yknow.
-
+            // Flush everything due to a likely invalid fear.
             _writer.Flush();
             _writer.BaseStream.Flush();
             _writer.Dispose();
