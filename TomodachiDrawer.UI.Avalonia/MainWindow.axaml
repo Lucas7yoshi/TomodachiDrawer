@@ -78,6 +78,24 @@
           ToggleType="CheckBox"
           Click="EnableExperimentalMenuItem_Click"
         />
+        <MenuItem x:Name="TSPTimeLimitMenuItem">
+          <MenuItem.Header>
+            <StackPanel Orientation="Horizontal" Spacing="6">
+              <TextBlock Text="TSP Solver Time Limit" VerticalAlignment="Center" />
+              <!-- TODO: revert to NumericUpDown once Avalonia#21491 is fixed -->
+              <local:SafeNumericUpDown
+                x:Name="TSPTimeLimitUpDown"
+                Minimum="0.1"
+                Maximum="30"
+                Increment="0.1"
+                Value="0.5"
+                Width="110"
+              />
+              <TextBlock Text="seconds" VerticalAlignment="Center" />
+              <Button Content="?" Width="28" Click="TSPHelpButton_Click" />
+            </StackPanel>
+          </MenuItem.Header>
+        </MenuItem>
         <MenuItem
           x:Name="EarlyTspExitMenuItem"
           Header="Early TSP _Convergence..."
@@ -181,24 +199,16 @@
                 <ComboBoxItem>Switch 2</ComboBoxItem>
               </ComboBox>
             </Grid>
-            <StackPanel Orientation="Horizontal" Spacing="6">
-              <TextBlock Text="TSP Solver Time Limit" VerticalAlignment="Center" />
-              <!-- TODO: revert to NumericUpDown once Avalonia#21491 is fixed -->
-              <local:SafeNumericUpDown
-                x:Name="TSPTimeLimitUpDown"
-                Minimum="0.1"
-                Maximum="30"
-                Increment="0.1"
-                Value="0.5"
-                Width="110"
-              />
-              <TextBlock Text="seconds" VerticalAlignment="Center" />
-              <Button Content="?" Width="28" Click="TSPHelpButton_Click" />
-            </StackPanel>
+            <CheckBox
+              x:Name="EnableBucketFills"
+              Content="Enable Bucket Fills"
+              ToolTip.Tip="Enables the ability for the program to use outlines that are then bucket filled, this saves time on most drawings and only activates where it makes sense, however it can increase the time it takes to export as it compares &quot;is this worth it?&quot; for every layer that COULD benefit from it. Disable if you need quicker solves"
+              IsCheckedChanged="EnableBucketFills_IsCheckedChanged"
+            />
             <CheckBox
               x:Name="EnableHomeCanvas"
               Content="Auto Home Canvas To Top Left (Resets canvas)"
-              ToolTip.Tip="At the beginning, the program will zoom out, and set itself at the very very top left of the canvas. This is automatically checked for full size (256x256) images. Additionally, to ensure the bucket tool works for Switch 2 it will clear the canvas."
+              ToolTip.Tip="At the beginning, the program will zoom out, and set itself at the very very top left of the canvas. This is automatically checked for full size (256x256) images. Additionally, to ensure the bucket tool works it will clear the canvas."
               IsCheckedChanged="EnableHomeCanvas_IsCheckedChanged"
             />
           </StackPanel>

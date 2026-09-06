@@ -12,6 +12,8 @@ internal class AppSettings
 
     public bool EnableExperimentalFeatures { get; set; } = false;
 
+    public bool EnableBucketFills { get; set; } = true;
+
     // Renamed from EnableEarlyTspExit (which had a default of true) to force
     // it back to false. not ideal. This comment can be removed down the line.
     public bool EarlyTspConvergenceEnabled { get; set; } = false;

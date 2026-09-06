@@ -169,11 +169,11 @@ namespace TomodachiDrawer.Core
                 }
             }
 
-            bool bucketsAllowed = settings.EnableExperimentalFeatures;
+            bool bucketsAllowed = settings.EnableBucketFills;
             if (bucketsAllowed)
                 _log("Bucket fills enabled, will compare both routes per layer.");
             else
-                _log("Experimental features disabled, so not running dynamic bucket fill scan.");
+                _log("Bucket fills disabled, so not running dynamic bucket fill scan.");
 
             double totalInLayerTime = 0.0;
 

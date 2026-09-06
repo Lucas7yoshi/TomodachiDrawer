@@ -66,6 +66,9 @@ public partial class MainWindow : Window
     private AppSettings _currentSettings = new(); // All cases will result in it being non-null but IntelliSense cant see that far
     private bool _loadingSettings = true;
 
+    // Nothing is actually behind the experimental flag right now, flip when that changes.
+    private const bool HasExperimentalFeatures = false;
+
 #if DEBUG
     private readonly VirtualGamepad _debugVirtualGamepad = new();
 
@@ -1324,6 +1327,7 @@ public partial class MainWindow : Window
         var quantizerSettings = GetQuantizerSettings();
         var enableExperimental = EnableExperimentalMenuItem.IsChecked;
         var enableHome = EnableHomeCanvas.IsChecked ?? false;
+        var enableBuckets = EnableBucketFills.IsChecked ?? true;
         var reverseColourOrder = ReverseColourOrder.IsChecked;
 
         return new()
@@ -1333,6 +1337,7 @@ public partial class MainWindow : Window
             TSPTimeLimit = tspLimit,
             DisableLargeBrush = false,
             EnableExperimentalFeatures = enableExperimental,
+            EnableBucketFills = enableBuckets,
             HomeToTopLeft = enableHome,
             ReverseColourOrder = reverseColourOrder,
             EarlyExitEnabled = _currentSettings.EarlyTspConvergenceEnabled,
@@ -1739,6 +1744,8 @@ public partial class MainWindow : Window
             ThemeDarkMenuItem.IsChecked = _currentSettings.SelectedThemeIndex == 2;
 
             EnableExperimentalMenuItem.IsChecked = _currentSettings.EnableExperimentalFeatures;
+            EnableExperimentalMenuItem.IsEnabled = HasExperimentalFeatures;
+            EnableBucketFills.IsChecked = _currentSettings.EnableBucketFills;
             CheckForUpdatesCheckBox.IsChecked = _currentSettings.CheckForUpdatesOnStart;
 
             SelectComboBoxItem(ColourMatcherComboBox, _currentSettings.SelectedColourMatcher);
@@ -1818,7 +1825,6 @@ public partial class MainWindow : Window
             _ = ShowMessageAsync(
                 "Experimental Features",
                 "WARNING: Enabling experimental features may induce more common desyncs. Things that are prone to desyncs, but that are desired to be made stable are put here."
-                    + "\nNamely, this includes bucket filling dynamic areas on the switch 2."
                     + "\nOnly enable this if you are okay with the increased chance of desyncs. Having this disabled does not guarantee it will work, but that is the goal and in 99% of cases it will work.",
                 new Uri("https://github.com/Lucas7yoshi/TomodachiDrawer/issues/34"),
                 "Open Experimental Feature Info"
@@ -1982,6 +1988,15 @@ public partial class MainWindow : Window
         _ = PerformAsyncUpdateCheck();
 
     private void EnableHomeCanvas_IsCheckedChanged(object? sender, RoutedEventArgs e) { }
+
+    private void EnableBucketFills_IsCheckedChanged(object? sender, RoutedEventArgs e)
+    {
+        if (_loadingSettings)
+            return;
+
+        _currentSettings.EnableBucketFills = EnableBucketFills.IsChecked ?? true;
+        SaveSettings();
+    }
 
     private async void OpenTelemetryPrompt_Click(object? sender, RoutedEventArgs e)
     {
