@@ -201,7 +201,7 @@
             </Grid>
             <CheckBox
               x:Name="EnableBucketFills"
-              Content="Enable Bucket Fills"
+              Content="Enable Bucket Fills (Slightly slower export for faster draw. Hover for details)"
               ToolTip.Tip="Enables the ability for the program to use outlines that are then bucket filled, this saves time on most drawings and only activates where it makes sense, however it can increase the time it takes to export as it compares &quot;is this worth it?&quot; for every layer that COULD benefit from it. Disable if you need quicker solves"
               IsCheckedChanged="EnableBucketFills_IsCheckedChanged"
             />

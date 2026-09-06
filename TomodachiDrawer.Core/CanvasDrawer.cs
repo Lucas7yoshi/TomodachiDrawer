@@ -205,6 +205,9 @@ namespace TomodachiDrawer.Core
                     entryToolbar
                 );
 
+                // TODO: If we know the bucket will be filling like... over a thousand pixels, we can probably
+                // skip this step since we can reasonably assume that will be much faster than the alternative.
+                // Although need to expose that through to here.
                 if (chosen.Clicks > 0) // If we found any bucketetable zones, make sure its actually better.
                 {
                     var plain = BuildLayerPlan(
@@ -219,7 +222,7 @@ namespace TomodachiDrawer.Core
                     );
 
                     _log(
-                        $"	Bucket: {chosen.Seconds:F3}s ({chosen.Clicks} clicks) vs plain {plain.Seconds:F3}s -> {(plain.Ms < chosen.Ms ? "plain" : "bucket")}"
+                        $"	Bucket: {chosen.Seconds:F3}s ({chosen.Clicks} clicks) vs plain {plain.Seconds:F3}s -> {(plain.Ms < chosen.Ms ? "plain" : "bucket")} (saving {-(chosen.Seconds - plain.Seconds):F2}s)"
                     );
 
                     // Paranoia navigation mode makes each click cost about 5s of menu BS

@@ -283,6 +283,7 @@ namespace TomodachiDrawer.Core
                         points.Min(p => p.Y),
                         points.Max(p => p.Y)
                     ),
+                    TotalPixels = points.Count
                 };
 
                 outputLayers.Add(layer);

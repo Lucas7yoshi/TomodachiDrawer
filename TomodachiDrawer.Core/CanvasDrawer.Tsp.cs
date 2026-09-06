@@ -138,6 +138,9 @@ namespace TomodachiDrawer.Core
 
 #if DEBUG
             _log($"\tHeld-Karp TSP took {sw.ElapsedMilliseconds}ms");
+#else
+            if (sw.ElapsedMilliseconds > 5)
+                _log($"\tHeld-Karp TSP took {sw.ElapsedMilliseconds}ms");
 #endif
 
             return order.ToList();
