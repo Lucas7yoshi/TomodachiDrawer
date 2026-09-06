@@ -109,14 +109,14 @@ namespace TomodachiDrawer.Core
             // biggest.
             PaletteColour? bucketColour = null;
 
-            // This below uses the bucket on switch 2, but is generally stable enough since it is just a one off bucket use
-            // that doesnt even move the cursor.
+            // This is stable enough to run unconditionally since it is just a one off bucket use that
+            // doesnt even move the cursor. The switch 1 gets paranoia mode for it, since we have no idea
+            // how laggy it is going to be and eating a couple of extra seconds once is nothing next to
+            // the minutes this saves.
             // The dynamic bucket fill on the other hand is prone to desyncs even on switch 2, thus is classified as experimental.
-            if (
-                _switchVersion == SwitchVersion.Switch2
-                && image.Width == 256
-                && image.Height == 256
-            )
+            bool bucketParanoia = _switchVersion == SwitchVersion.Switch1;
+
+            if (image.Width == 256 && image.Height == 256)
             {
                 _log("Seeing if we can use the bucket to save time");
                 bool anyTransparent = false;
@@ -145,10 +145,23 @@ namespace TomodachiDrawer.Core
 
                     _toolbar.ClearCanvas();
 
-                    _toolbar.SelectBucket();
+                    // Colour first, then the bucket. Picking the colour with the bucket already selected
+                    // means every tap in the palette menu lands in the lag hell, which is exactly what
+                    // the dynamic fill goes out of its way to avoid.
                     _palette.SelectColour(bucketColour.Value, 25.0);
-                    _realOutput.Tap(Button.A);
-                    _realOutput.Delay(1000); // This is probably generous but bucket fill seems to cause a short stutter.
+                    _toolbar.SelectBucket(bucketParanoia);
+                    _realOutput.Tap(
+                        Button.A,
+                        bucketParanoia ? 100 : default,
+                        bucketParanoia ? 75 : default
+                    );
+                    _realOutput.Delay(bucketParanoia ? 2000 : 1000); // This is probably generous but bucket fill seems to cause a short stutter.
+
+                    // Get off the bucket before we go picking the first layer's colour, otherwise the
+                    // whole palette menu is navigated in the lag hell. Costs nothing, the first layer
+                    // needs a brush selected anyway. Switch 2 is left alone since it copes fine.
+                    if (bucketParanoia)
+                        _toolbar.ReselectLastBrush();
                 }
                 else
                 {
@@ -156,40 +169,11 @@ namespace TomodachiDrawer.Core
                 }
             }
 
-            if (settings.EnableExperimentalFeatures)
-            {
-                if (_switchVersion == SwitchVersion.Switch2)
-                {
-                    _log("Finding large bucket-fillable zones...");
-                    int sum = 0;
-                    foreach (var l in layers)
-                    {
-                        sum += DetectBucketZones(l, image.Width, image.Height);
-                    }
-                    _log($"\tFound {sum} dynamic bucket fill zones across image.");
-                }
-                else
-                {
-                    _log("Can't perform large bucket-fillable search because Switch 1 is laggy :(");
-                }
-            }
+            bool bucketsAllowed = settings.EnableExperimentalFeatures;
+            if (bucketsAllowed)
+                _log("Bucket fills enabled, will compare both routes per layer.");
             else
-            {
                 _log("Experimental features disabled, so not running dynamic bucket fill scan.");
-            }
-
-            // Stamp/uniform area detection
-            // TODO: This not useful with the new bucket-fillable search..? Except unless theres
-            // a large number of small areas that were rejected for being too small during the bucket zone search.
-            // TODO: Figure that out lol
-            _log("Detecting uniform areas for large brushes...");
-            if (!settings.DisableLargeBrush)
-            {
-                foreach (var l in layers)
-                {
-                    DetectUniformAreas(l, image.Width, image.Height);
-                }
-            }
 
             double totalInLayerTime = 0.0;
 
@@ -204,121 +188,224 @@ namespace TomodachiDrawer.Core
 
                 _palette.SelectColour(l.Colour, 25.0);
 
-                // STAMPS
-                if (l.StampsBySize?.Count > 0)
+                // Where the cursor and the menus are right now for restoration.
+                int entryX = _cursorX;
+                int entryY = _cursorY;
+                var entryToolbar = _toolbar.Snapshot();
+
+                // Do with buckets, if allowed, if its not allowed this will just figure out the plan anyhow.
+                var chosen = BuildLayerPlan(
+                    l,
+                    image.Width,
+                    image.Height,
+                    settings,
+                    bucketsAllowed,
+                    entryX,
+                    entryY,
+                    entryToolbar
+                );
+
+                if (chosen.Clicks > 0) // If we found any bucketetable zones, make sure its actually better.
                 {
-                    var stampSink = new TimingSink();
-                    foreach (var sbs in l.StampsBySize)
-                    {
-                        if (sbs.Value.Count == 0)
-                            continue;
-                        int brushSize = sbs.Key;
+                    var plain = BuildLayerPlan(
+                        l,
+                        image.Width,
+                        image.Height,
+                        settings,
+                        false,
+                        entryX,
+                        entryY,
+                        entryToolbar
+                    );
 
-                        _toolbar.SelectBrush(stampSink, brushSize);
-
-                        var dumbRoute = new List<CanvasPoint>(sbs.Value);
-                        var pointCount = dumbRoute.Count;
-                        float tspTime = 0.5f;
-                        if (pointCount > 200)
-                            tspTime = 1.5f;
-                        else if (pointCount > 100)
-                            tspTime = 1.0f;
-                        var optimizedRoute = PerformTSP(dumbRoute, tspTime); // half a sec per stamp size per colour is prob reasonable?
-
-                        foreach (var point in optimizedRoute)
-                        {
-                            NavigateTo(stampSink, point);
-                            (stampSink as ISwitchOutput).Tap(Button.A);
-                        }
-                    }
-                    _log($"\tStamps: {stampSink.TotalSeconds:F3}s");
-                    stampSink.ReplayTo(_realOutput);
-                    totalInLayerTime += stampSink.TotalTime.TotalSeconds;
-                }
-                // END STAMPS.
-
-                // ============= Fine details
-                if (l.FineDetailPoints.Count > 0)
-                {
-                    _toolbar.SelectBrush(1); // no-op if already selected.
-
-                    // Dry run both to get timing, TimingSink stores
-                    // the outputs and time taken so it can be replayed without needing to rerun
-                    // the tsp solve or snake logic (snake logic is compartively short but it also replays)
-                    int savedX = _cursorX;
-                    int savedY = _cursorY;
-
-                    var snakeSink = new TimingSink();
-                    FineDetailSnake(snakeSink, l);
-
-                    int afterSnakeX = _cursorX;
-                    int afterSnakeY = _cursorY;
-
-                    _cursorX = savedX;
-                    _cursorY = savedY;
-
-                    var tspSink = new TimingSink();
-                    FineDetailTsp(tspSink, l, settings.TSPTimeLimit);
-
-                    int afterTspX = _cursorX;
-                    int afterTspY = _cursorY;
-
-                    //_cursorX = savedX;
-                    //_cursorY = savedY;
-
-                    bool tspHasSolution = tspSink.TotalMilliseconds > 0;
-                    bool usedSnake =
-                        !tspHasSolution || snakeSink.TotalMilliseconds <= tspSink.TotalMilliseconds;
-                    if (usedSnake)
-                    {
-                        snakeSink.ReplayTo(_realOutput);
-                        totalInLayerTime += snakeSink.TotalTime.TotalSeconds;
-                        _cursorX = afterSnakeX;
-                        _cursorY = afterSnakeY;
-                    }
-                    else
-                    {
-                        tspSink.ReplayTo(_realOutput);
-                        totalInLayerTime += tspSink.TotalTime.TotalSeconds;
-                        _cursorX = afterTspX;
-                        _cursorY = afterTspY;
-                    }
-                    string tspPart = tspHasSolution
-                        ? $"{tspSink.TotalTime.TotalSeconds:F3}s"
-                        : "no solution";
                     _log(
-                        $"[{layerNumber}/{totalLayers}] {l.Colour.DisplayName} ({l.FineDetailPoints.Count} pts): snake={snakeSink.TotalTime.TotalSeconds:F3}s, tsp={tspPart} -> {(usedSnake ? "snake" : "tsp")}"
+                        $"	Bucket: {chosen.Seconds:F3}s ({chosen.Clicks} clicks) vs plain {plain.Seconds:F3}s -> {(plain.Ms < chosen.Ms ? "plain" : "bucket")}"
                     );
+
+                    // Paranoia navigation mode makes each click cost about 5s of menu BS
+                    // so if the plain route is faster, just do that.
+                    if (plain.Ms < chosen.Ms)
+                        chosen = plain;
                 }
 
-                // Bucket clicks. (The bucket outlines are merged into FineDetailPoints)
-                if (l.BucketClicks.Count > 0)
-                {
-                    _log($"\tPerforming bucket fills: {l.BucketClicks.Count} clicks");
+                chosen.Sink.ReplayTo(_realOutput);
+                _cursorX = chosen.EndX;
+                _cursorY = chosen.EndY;
+                _toolbar.Restore(chosen.EndToolbar);
+                totalInLayerTime += chosen.Seconds;
 
-                    _toolbar.SelectBucket();
-                    // tsp solve the points
-                    var bucketClickRouteTimeout = 0.25f;
-                    if (l.BucketClicks.Count > 50)
-                        bucketClickRouteTimeout = 0.5f;
-                    var optimizedBucketClickRoute = PerformTSP(
-                        l.BucketClicks.ToList(),
-                        bucketClickRouteTimeout
-                    );
-                    foreach (var click in optimizedBucketClickRoute)
+                _log(
+                    $"[{layerNumber}/{totalLayers}] {l.Colour.DisplayName}: {chosen.Summary} -> {chosen.Seconds:F3}s"
+                );
+            }
+
+            _log($"Done routing!");
+        }
+
+        /// <summary>
+        /// A whole layer's worth of inputs, already solved and timed, waiting to be replayed.
+        /// Also carries the state the drawer needs to be left in afterwards, since a dry run
+        /// moves the cursor and the menus about.
+        /// </summary>
+        private sealed record LayerPlan(
+            TimingSink Sink,
+            int EndX,
+            int EndY,
+            CanvasToolbar.ToolbarState EndToolbar,
+            int Clicks,
+            string Summary
+        )
+        {
+            public double Ms => Sink.TotalMilliseconds;
+
+            public double Seconds => Sink.TotalMilliseconds / 1000.0;
+        }
+
+        /// <summary>
+        /// Solves and times a full layer without touching the real output, so two of them can be
+        /// raced against each other. The bucket clicks get emitted properly rather than being
+        /// costed by hand, so the paranoia faffing prices itself and stays right if the delays move.
+        /// </summary>
+        private LayerPlan BuildLayerPlan(
+            ColourLayer solid,
+            int width,
+            int height,
+            DrawImageSettings settings,
+            bool useBuckets,
+            int entryX,
+            int entryY,
+            CanvasToolbar.ToolbarState entryToolbar
+        )
+        {
+            _cursorX = entryX;
+            _cursorY = entryY;
+            _toolbar.Restore(entryToolbar);
+
+            var l = solid.Clone();
+
+            int clicks = useBuckets
+                ? DetectBucketZones(l, width, height, settings.MinBucketZoneSize)
+                : 0;
+
+            if (!settings.DisableLargeBrush)
+                DetectUniformAreas(l, width, height, quiet: true);
+
+            var sink = new TimingSink();
+            var summary = new List<string>();
+
+            // STAMPS
+            if (l.StampsBySize?.Count > 0)
+            {
+                foreach (var sbs in l.StampsBySize)
+                {
+                    if (sbs.Value.Count == 0)
+                        continue;
+                    int brushSize = sbs.Key;
+
+                    _toolbar.SelectBrush(sink, brushSize);
+
+                    var dumbRoute = new List<CanvasPoint>(sbs.Value);
+                    var pointCount = dumbRoute.Count;
+                    float tspTime = 0.5f;
+                    if (pointCount > 200)
+                        tspTime = 1.5f;
+                    else if (pointCount > 100)
+                        tspTime = 1.0f;
+                    var optimizedRoute = PerformTSP(dumbRoute, tspTime); // half a sec per stamp size per colour is prob reasonable?
+
+                    foreach (var point in optimizedRoute)
                     {
-                        NavigateTo(_realOutput, click);
-                        _realOutput.Tap(Button.A);
-                        _realOutput.Delay(500); // Bit generous given this is now switch 2 only but justtttt in case the switch struggles with the flood fill :p
+                        NavigateTo(sink, point);
+                        (sink as ISwitchOutput).Tap(Button.A);
                     }
+
+                    summary.Add($"{pointCount}x{brushSize}^2");
                 }
             }
-            _log($"Done routing!");
+            // END STAMPS.
+
+            // ============= Fine details
+            if (l.FineDetailPoints.Count > 0)
+            {
+                _toolbar.SelectBrush(sink, 1); // no-op if already selected.
+
+                // Dry run both to get timing, TimingSink stores
+                // the outputs and time taken so it can be replayed without needing to rerun
+                // the tsp solve or snake logic (snake logic is compartively short but it also replays)
+                int savedX = _cursorX;
+                int savedY = _cursorY;
+
+                var snakeSink = new TimingSink();
+                FineDetailSnake(snakeSink, l);
+
+                int afterSnakeX = _cursorX;
+                int afterSnakeY = _cursorY;
+
+                _cursorX = savedX;
+                _cursorY = savedY;
+
+                var tspSink = new TimingSink();
+                FineDetailTsp(tspSink, l, settings.TSPTimeLimit);
+
+                bool tspHasSolution = tspSink.TotalMilliseconds > 0;
+                bool usedSnake =
+                    !tspHasSolution || snakeSink.TotalMilliseconds <= tspSink.TotalMilliseconds;
+                if (usedSnake)
+                {
+                    snakeSink.ReplayTo(sink);
+                    _cursorX = afterSnakeX;
+                    _cursorY = afterSnakeY;
+                }
+                else
+                {
+                    tspSink.ReplayTo(sink);
+                }
+
+                summary.Add($"{l.FineDetailPoints.Count} pts via {(usedSnake ? "snake" : "tsp")}");
+            }
+
+            // Bucket clicks. (The bucket outlines are merged into FineDetailPoints)
+            if (clicks > 0)
+            {
+                var bucketClickRouteTimeout = l.BucketClicks.Count > 50 ? 0.5f : 0.25f;
+                var optimizedBucketClickRoute = PerformTSP(
+                    l.BucketClicks.ToList(),
+                    bucketClickRouteTimeout
+                );
+
+                foreach (var click in optimizedBucketClickRoute)
+                {
+                    // Just having the bucket tool selected causes lag, particularly on the Switch 1, but still even on the Switch 2 as well
+                    // as it seems like for some reason the game is doing a full flood fill behind the scene regardless of whether you are clicking or not.
+                    // Atleast thats my theory, as such we have to navigate to the point without a bucket, then select the bucket, click, then deselect.
+                    // and whenever we have the bucket selected we need to be insanely generous with our button presses because we do not know
+                    // how laggy the game is or is not.
+                    NavigateTo(sink, click);
+                    _toolbar.SelectBucket(sink); // waits after selection
+                    // enter paranoia mode.
+                    (sink as ISwitchOutput).Tap(Button.A, 100, 75);
+                    sink.Delay(_switchVersion == SwitchVersion.Switch1 ? 600 : 400);
+                    _toolbar.ReselectLastBrush(sink, paranoid: true); // Going back to a regular brush clears us from the lag hell.
+                }
+
+                summary.Add($"{clicks} bucket clicks");
+            }
+
+            return new LayerPlan(
+                sink,
+                _cursorX,
+                _cursorY,
+                _toolbar.Snapshot(),
+                clicks,
+                summary.Count > 0 ? string.Join(", ", summary) : "nothing to draw"
+            );
         }
 
         private static readonly int[] LargeBrushSizes = [27, 19, 13, 7, 3];
 
         // Various thresholds for eviction, based on image size.
+        // Because generally travel distances are smaller for smaller images so its less of a burden
+        // to draw a few more stamps.
 
         private static readonly int[] LargeBrushEvictionThreshold_200 = [1, 1, 3, 12, 24];
         private static readonly int[] LargeBrushEvictionThreshold_128 = [1, 1, 2, 7, 12];
@@ -460,7 +547,8 @@ namespace TomodachiDrawer.Core
 
         /// <summary>Takes in a ColourLayer and detects large areas that can be better drawn with stamps.</summary>
         /// <param name="l"></param>
-        public void DetectUniformAreas(ColourLayer l, int width, int height)
+        /// <param name="quiet">Shush the logging. We run this twice per layer while comparing routes.</param>
+        public void DetectUniformAreas(ColourLayer l, int width, int height, bool quiet = false)
         {
             // NOTES:
             // 3x3 Brushes seem to be past the point of diminishing returns,
@@ -478,7 +566,8 @@ namespace TomodachiDrawer.Core
 
             l.StampsBySize = [];
 
-            _log($"Scanning {l.Colour.DisplayName} for large brush");
+            if (!quiet)
+                _log($"Scanning {l.Colour.DisplayName} for large brush");
 
             foreach (var brushSize in LargeBrushSizes)
             {
@@ -506,9 +595,10 @@ namespace TomodachiDrawer.Core
                 // Evict lone stamps or small amounts of them
                 if (ShouldEvictBrushes(width, height, brushSize, largeBrushPoints.Count))
                 {
-                    _log(
-                        $"\tEVICTED {largeBrushPoints.Count} areas for size {brushSize}^2 because too few."
-                    );
+                    if (!quiet)
+                        _log(
+                            $"\tEVICTED {largeBrushPoints.Count} areas for size {brushSize}^2 because too few."
+                        );
                     // un-clear the area.
                     foreach (var p in largeBrushPoints)
                     {
@@ -518,7 +608,8 @@ namespace TomodachiDrawer.Core
                 }
 
                 l.StampsBySize[brushSize] = largeBrushPoints;
-                _log($"\tFOUND {largeBrushPoints.Count} areas for size {brushSize}^2");
+                if (!quiet)
+                    _log($"\tFOUND {largeBrushPoints.Count} areas for size {brushSize}^2");
             }
         }
 

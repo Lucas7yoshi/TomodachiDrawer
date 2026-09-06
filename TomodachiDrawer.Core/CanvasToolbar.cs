@@ -43,6 +43,14 @@ namespace TomodachiDrawer.Core
 
         private int _lastBrushColumn = -1; // Brush menu remains on the previous
 
+        // Used to streamline the "Testing" of various paths for drawing and how expensive they are, particularly as a result of
+        // the paranoia mode for handling the bucket adding a not insignificant amount of time.
+        public readonly record struct ToolbarState(
+            int ToolbarIndex,
+            int LastBrushColumn,
+            bool BucketSubmenuHomed
+        );
+
         public static readonly Dictionary<int, int> BrushColumnBySize = new()
         {
             [1] = 0,
@@ -53,8 +61,30 @@ namespace TomodachiDrawer.Core
             [27] = 5,
         };
 
+        public static readonly Dictionary<int, int> SizeByBrushColumn = new()
+        {
+            [0] = 1,
+            [1] = 3,
+            [2] = 7,
+            [3] = 13,
+            [4] = 19,
+            [5] = 27,
+        };
+
         private readonly ISwitchOutput _realOutput = output;
         private readonly SwitchVersion _switchVersion = switchVersion;
+
+        // Grabs the current state of toolbar for restoration.
+        public ToolbarState Snapshot() =>
+            new(_toolbarCurrentIndex, _lastBrushColumn, _bucketSubmenuHomed);
+
+        // Restores.
+        public void Restore(ToolbarState state)
+        {
+            _toolbarCurrentIndex = state.ToolbarIndex;
+            _lastBrushColumn = state.LastBrushColumn;
+            _bucketSubmenuHomed = state.BucketSubmenuHomed;
+        }
 
         private void HomeToolbar(ISwitchOutput output)
         {
@@ -121,10 +151,26 @@ namespace TomodachiDrawer.Core
             _toolbarCurrentIndex = -1;
         }
 
-        public bool SelectBrush(int brushSize) => SelectBrush(_realOutput, brushSize);
+        public bool SelectBrush(int brushSize, bool paranoid = false) =>
+            SelectBrush(_realOutput, brushSize, paranoid);
+
+        public void ReselectLastBrush(bool paranoid = false) =>
+            ReselectLastBrush(_realOutput, paranoid);
+
+        public void ReselectLastBrush(ISwitchOutput output, bool paranoid = false)
+        {
+            if (_lastBrushColumn < 0)
+            {
+                // We haven't selected anything so just pick 1 since its a fair bet. Ideally this shouldnt ever be hit but just to be paranoid.
+                SelectBrush(output, 1);
+                return;
+            }
+
+            SelectBrush(output, SizeByBrushColumn[_lastBrushColumn], paranoid);
+        }
 
         /// <returns>Whether or not it actually moved</returns>
-        public bool SelectBrush(ISwitchOutput output, int brushSize)
+        public bool SelectBrush(ISwitchOutput output, int brushSize, bool paranoid = false)
         {
             int targetColumn = BrushColumnBySize[brushSize];
 
@@ -137,19 +183,19 @@ namespace TomodachiDrawer.Core
 
             // Open toolbar.
             output.Tap(Button.X);
-            output.Delay(500);
+            output.Delay(paranoid ? 750 : 500);
 
             // Go to brush.
             GoToToolbarIndex(output, ToolbarBrushIndex);
 
             // open submenu
-            output.Tap(Button.X, 200, 50); // bumped even more due to desyncs on the switch 2 (from 50/25)
-            output.Delay(500);
+            output.Tap(Button.X, paranoid ? 250 : 175, 50); // bumped even more due to desyncs on the switch 2 (from 50/25)
+            output.Delay(paranoid ? 600 : 400);
 
             int currentColumn = _lastBrushColumn;
 
             bool needsHomed = currentColumn < 0;
-            if (needsHomed)
+            if (needsHomed) // Paranoia mode shouldnt ever be triggered when we need homed.
             {
                 for (int i = 0; i < BrushSubmenuRows; i++)
                     output.Tap(DPad.UP);
@@ -161,7 +207,7 @@ namespace TomodachiDrawer.Core
                 for (int i = 0; i < 5; i++)
                     output.Tap(DPad.RIGHT);
                 output.Tap(Button.A); // Select a brush that we dont actually use so we KNOW we will need two A presses. avoids a accidental click through draw
-                output.Delay(_switchVersion == SwitchVersion.Switch1 ? 500 : 350);
+                output.Delay(_switchVersion == SwitchVersion.Switch1 ? 450 : 350);
 
                 // Switch 1 lags with the largest sphere brush, because of course it does, so we more generously delay the taps back to the left.
                 // This doesn't happen on my Switch 1 which is annoying but whatever...
@@ -180,7 +226,7 @@ namespace TomodachiDrawer.Core
             int deltaX = targetColumn - currentColumn;
             var dir = deltaX > 0 ? DPad.RIGHT : DPad.LEFT;
             for (int i = 0; i < Math.Abs(deltaX); i++)
-                output.Tap(dir);
+                output.Tap(dir, paranoid ? 75 : default, paranoid ? 50 : default);
 
             // We need two taps if we are selecting something
             // not previously selected, one selects it, one confirms.
@@ -192,23 +238,23 @@ namespace TomodachiDrawer.Core
             // Confirm
             if (needsTwoTaps)
             {
-                output.Tap(Button.A, 50, 25); // Switch 1 seems to want the press to last longer oddly. Hold for 50ms instead of 25.
-                output.Delay(350);
+                output.Tap(Button.A, paranoid ? 100 : 50, paranoid ? 50 : 25); // Switch 1 seems to want the press to last longer oddly. Hold for 50ms instead of 25.
+                output.Delay(paranoid ? 475 : 350);
             }
             // Close
-            output.Tap(Button.A, 50, 25);
-            output.Delay(600);
+            output.Tap(Button.A, paranoid ? 100 : 50, paranoid ? 50 : 25);
+            output.Delay(500); // Shouldn't need paranoia here.
 
             return true;
         }
 
-        public void SelectBucket() => SelectBucket(_realOutput);
+        public void SelectBucket(bool paranoid = false) => SelectBucket(_realOutput, paranoid);
 
         /// <summary>Important note: Using the brush seems mildly laggy. Be generous with delays.</summary>
-        public void SelectBucket(ISwitchOutput output)
+        public void SelectBucket(ISwitchOutput output, bool paranoid = false)
         {
             output.Tap(Button.X);
-            output.Delay(500);
+            output.Delay(paranoid ? 750 : 500);
 
             GoToToolbarIndex(output, ToolbarBucketIndex);
 
@@ -216,21 +262,21 @@ namespace TomodachiDrawer.Core
             // Homing is probably not needed but might as well.
             if (!_bucketSubmenuHomed)
             {
-                output.Tap(Button.X, 50, 25);
-                output.Delay(400);
+                output.Tap(Button.X, paranoid ? 250 : 50, paranoid ? 50 : 25);
+                output.Delay(paranoid ? 600 : 400);
                 // 7 wide 2 tall
                 for (int i = 0; i < BucketSubmenuRows - 1; i++)
-                    output.Tap(DPad.UP);
+                    output.Tap(DPad.UP, paranoid ? 75 : default, paranoid ? 50 : default);
                 for (int i = 0; i < BucketSubmenuColumns - 1; i++)
-                    output.Tap(DPad.LEFT);
+                    output.Tap(DPad.LEFT, paranoid ? 75 : default, paranoid ? 50 : default);
 
                 _bucketSubmenuHomed = true;
             }
 
             // Pressing A in the submenu goes straight to canvas, pressing A from the toolbar does the same
             // so only one A press ever needed.
-            output.Tap(Button.A, 50, 25);
-            output.Delay(500);
+            output.Tap(Button.A, paranoid ? 100 : 50, paranoid ? 50 : 25);
+            output.Delay(paranoid ? 750 : 500);
         }
 
         public void ClearCanvas() => ClearCanvas(_realOutput);

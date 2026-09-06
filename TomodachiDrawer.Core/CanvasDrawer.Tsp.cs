@@ -7,7 +7,7 @@ namespace TomodachiDrawer.Core
     // All TSP routing logic, recommended values, and fallbacks and shortcuts.
     public partial class CanvasDrawer
     {
-        private const int ExactMaxPoints = 16;
+        private const int ExactMaxPoints = 17;
 
         // Early-exit (improvement limit) tuning. See PerformTSP.
         // Testing seemed to suggest this provided atleast some improvements, not for all image sizes or point counts.

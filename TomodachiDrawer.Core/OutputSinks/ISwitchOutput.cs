@@ -65,6 +65,32 @@
             Delay(releaseDuration);
         }
 
+        /// <summary>Tap a button multiples times, emits multiple taps.</summary>
+        /// <param name="btn"></param>
+        /// <param name="times"></param>
+        /// <param name="holdDuration"></param>
+        /// <param name="releaseDuration"></param>
+        void TapNTimes(Button btn, int times, double holdDuration = 25.0, double releaseDuration = 25.0)
+        {
+            for (int i = 0; i < times; i++)
+            {
+                Tap(btn, holdDuration, releaseDuration);
+            }
+        }
+
+        /// <summary>Tap a d-pad direction multiples times, emits multiple taps.</summary>
+        /// <param name="dir"></param>
+        /// <param name="times"></param>
+        /// <param name="holdDuration"></param>
+        /// <param name="releaseDuration"></param>
+        void TapNTimes(DPad dir, int times, double holdDuration = 25.0, double releaseDuration = 25.0)
+        {
+            for (int i = 0; i < times; i++)
+            {
+                Tap(dir, holdDuration, releaseDuration);
+            }
+        }
+
         /// <summary>
         /// Centers all analog sticks.
         /// </summary>

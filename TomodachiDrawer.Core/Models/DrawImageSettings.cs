@@ -27,6 +27,9 @@ namespace TomodachiDrawer.Core.Models
         /// <summary>Enables stuff that may be prone to desyncs or other instabilities.</summary>
         public bool EnableExperimentalFeatures { get; set; } = false;
 
+        /// <summary>Cutoff for bucket tool usage, an area has to be this many pixels that will be filled by the bucket to be worthwhile. 36 initially, but may get tweaked</summary>
+        public int MinBucketZoneSize { get; set; } = 36;
+
         public bool HomeToTopLeft { get; set; } = false;
 
         public bool ReverseColourOrder { get; set; } = false;

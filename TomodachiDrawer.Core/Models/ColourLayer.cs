@@ -23,5 +23,15 @@ namespace TomodachiDrawer.Core.Models
 
         /// <summary>Interior points to click with the bucket tool after drawing the outline.</summary>
         public HashSet<CanvasPoint> BucketClicks = [];
+
+        /// <summary>Copies the colour layer for testing, used for testing two or more different approaches with timingsinks to find which is optimal.</summary>
+        /// <returns></returns>
+        public ColourLayer Clone() =>
+            new()
+            {
+                Colour = Colour,
+                Extents = Extents,
+                FineDetailPoints = new HashSet<CanvasPoint>(FineDetailPoints),
+            };
     }
 }
