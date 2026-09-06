@@ -65,9 +65,7 @@ namespace TomodachiDrawer.Core
         // This is for brute-force-ish solving low point count things 100% optimally, really quickly.
         private List<CanvasPoint> HeldKarpRoute(CanvasPoint[] points)
         {
-#if DEBUG
             var sw = Stopwatch.StartNew();
-#endif
             int n = points.Length;
             int start = NearestIndexToCursor(points);
 
