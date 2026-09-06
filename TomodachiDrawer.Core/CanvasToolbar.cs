@@ -226,7 +226,7 @@ namespace TomodachiDrawer.Core
             int deltaX = targetColumn - currentColumn;
             var dir = deltaX > 0 ? DPad.RIGHT : DPad.LEFT;
             for (int i = 0; i < Math.Abs(deltaX); i++)
-                output.Tap(dir, paranoid ? 75 : default, paranoid ? 50 : default);
+                output.Tap(dir, paranoid ? 75 : 25, paranoid ? 50 : 25);
 
             // We need two taps if we are selecting something
             // not previously selected, one selects it, one confirms.
@@ -266,9 +266,9 @@ namespace TomodachiDrawer.Core
                 output.Delay(paranoid ? 600 : 400);
                 // 7 wide 2 tall
                 for (int i = 0; i < BucketSubmenuRows - 1; i++)
-                    output.Tap(DPad.UP, paranoid ? 75 : default, paranoid ? 50 : default);
+                    output.Tap(DPad.UP, paranoid ? 75 : 25, paranoid ? 50 : 25);
                 for (int i = 0; i < BucketSubmenuColumns - 1; i++)
-                    output.Tap(DPad.LEFT, paranoid ? 75 : default, paranoid ? 50 : default);
+                    output.Tap(DPad.LEFT, paranoid ? 75 : 25, paranoid ? 50 : 25);
 
                 _bucketSubmenuHomed = true;
             }

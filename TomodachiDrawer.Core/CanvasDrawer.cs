@@ -150,11 +150,7 @@ namespace TomodachiDrawer.Core
                     // the dynamic fill goes out of its way to avoid.
                     _palette.SelectColour(bucketColour.Value, 25.0);
                     _toolbar.SelectBucket(bucketParanoia);
-                    _realOutput.Tap(
-                        Button.A,
-                        bucketParanoia ? 100 : default,
-                        bucketParanoia ? 75 : default
-                    );
+                    _realOutput.Tap(Button.A, bucketParanoia ? 100 : 25, bucketParanoia ? 75 : 25);
                     _realOutput.Delay(bucketParanoia ? 2000 : 1000); // This is probably generous but bucket fill seems to cause a short stutter.
 
                     // Get off the bucket before we go picking the first layer's colour, otherwise the
