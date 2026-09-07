@@ -10,19 +10,19 @@ using System.Diagnostics.CodeAnalysis;
     "IDE0028:Simplify collection initialization",
     Justification = "<Pending>",
     Scope = "member",
-    Target = "~M:TomodachiDrawer.Core.CanvasDrawer.DetectBucketZones(TomodachiDrawer.Core.Models.ColourLayer,System.Int32,System.Int32,System.Int32)"
+    Target = "~M:TomodachiDrawer.Core.CanvasDrawer.DetectBucketZones(TomodachiDrawer.Core.Models.ColourLayer,System.Int32,System.Int32,System.Boolean[0:,0:],System.Int32)"
 )]
 [assembly: SuppressMessage(
     "Style",
     "IDE0306:Simplify collection initialization",
     Justification = "<Pending>",
     Scope = "member",
-    Target = "~M:TomodachiDrawer.Core.CanvasDrawer.DetectBucketZones(TomodachiDrawer.Core.Models.ColourLayer,System.Int32,System.Int32,System.Int32)"
+    Target = "~M:TomodachiDrawer.Core.CanvasDrawer.DetectBucketZones(TomodachiDrawer.Core.Models.ColourLayer,System.Int32,System.Int32,System.Boolean[0:,0:],System.Int32)"
 )]
 [assembly: SuppressMessage(
     "Style",
     "IDE0300:Simplify collection initialization",
     Justification = "Switching { for [ is really minor",
     Scope = "member",
-    Target = "~M:TomodachiDrawer.Core.CanvasDrawer.DetectBucketZones(TomodachiDrawer.Core.Models.ColourLayer,System.Int32,System.Int32,System.Int32)"
+    Target = "~M:TomodachiDrawer.Core.CanvasDrawer.DetectBucketZones(TomodachiDrawer.Core.Models.ColourLayer,System.Int32,System.Int32,System.Boolean[0:,0:],System.Int32)"
 )]

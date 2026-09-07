@@ -171,7 +171,20 @@ namespace TomodachiDrawer.Core
             else
                 _log("Bucket fills disabled, so not running dynamic bucket fill scan.");
 
+            // Only does anything for the buckets
+            // also dont if reverse colour order but tbh that probably needs removed.
+            if (bucketsAllowed && !settings.ReverseColourOrder)
+            {
+                SealOrderLayers(layers, image.Width, image.Height);
+                _log("Reordered colour layers to seal borders cheaper");
+            }
+
             double totalInLayerTime = 0.0;
+
+            // Everything we've drawn so far, which is wall the bucket cant escape through. Assumes the
+            // canvas started clear like the tutorial says to. The global pre-fill colour deliberately
+            // doesnt go in here, since it doesnt really matter.
+            var painted = new bool[image.Width, image.Height];
 
             var totalLayers = layers.Count;
             // 80% divided by total layers.
@@ -196,6 +209,7 @@ namespace TomodachiDrawer.Core
                     image.Height,
                     settings,
                     bucketsAllowed,
+                    painted,
                     entryX,
                     entryY,
                     entryToolbar
@@ -212,6 +226,7 @@ namespace TomodachiDrawer.Core
                         image.Height,
                         settings,
                         false,
+                        painted,
                         entryX,
                         entryY,
                         entryToolbar
@@ -232,6 +247,10 @@ namespace TomodachiDrawer.Core
                 _cursorY = chosen.EndY;
                 _toolbar.Restore(chosen.EndToolbar);
                 totalInLayerTime += chosen.Seconds;
+
+                // Its on the canvas now. (l is the original, BuildLayerPlan only ever mmodifies a Clone)
+                foreach (var p in l.FineDetailPoints)
+                    painted[p.X, p.Y] = true;
 
                 _log(
                     $"[{layerNumber}/{totalLayers}] {l.Colour.DisplayName}: {chosen.Summary} -> {chosen.Seconds:F3}s"
@@ -271,6 +290,7 @@ namespace TomodachiDrawer.Core
             int height,
             DrawImageSettings settings,
             bool useBuckets,
+            bool[,] painted,
             int entryX,
             int entryY,
             CanvasToolbar.ToolbarState entryToolbar
@@ -283,7 +303,7 @@ namespace TomodachiDrawer.Core
             var l = solid.Clone();
 
             int clicks = useBuckets
-                ? DetectBucketZones(l, width, height, settings.MinBucketZoneSize)
+                ? DetectBucketZones(l, width, height, painted, settings.MinBucketZoneSize)
                 : 0;
 
             if (!settings.DisableLargeBrush)
@@ -429,10 +449,106 @@ namespace TomodachiDrawer.Core
                 return count < LargeBrushEvictionThreshold_200[index];
         }
 
+        /// <summary>
+        /// Works out what order to draw the layers in. Whichever of two touching layers goes first has
+        /// to pen its own side of the border, the second one gets that border for free as a wall, and
+        /// the two sides arent the same length (think inner vs outer rim of a ring). So put the cheap
+        /// side first. Only used with buckets. 
+        /// </summary>
+        private static void SealOrderLayers(List<ColourLayer> layers, int width, int height)
+        {
+            int n = layers.Count;
+
+            var owner = new int[width, height];
+            for (int x = 0; x < width; x++)
+            for (int y = 0; y < height; y++)
+                owner[x, y] = -1;
+
+            for (int i = 0; i < n; i++)
+                foreach (var p in layers[i].FineDetailPoints)
+                    owner[p.X, p.Y] = i;
+
+            // adj[a,b] is how many of a's pixels touch b, ie the bill a gets for going first.
+            var adj = new int[n, n];
+
+            // direct neighbours only, same as the bucket.
+            int[] dx = { 0, 0, -1, 1 };
+            int[] dy = { -1, 1, 0, 0 };
+            Span<int> seen = stackalloc int[4];
+
+            for (int x = 0; x < width; x++)
+            {
+                for (int y = 0; y < height; y++)
+                {
+                    int a = owner[x, y];
+                    if (a < 0)
+                        continue;
+
+                    int seenCount = 0;
+                    for (int i = 0; i < 4; i++)
+                    {
+                        int tx = x + dx[i];
+                        int ty = y + dy[i];
+                        if (tx < 0 || tx >= width || ty < 0 || ty >= height)
+                            continue;
+
+                        int b = owner[tx, ty];
+                        if (b < 0 || b == a)
+                            continue;
+
+                        // a pixel touching the same layer twice is still just the one pixel to draw.
+                        if (seen[..seenCount].Contains(b))
+                            continue;
+
+                        seen[seenCount++] = b;
+                        adj[a, b]++;
+                    }
+                }
+            }
+
+            // Fill it back to front. Whatever we put last makes everything still unplaced pay for its
+            // border against it, so each round just shove whichever is cheapest to the back.
+            // Greedy, but theres only ever a handful of layers so its not worth being clever.
+            var order = new List<ColourLayer>(n);
+            var placed = new bool[n];
+
+            for (int slot = 0; slot < n; slot++)
+            {
+                int best = 0;
+                int bestCost = int.MaxValue;
+
+                for (int i = 0; i < n; i++)
+                {
+                    if (placed[i])
+                        continue;
+
+                    int cost = 0;
+                    for (int j = 0; j < n; j++)
+                        if (j != i && !placed[j])
+                            cost += adj[j, i];
+
+                    if (cost < bestCost)
+                    {
+                        bestCost = cost;
+                        best = i;
+                    }
+                }
+
+                placed[best] = true;
+                order.Add(layers[best]);
+            }
+
+            order.Reverse();
+            layers.Clear();
+            layers.AddRange(order);
+        }
+
+        /// <param name="painted">What earlier layers already drew, the fill cant escape through it.</param>
         public static int DetectBucketZones(
             ColourLayer l,
             int width,
             int height,
+            bool[,] painted,
             int minZoneSize = 36
         )
         {
@@ -465,7 +581,15 @@ namespace TomodachiDrawer.Core
                         int ty = y + dy[i];
 
                         // handle edges as outline pixels.
-                        if (tx < 0 || tx >= width || ty < 0 || ty >= height || !workingSet[tx, ty])
+                        if (tx < 0 || tx >= width || ty < 0 || ty >= height)
+                        {
+                            isOutlinePixel = true;
+                            break;
+                        }
+
+                        // only outline against stuff the fill could actually escape into, an earlier
+                        // layer is already a wall so putting ours right next to it does nothing.
+                        if (!workingSet[tx, ty] && !painted[tx, ty])
                         {
                             isOutlinePixel = true;
                             break;
