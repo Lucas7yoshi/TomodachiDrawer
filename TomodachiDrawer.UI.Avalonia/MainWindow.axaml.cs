@@ -231,15 +231,15 @@ public partial class MainWindow : Window
 
     // Welcome message stuff. For important changes, the ID is incremented by one by hand whenever something notable changes.
     // This is only really needed for Mac since its settings are saved in a way that persists more readily.
-    private const int CURRENT_WELCOME_ID = 4;
+    private const int CURRENT_WELCOME_ID = 5;
 
     private async Task ShowWelcomeMessage()
     {
         await ShowMessageAsync(
             "Welcome to TomodachiDrawer!",
-            "0.7.0 has added support for ESP32-S3 based boards for those who happen to have one."
+            "0.9.0 has added no-longer-experimental support for Bucket filling optimizations. The program will draw outlines of large (non uniform) areas and use a single bucket fill instead of a mess of stamps, and is safe for Switch 1 and 2."
+                + "\n\n-0.7.0 Added support for ESP32-S3 based boards."
                 + "\n\n-0.6.0 added support for RP2350 based boards (RP2350-Zero, Raspberry Pi Pico 2, Pico 2W, etc)"
-                + "\n-0.5.0 added support for templates, accessible from the top menu bar."
         );
     }
 
