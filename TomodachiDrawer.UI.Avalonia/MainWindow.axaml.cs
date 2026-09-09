@@ -42,6 +42,9 @@ public partial class MainWindow : Window
     // Cancels the in-progress draw generation (the DrawImage call inside GenerateTdldAsync).
     private CancellationTokenSource? _drawCts;
 
+    private CancellationTokenSource? _previewCts;
+    private const int PreviewDebounceMs = 250;
+
     private bool _busyExporting = false;
     private bool BusyExporting
     {
@@ -798,12 +801,43 @@ public partial class MainWindow : Window
             return;
         }
 
+        _previewCts?.Cancel();
+        _previewCts?.Dispose();
+        var cts = new CancellationTokenSource();
+        _previewCts = cts;
+
+        try
+        {
+            await Task.Delay(PreviewDebounceMs, cts.Token);
+        }
+        catch (OperationCanceledException)
+        {
+            return;
+        }
+
         var quantizerSettings = GetQuantizerSettings();
         var denoiser = DenoisingComboBox.SelectedItem?.ToString();
         using var source = _currentImage!.Copy();
 
-        var preview = await Task.Run(() => GetPreview(source, quantizerSettings, denoiser))
-            .ConfigureAwait(true);
+        SKBitmap preview;
+        try
+        {
+            preview = await Task.Run(
+                    () => GetPreview(source, quantizerSettings, denoiser),
+                    cts.Token
+                )
+                .ConfigureAwait(true);
+        }
+        catch (OperationCanceledException)
+        {
+            return;
+        }
+
+        if (cts.Token.IsCancellationRequested)
+        {
+            preview.Dispose();
+            return;
+        }
 
         PreviewImage.Source = ToAvaloniaBitmap(preview);
         // update the preview label to indicate the size of the image just for user reference
