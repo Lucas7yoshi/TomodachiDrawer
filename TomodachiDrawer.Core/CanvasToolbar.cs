@@ -188,6 +188,15 @@ namespace TomodachiDrawer.Core
             // Go to brush.
             GoToToolbarIndex(output, ToolbarBrushIndex);
 
+            // If this is already the brush size we picked last time, we can just press
+            // A on it and skip the submenu entirely. Big time saver for bucket stuff.
+            if (_lastBrushColumn == targetColumn)
+            {
+                output.Tap(Button.A, paranoid ? 100 : 50, paranoid ? 50 : 25);
+                output.Delay(500);
+                return true;
+            }
+
             // open submenu
             output.Tap(Button.X, paranoid ? 250 : 175, 50); // bumped even more due to desyncs on the switch 2 (from 50/25)
             output.Delay(paranoid ? 600 : 400);
