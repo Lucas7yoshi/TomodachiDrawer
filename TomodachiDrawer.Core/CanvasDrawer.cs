@@ -575,11 +575,23 @@ namespace TomodachiDrawer.Core
                         int tx = x + dx[i];
                         int ty = y + dy[i];
 
-                        // handle edges as outline pixels.
+                        // handle edges as outline pixels, unless the edge is a real canvas wall the
+                        // fill couldn't escape through anyway. DrawImage always anchors the image at
+                        // canvas (0,0), so the top/left are always the true canvas edge regardless of
+                        // image size, but the bottom/right are only the true edge if this image *is*
+                        // the full 256x256 canvas - a smaller template still has real canvas beyond it.
                         if (tx < 0 || tx >= width || ty < 0 || ty >= height)
                         {
-                            isOutlinePixel = true;
-                            break;
+                            bool realCanvasWall =
+                                tx < 0 || ty < 0 || (width == 256 && height == 256);
+
+                            if (!realCanvasWall)
+                            {
+                                isOutlinePixel = true;
+                                break;
+                            }
+
+                            continue;
                         }
 
                         // only outline against stuff the fill could actually escape into, an earlier
