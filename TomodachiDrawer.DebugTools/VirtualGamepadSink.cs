@@ -20,7 +20,7 @@ namespace TomodachiDrawer.DebugTools
             ReleaseAll();
         }
 
-        public void Delay(double milliseconds)
+        public void Delay(float milliseconds)
         {
             Thread.Sleep((int)milliseconds);
         }

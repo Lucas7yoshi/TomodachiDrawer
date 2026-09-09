@@ -143,7 +143,7 @@ namespace TomodachiDrawer.Core
                     // Colour first, then the bucket. Picking the colour with the bucket already selected
                     // means every tap in the palette menu lands in the lag hell, which is exactly what
                     // the dynamic fill goes out of its way to avoid.
-                    _palette.SelectColour(bucketColour.Value, 25.0);
+                    _palette.SelectColour(bucketColour.Value, 25.0f);
                     _toolbar.SelectBucket(bucketParanoia);
                     _realOutput.Tap(Button.A, bucketParanoia ? 100 : 25, bucketParanoia ? 75 : 25);
                     _realOutput.Delay(bucketParanoia ? 1500 : 750); // This is probably generous but bucket fill seems to cause a short stutter.
@@ -190,7 +190,7 @@ namespace TomodachiDrawer.Core
                 cancellationToken.ThrowIfCancellationRequested();
                 layerNumber++;
 
-                _palette.SelectColour(l.Colour, 25.0);
+                _palette.SelectColour(l.Colour, 25.0f);
 
                 // Where the cursor and the menus are right now for restoration.
                 int entryX = _cursorX;
@@ -883,7 +883,7 @@ namespace TomodachiDrawer.Core
                     if (isCurrentPoint && !holdingA)
                     {
                         output.Press(Button.A);
-                        output.Delay(25.0);
+                        output.Delay(25.0f);
                         holdingA = true;
                     }
 
@@ -892,7 +892,7 @@ namespace TomodachiDrawer.Core
                         if (holdingA)
                         {
                             output.Release(Button.A);
-                            output.Delay(25.0);
+                            output.Delay(25.0f);
                             holdingA = false;
                         }
                         break;
@@ -902,7 +902,7 @@ namespace TomodachiDrawer.Core
                     if (holdingA && !isNextPoint)
                     {
                         output.Release(Button.A);
-                        output.Delay(25.0);
+                        output.Delay(25.0f);
                         holdingA = false;
                     }
 
@@ -970,22 +970,22 @@ namespace TomodachiDrawer.Core
                     if (!nextIsAdjacent)
                     {
                         output.Release(Button.A);
-                        output.Delay(25.0);
+                        output.Delay(25.0f);
                         isAHeld = false;
                     }
                     // else: next is also adjacent, keep holding
                 }
                 else if (nextIsAdjacent)
                 {
-                    // Start of an adjacent run — press and hold.
+                    // Start of an adjacent run - press and hold.
                     output.Press(Button.A);
-                    output.Delay(25.0);
+                    output.Delay(25.0f);
                     isAHeld = true;
                 }
                 else
                 {
-                    // Isolated point — plain tap, no hold.
-                    output.Tap(Button.A);
+                    // Isolated point - plain tap, no hold.
+                    output.Tap(Button.A, 25.0f, 25.0f);
                 }
             }
         }

@@ -296,7 +296,7 @@ namespace TomodachiDrawer.Core
 
         private PaletteColour? _lastColour = null;
 
-        public void SelectColour(PaletteColour target, double speed)
+        public void SelectColour(PaletteColour target, float speed)
         {
             if (_lastColour != null && _lastColour == target)
                 return;

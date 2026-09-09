@@ -1,4 +1,4 @@
-﻿namespace TomodachiDrawer.Core.OutputSinks
+namespace TomodachiDrawer.Core.OutputSinks
 {
     /// <summary>
     /// Tracks how long all inputs fed to it would take, and records them for later replay.
@@ -8,8 +8,32 @@
     /// </summary>
     public sealed class TimingSink : ISwitchOutput
     {
-        //
-        private readonly List<Action<ISwitchOutput>> _actions = [];
+        private enum Op : byte
+        {
+            Press,
+            Release,
+            DPadPress,
+            DPadRelease,
+            ReleaseAll,
+            SetStick,
+            Delay,
+            Tap,
+            TapDPad,
+            TapStick,
+        }
+
+        private struct Instruction
+        {
+            public Op Op;
+            public Button Button;
+            public DPad DPad;
+            public Stick Stick;
+            public byte Value;
+            public float A; // Double is excessivbe and literally I only did 
+            public float B;
+        }
+
+        private readonly List<Instruction> _log = [];
         private double _totalMilliseconds;
 
         public TimeSpan TotalTime => TimeSpan.FromMilliseconds(_totalMilliseconds);
@@ -18,36 +42,82 @@
 
         public void ReplayTo(ISwitchOutput target)
         {
-            foreach (var action in _actions)
-                action(target);
+            foreach (var i in _log)
+            {
+                switch (i.Op)
+                {
+                    case Op.Press:
+                        target.Press(i.Button);
+                        break;
+                    case Op.Release:
+                        target.Release(i.Button);
+                        break;
+                    case Op.DPadPress:
+                        target.Press(i.DPad);
+                        break;
+                    case Op.DPadRelease:
+                        target.Release(i.DPad);
+                        break;
+                    case Op.ReleaseAll:
+                        target.ReleaseAll();
+                        break;
+                    case Op.SetStick:
+                        target.SetStick(i.Stick, i.Value);
+                        break;
+                    case Op.Delay:
+                        target.Delay(i.A);
+                        break;
+                    case Op.Tap:
+                        target.Tap(i.Button, i.A, i.B);
+                        break;
+                    case Op.TapDPad:
+                        target.Tap(i.DPad, i.A, i.B);
+                        break;
+                    case Op.TapStick:
+                        target.TapStick(i.Stick, i.Value, i.A, i.B);
+                        break;
+                }
+            }
         }
 
-        public void Delay(double milliseconds)
+        public void Delay(float milliseconds)
         {
             _totalMilliseconds += milliseconds;
-            _actions.Add(o => o.Delay(milliseconds));
+            _log.Add(new Instruction { Op = Op.Delay, A = milliseconds });
         }
 
-        public void Press(Button btn) => _actions.Add(o => o.Press(btn));
+        public void Press(Button btn) => _log.Add(new Instruction { Op = Op.Press, Button = btn });
 
-        public void Release(Button btn) => _actions.Add(o => o.Release(btn));
+        public void Release(Button btn) =>
+            _log.Add(new Instruction { Op = Op.Release, Button = btn });
 
-        public void Press(DPad dir) => _actions.Add(o => o.Press(dir));
+        public void Press(DPad dir) => _log.Add(new Instruction { Op = Op.DPadPress, DPad = dir });
 
-        public void Release(DPad dir) => _actions.Add(o => o.Release(dir));
+        public void Release(DPad dir) =>
+            _log.Add(new Instruction { Op = Op.DPadRelease, DPad = dir });
 
-        public void ReleaseAll() => _actions.Add(o => o.ReleaseAll());
+        public void ReleaseAll() => _log.Add(new Instruction { Op = Op.ReleaseAll });
 
         public void SetStick(Stick stick, byte value) =>
-            _actions.Add(o => o.SetStick(stick, value));
-
-        void ISwitchOutput.Tap(Button btn, double holdDuration, double releaseDuration)
-        {
-            if (holdDuration == 25.0 && releaseDuration == 25.0)
+            _log.Add(new Instruction
             {
-                //WriteNibbleRecord(Opcode.TapButton, (byte)btn);
+                Op = Op.SetStick,
+                Stick = stick,
+                Value = value,
+            });
+
+        void ISwitchOutput.Tap(Button btn, float holdDuration, float releaseDuration)
+        {
+            if (holdDuration == 25.0f && releaseDuration == 25.0f)
+            {
                 _totalMilliseconds += holdDuration + releaseDuration;
-                _actions.Add(o => o.Tap(btn, holdDuration, releaseDuration));
+                _log.Add(new Instruction
+                {
+                    Op = Op.Tap,
+                    Button = btn,
+                    A = (float)holdDuration,
+                    B = (float)releaseDuration,
+                });
                 return;
             }
 
@@ -57,13 +127,18 @@
             Delay(releaseDuration);
         }
 
-        void ISwitchOutput.Tap(DPad dir, double holdDuration, double releaseDuration)
+        void ISwitchOutput.Tap(DPad dir, float holdDuration, float releaseDuration)
         {
-            if (holdDuration == 25.0 && releaseDuration == 25.0)
+            if (holdDuration == 25.0f && releaseDuration == 25.0f)
             {
-                //WriteNibbleRecord(Opcode.TapDPad, (byte)dir);
                 _totalMilliseconds += holdDuration + releaseDuration;
-                _actions.Add(o => o.Tap(dir, holdDuration, releaseDuration));
+                _log.Add(new Instruction
+                {
+                    Op = Op.TapDPad,
+                    DPad = dir,
+                    A = (float)holdDuration,
+                    B = (float)releaseDuration,
+                });
                 return;
             }
 
@@ -76,12 +151,19 @@
         void ISwitchOutput.TapStick(
             Stick stick,
             byte value,
-            double holdDuration,
-            double releaseDuration
+            float holdDuration,
+            float releaseDuration
         )
         {
             _totalMilliseconds += holdDuration + releaseDuration;
-            _actions.Add(o => o.TapStick(stick, value, holdDuration, releaseDuration));
+            _log.Add(new Instruction
+            {
+                Op = Op.TapStick,
+                Stick = stick,
+                Value = value,
+                A = holdDuration,
+                B = releaseDuration,
+            });
         }
 
         public void Dispose() { }

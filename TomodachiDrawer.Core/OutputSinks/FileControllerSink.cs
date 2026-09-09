@@ -63,7 +63,7 @@ namespace TomodachiDrawer.Core.OutputSinks
         public void SetStick(Stick stick, byte value) =>
             Write2ByteRecord((byte)((Opcode.SetStick << 4) | (byte)stick), value);
 
-        public void Delay(double milliseconds)
+        public void Delay(float milliseconds)
         {
             if (milliseconds <= 0)
                 return;
@@ -84,7 +84,7 @@ namespace TomodachiDrawer.Core.OutputSinks
         // To avoid 4 records (press+delay+release+delay)
         // 99.99% of the time, we have a dedicated opcode for normal 25ms taps so its 1 byte.
 
-        void ISwitchOutput.Tap(Button btn, double holdDuration, double releaseDuration)
+        void ISwitchOutput.Tap(Button btn, float holdDuration, float releaseDuration)
         {
             if (holdDuration == DefaultHoldDuration && releaseDuration == DefaultReleaseDuration)
             {
@@ -98,7 +98,7 @@ namespace TomodachiDrawer.Core.OutputSinks
             Delay(releaseDuration);
         }
 
-        void ISwitchOutput.Tap(DPad dir, double holdDuration, double releaseDuration)
+        void ISwitchOutput.Tap(DPad dir, float holdDuration, float releaseDuration)
         {
             if (holdDuration == DefaultHoldDuration && releaseDuration == DefaultReleaseDuration)
             {

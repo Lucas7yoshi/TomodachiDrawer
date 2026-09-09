@@ -35,7 +35,7 @@
         /// <summary>
         /// Emits or records a delay between input operations.
         /// </summary>
-        void Delay(double milliseconds);
+        void Delay(float milliseconds);
 
         /// <summary>
         /// Presses a button, waits for the specified delay, then releases it.
@@ -43,7 +43,7 @@
         /// <param name="btn">Button to tap</param>
         /// <param name="holdDuration">Duration for the button-down to stay</param>
         /// <param name="releaseDuration">Duration to pause before resuming anything else.</param>
-        void Tap(Button btn, double holdDuration = 25.0, double releaseDuration = 25.0)
+        void Tap(Button btn, float holdDuration = 25.0f, float releaseDuration = 25.0f)
         {
             Press(btn);
             Delay(holdDuration);
@@ -57,7 +57,7 @@
         /// <param name="dir">DPad direction to tap</param>
         /// <param name="holdDuration">Duration for the dpad-down to stay</param>
         /// <param name="releaseDuration">Duration to pause before resuming anything else.</param>
-        void Tap(DPad dir, double holdDuration = 25.0, double releaseDuration = 25.0)
+        void Tap(DPad dir, float holdDuration = 25.0f, float releaseDuration = 25.0f)
         {
             Press(dir);
             Delay(holdDuration);
@@ -70,7 +70,7 @@
         /// <param name="times"></param>
         /// <param name="holdDuration"></param>
         /// <param name="releaseDuration"></param>
-        void TapNTimes(Button btn, int times, double holdDuration = 25.0, double releaseDuration = 25.0)
+        void TapNTimes(Button btn, int times, float holdDuration = 25.0f, float releaseDuration = 25.0f)
         {
             for (int i = 0; i < times; i++)
             {
@@ -83,7 +83,7 @@
         /// <param name="times"></param>
         /// <param name="holdDuration"></param>
         /// <param name="releaseDuration"></param>
-        void TapNTimes(DPad dir, int times, double holdDuration = 25.0, double releaseDuration = 25.0)
+        void TapNTimes(DPad dir, int times, float holdDuration = 25.0f, float releaseDuration = 25.0f)
         {
             for (int i = 0; i < times; i++)
             {
@@ -105,7 +105,7 @@
         /// <summary>
         /// Deflects an analog stick for the specified hold time, then returns it to center.
         /// </summary>
-        void TapStick(Stick stick, byte value, double holdDuration, double releaseDuration)
+        void TapStick(Stick stick, byte value, float holdDuration, float releaseDuration)
         {
             SetStick(stick, value);
             Delay(holdDuration);

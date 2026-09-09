@@ -2,7 +2,7 @@
 {
     public sealed class DummySink : ISwitchOutput
     {
-        public void Delay(double milliseconds) { }
+        public void Delay(float milliseconds) { }
 
         public void Dispose() { }
 

@@ -1,7 +1,7 @@
 ﻿namespace TomodachiDrawer.Core.OutputSinks
 {
     /// <summary>Boolean Pressed/Released buttons</summary>
-    public enum Button
+    public enum Button : byte
     {
         A,
         B,
@@ -20,7 +20,7 @@
     }
 
     /// <summary>DPad, only one can be active at once.</summary>
-    public enum DPad
+    public enum DPad : byte
     {
         UP,
         UPRIGHT,
@@ -33,7 +33,7 @@
     }
 
     /// <summary>Analog sticks axes</summary>
-    public enum Stick
+    public enum Stick : byte
     {
         LX,
         LY,
