@@ -29,7 +29,7 @@ namespace TomodachiDrawer.Core.OutputSinks
             public DPad DPad;
             public Stick Stick;
             public byte Value;
-            public float A; // Double is excessivbe and literally I only did 
+            public float A; // Double is excessivbe and literally I only did
             public float B;
         }
 
@@ -99,25 +99,29 @@ namespace TomodachiDrawer.Core.OutputSinks
         public void ReleaseAll() => _log.Add(new Instruction { Op = Op.ReleaseAll });
 
         public void SetStick(Stick stick, byte value) =>
-            _log.Add(new Instruction
-            {
-                Op = Op.SetStick,
-                Stick = stick,
-                Value = value,
-            });
+            _log.Add(
+                new Instruction
+                {
+                    Op = Op.SetStick,
+                    Stick = stick,
+                    Value = value,
+                }
+            );
 
         void ISwitchOutput.Tap(Button btn, float holdDuration, float releaseDuration)
         {
             if (holdDuration == 25.0f && releaseDuration == 25.0f)
             {
                 _totalMilliseconds += holdDuration + releaseDuration;
-                _log.Add(new Instruction
-                {
-                    Op = Op.Tap,
-                    Button = btn,
-                    A = (float)holdDuration,
-                    B = (float)releaseDuration,
-                });
+                _log.Add(
+                    new Instruction
+                    {
+                        Op = Op.Tap,
+                        Button = btn,
+                        A = (float)holdDuration,
+                        B = (float)releaseDuration,
+                    }
+                );
                 return;
             }
 
@@ -132,13 +136,15 @@ namespace TomodachiDrawer.Core.OutputSinks
             if (holdDuration == 25.0f && releaseDuration == 25.0f)
             {
                 _totalMilliseconds += holdDuration + releaseDuration;
-                _log.Add(new Instruction
-                {
-                    Op = Op.TapDPad,
-                    DPad = dir,
-                    A = (float)holdDuration,
-                    B = (float)releaseDuration,
-                });
+                _log.Add(
+                    new Instruction
+                    {
+                        Op = Op.TapDPad,
+                        DPad = dir,
+                        A = (float)holdDuration,
+                        B = (float)releaseDuration,
+                    }
+                );
                 return;
             }
 
@@ -156,14 +162,16 @@ namespace TomodachiDrawer.Core.OutputSinks
         )
         {
             _totalMilliseconds += holdDuration + releaseDuration;
-            _log.Add(new Instruction
-            {
-                Op = Op.TapStick,
-                Stick = stick,
-                Value = value,
-                A = holdDuration,
-                B = releaseDuration,
-            });
+            _log.Add(
+                new Instruction
+                {
+                    Op = Op.TapStick,
+                    Stick = stick,
+                    Value = value,
+                    A = holdDuration,
+                    B = releaseDuration,
+                }
+            );
         }
 
         public void Dispose() { }

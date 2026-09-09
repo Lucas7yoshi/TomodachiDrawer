@@ -70,7 +70,12 @@
         /// <param name="times"></param>
         /// <param name="holdDuration"></param>
         /// <param name="releaseDuration"></param>
-        void TapNTimes(Button btn, int times, float holdDuration = 25.0f, float releaseDuration = 25.0f)
+        void TapNTimes(
+            Button btn,
+            int times,
+            float holdDuration = 25.0f,
+            float releaseDuration = 25.0f
+        )
         {
             for (int i = 0; i < times; i++)
             {
@@ -83,7 +88,12 @@
         /// <param name="times"></param>
         /// <param name="holdDuration"></param>
         /// <param name="releaseDuration"></param>
-        void TapNTimes(DPad dir, int times, float holdDuration = 25.0f, float releaseDuration = 25.0f)
+        void TapNTimes(
+            DPad dir,
+            int times,
+            float holdDuration = 25.0f,
+            float releaseDuration = 25.0f
+        )
         {
             for (int i = 0; i < times; i++)
             {

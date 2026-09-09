@@ -448,7 +448,7 @@ namespace TomodachiDrawer.Core
         /// Works out what order to draw the layers in. Whichever of two touching layers goes first has
         /// to pen its own side of the border, the second one gets that border for free as a wall, and
         /// the two sides arent the same length (think inner vs outer rim of a ring). So put the cheap
-        /// side first. Only used with buckets. 
+        /// side first. Only used with buckets.
         /// </summary>
         private static void SealOrderLayers(List<ColourLayer> layers, int width, int height)
         {

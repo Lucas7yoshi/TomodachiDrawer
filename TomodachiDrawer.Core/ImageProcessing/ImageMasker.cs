@@ -37,7 +37,8 @@ namespace TomodachiDrawer.Core.ImageProcessing
 
             for (int i = 0; i < maskPixels.Length; i++)
             {
-                outputPixels[i] = maskPixels[i].Alpha == 255 ? SKColors.Transparent : inputPixels[i];
+                outputPixels[i] =
+                    maskPixels[i].Alpha == 255 ? SKColors.Transparent : inputPixels[i];
             }
 
             return new SKBitmap(input.Width, input.Height) { Pixels = outputPixels };
