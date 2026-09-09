@@ -2,7 +2,7 @@
 {
     public class EuclideanColourMatch(IEnumerable<PaletteColour> palette) : IImageQuantizer
     {
-        private readonly IEnumerable<PaletteColour> _palette = palette;
+        private readonly PaletteColour[] _palette = palette as PaletteColour[] ?? palette.ToArray();
 
         // Stupid simple colour matching.
         // Measures the error across the 3 channels, finds whatever has the lowest over all delta.
@@ -10,7 +10,7 @@
 
         public PaletteColour FindClosestColour(byte r, byte g, byte b)
         {
-            var best = _palette.First();
+            var best = _palette[0];
             var bestDist = int.MaxValue;
 
             foreach (var colour in _palette)

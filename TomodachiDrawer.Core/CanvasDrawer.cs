@@ -120,18 +120,13 @@ namespace TomodachiDrawer.Core
             {
                 _log("Seeing if we can use the bucket to save time");
                 bool anyTransparent = false;
-                for (int x = 0; x < image.Width; x++)
+                foreach (var p in image.Pixels)
                 {
-                    for (int y = 0; y < image.Height; y++)
+                    if (p.Alpha < 128)
                     {
-                        if (image.GetPixel(x, y).Alpha < 128)
-                        {
-                            anyTransparent = true;
-                            break;
-                        }
-                    }
-                    if (anyTransparent)
+                        anyTransparent = true;
                         break;
+                    }
                 }
 
                 if (!anyTransparent)

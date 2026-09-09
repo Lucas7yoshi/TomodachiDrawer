@@ -2,11 +2,11 @@
 {
     public class RedmeanColourMatch(IEnumerable<PaletteColour> palette) : IImageQuantizer
     {
-        private readonly IEnumerable<PaletteColour> _palette = palette;
+        private readonly PaletteColour[] _palette = palette as PaletteColour[] ?? palette.ToArray();
 
         public PaletteColour FindClosestColour(byte r, byte g, byte b)
         {
-            var best = _palette.First();
+            var best = _palette[0];
             int bestDist = int.MaxValue;
 
             foreach (var colour in _palette)

@@ -21,6 +21,7 @@ namespace TomodachiDrawer.Core.ImageProcessing.Quantizers
 
             // WuAlphaColorQuantizer takes in a byte array instead of an ImageSharp type so we need to convert to that.
             // https://github.com/JeremyAnsel/JeremyAnsel.ColorQuant/blob/6d79217e72af9e3af1a8a29c606732adac1e8d87/JeremyAnsel.ColorQuant/JeremyAnsel.ColorQuant/WuAlphaColorQuantizer2.cs#L454-L457
+            // Also uses this opportunity to flatten any errant transparency.
             byte[] bgra = new byte[pixelCount * 4];
             for (int i = 0; i < pixelCount; i++)
             {

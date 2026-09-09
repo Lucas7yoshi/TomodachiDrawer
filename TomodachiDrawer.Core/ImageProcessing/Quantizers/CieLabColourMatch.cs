@@ -4,11 +4,11 @@
     // This was a bit above my paygrade...
     public class CieLabColourMatch : IImageQuantizer
     {
-        private readonly IEnumerable<PaletteColour> _palette;
+        private readonly PaletteColour[] _palette;
 
         public CieLabColourMatch(IEnumerable<PaletteColour> palette)
         {
-            _palette = palette;
+            _palette = palette as PaletteColour[] ?? palette.ToArray();
             BuildLabCache();
         }
 
@@ -16,7 +16,7 @@
         {
             RgbToLab(r, g, b, out double L, out double A, out double B_);
 
-            var best = _palette.First();
+            var best = _palette[0];
             double bestDist = double.MaxValue;
 
             foreach (var color in _palette)
