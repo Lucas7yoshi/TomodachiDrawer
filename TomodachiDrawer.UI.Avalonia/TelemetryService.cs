@@ -21,8 +21,23 @@ namespace TomodachiDrawer.UI.Avalonia
         string? Controller
     );
 
+    internal record BucketLayerDecisionDto(
+        int Clicks,
+        int BucketedPixelCount,
+        bool Skipped,
+        bool? BucketWon,
+        double? MarginSeconds
+    );
+
+    internal record BucketRoutingEventDto(
+        string? AppVersion,
+        int SkipThresholdUsed,
+        List<BucketLayerDecisionDto> Layers
+    );
+
     [JsonSerializable(typeof(StartupEventDto))]
     [JsonSerializable(typeof(ImageEventDto))]
+    [JsonSerializable(typeof(BucketRoutingEventDto))]
     internal partial class TelemetryJsonContext : JsonSerializerContext { }
 
     /// <summary>TelemetryService handles reporting basic telemetry data to the developer. This is optional.</summary>
@@ -90,6 +105,26 @@ namespace TomodachiDrawer.UI.Avalonia
                     "tomodachidrawer/image",
                     imageData,
                     TelemetryJsonContext.Default.ImageEventDto
+                );
+                return response.IsSuccessStatusCode;
+            }
+            catch (Exception)
+            {
+                return false;
+            }
+        }
+
+        public async Task<bool> ReportBucketRouting(BucketRoutingEventDto routingData)
+        {
+            if (!TelemetryEnabled)
+                return false;
+
+            try
+            {
+                var response = await _http.PostAsJsonAsync(
+                    "tomodachidrawer/bucketrouting",
+                    routingData,
+                    TelemetryJsonContext.Default.BucketRoutingEventDto
                 );
                 return response.IsSuccessStatusCode;
             }

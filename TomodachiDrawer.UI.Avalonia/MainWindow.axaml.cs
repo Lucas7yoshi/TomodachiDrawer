@@ -1048,7 +1048,7 @@ public partial class MainWindow : Window
 
         try
         {
-            var (uf2Bytes, totalTime) = await GenerateUF2Async(
+            var (uf2Bytes, totalTime, bucketDecisions) = await GenerateUF2Async(
                 chip,
                 ctx.Snapshot,
                 ctx.DrawSettings,
@@ -1198,7 +1198,7 @@ public partial class MainWindow : Window
                 }
             }
 
-            ReportImageExport(ctx, totalTime, chipName);
+            ReportImageExport(ctx, totalTime, chipName, bucketDecisions);
 
             SetEstimate(totalTime);
         }
@@ -1219,31 +1219,36 @@ public partial class MainWindow : Window
         DrawTimeLabel.Text = $"Draw Time Estimate: {estimateStr}";
     }
 
-    private async Task<(byte[]? uf2Bytes, TimeSpan totalTime)> GenerateUF2Async(
+    private async Task<(
+        byte[]? uf2Bytes,
+        TimeSpan totalTime,
+        List<BucketRouteDecision> bucketDecisions
+    )> GenerateUF2Async(
         RPChipType chip,
         SKBitmap imageSnapshot,
         DrawImageSettings drawSettings,
         string logPrefix
     )
     {
-        var (tdldBytes, totalTime) = await GenerateTdldAsync(
+        var (tdldBytes, totalTime, bucketDecisions) = await GenerateTdldAsync(
             imageSnapshot,
             drawSettings,
             logPrefix
         );
         var uf2Bytes = await Task.Run(() => UF2Flasher.BuildTDLDUF2(tdldBytes, chip));
-        return (uf2Bytes, totalTime);
+        return (uf2Bytes, totalTime, bucketDecisions);
     }
 
     // Used by every export, including TDLD export.
-    private async Task<(byte[] tdldBytes, TimeSpan totalTime)> GenerateTdldAsync(
-        SKBitmap imageSnapshot,
-        DrawImageSettings drawSettings,
-        string logPrefix
-    )
+    private async Task<(
+        byte[] tdldBytes,
+        TimeSpan totalTime,
+        List<BucketRouteDecision> bucketDecisions
+    )> GenerateTdldAsync(SKBitmap imageSnapshot, DrawImageSettings drawSettings, string logPrefix)
     {
         byte[] tdldBytes = [];
         TimeSpan totalTime = TimeSpan.MaxValue;
+        var bucketDecisions = new List<BucketRouteDecision>();
 
         // Shared Cts for cancellation
         _drawCts = new CancellationTokenSource();
@@ -1265,6 +1270,7 @@ public partial class MainWindow : Window
                     _currentSettings.SelectedSwitchVersion,
                     AppendLog
                 );
+                drawer.OnBucketDecision = bucketDecisions.Add;
                 drawer.ConnectAndConfirmController();
                 AppendLog("Starting to generate inputs...");
                 await drawer.DrawImage(img, drawSettings, token);
@@ -1289,7 +1295,7 @@ public partial class MainWindow : Window
             _drawCts = null;
         }
 
-        return (tdldBytes, totalTime);
+        return (tdldBytes, totalTime, bucketDecisions);
     }
 
     // Used to capture the state and settings off without any
@@ -1321,7 +1327,12 @@ public partial class MainWindow : Window
 
     // Telemetry that takes in export context and other data needed for report.
     // This is a no-op in the telemetryservice if its disabled.
-    private void ReportImageExport(ExportContext ctx, TimeSpan totalTime, string deviceName)
+    private void ReportImageExport(
+        ExportContext ctx,
+        TimeSpan totalTime,
+        string deviceName,
+        List<BucketRouteDecision> bucketDecisions
+    )
     {
         _ = _telemetry.ReportImage(
             new ImageEventDto(
@@ -1338,6 +1349,23 @@ public partial class MainWindow : Window
                 deviceName
             )
         );
+
+        if (bucketDecisions.Count > 0)
+            _ = _telemetry.ReportBucketRouting(
+                new BucketRoutingEventDto(
+                    GetVersionString(true),
+                    CanvasDrawer.BucketSkipComparisonAverageZonePixelThreshold,
+                    bucketDecisions
+                        .Select(d => new BucketLayerDecisionDto(
+                            d.Clicks,
+                            d.BucketedPixelCount,
+                            d.Skipped,
+                            d.BucketWon,
+                            d.MarginSeconds
+                        ))
+                        .ToList()
+                )
+            );
     }
 
     private bool EnsureSwitchVersionSelected()
@@ -1431,7 +1459,7 @@ public partial class MainWindow : Window
 
         try
         {
-            var (uf2Bytes, totalTime) = await GenerateUF2Async(
+            var (uf2Bytes, totalTime, bucketDecisions) = await GenerateUF2Async(
                 chip,
                 ctx.Snapshot,
                 ctx.DrawSettings,
@@ -1444,7 +1472,7 @@ public partial class MainWindow : Window
                 AppendLog($"Saved UF2 to {outputPath}");
             }
 
-            ReportImageExport(ctx, totalTime, chipName);
+            ReportImageExport(ctx, totalTime, chipName, bucketDecisions);
 
             SetEstimate(totalTime);
         }
@@ -1490,7 +1518,7 @@ public partial class MainWindow : Window
         BusyExporting = true;
         try
         {
-            var (tdldBytes, totalTime) = await GenerateTdldAsync(
+            var (tdldBytes, totalTime, bucketDecisions) = await GenerateTdldAsync(
                 ctx.Snapshot,
                 ctx.DrawSettings,
                 $"Exporting TDLD to {outputPath}"
@@ -1499,7 +1527,7 @@ public partial class MainWindow : Window
             File.WriteAllBytes(outputPath, tdldBytes);
             AppendLog($"Saved TDLD to {outputPath}");
 
-            ReportImageExport(ctx, totalTime, "tdld");
+            ReportImageExport(ctx, totalTime, "tdld", bucketDecisions);
             SetEstimate(totalTime);
         }
         catch (OperationCanceledException)
@@ -1539,7 +1567,7 @@ public partial class MainWindow : Window
         ExportESP32Button.IsEnabled = false;
         try
         {
-            var (tdldBytes, totalTime) = await GenerateTdldAsync(
+            var (tdldBytes, totalTime, bucketDecisions) = await GenerateTdldAsync(
                 ctx.Snapshot,
                 ctx.DrawSettings,
                 "Exporting to ESP32-S3"
@@ -1549,7 +1577,7 @@ public partial class MainWindow : Window
                 ESP32S3Flasher.WriteTdldImageAsync(board, tdldBytes, esptoolPath, AppendLog)
             );
 
-            ReportImageExport(ctx, totalTime, "ESP32-S3");
+            ReportImageExport(ctx, totalTime, "ESP32-S3", bucketDecisions);
             SetEstimate(totalTime);
         }
         catch (OperationCanceledException)

@@ -13,6 +13,12 @@ namespace TomodachiDrawer.Core
         public const int CanvasWidth = 256;
         public const int CanvasHeight = 256;
 
+        // Avg px/click above which bucket is assumed to win without racing plain.
+        public const int BucketSkipComparisonAverageZonePixelThreshold = 350;
+
+        // Used for testing/tweaking of the above value.
+        private const bool BucketSkipComparisonEnabled = true;
+
         private int _cursorX = 0;
         private int _cursorY = 0;
 
@@ -24,6 +30,9 @@ namespace TomodachiDrawer.Core
         private bool _earlyExitEnabled = true;
         private double _earlyExitRateCoefficient = EarlyExitRateCoefficient;
         private int _earlyExitSolutionsDistance = EarlyExitSolutionsDistance;
+
+        /// <summary>Fired per layer once a bucket-vs-plain decision (skip or race) is made. For ui side telemetry.</summary>
+        public Action<BucketRouteDecision>? OnBucketDecision { get; set; }
 
         public CanvasDrawer(
             ISwitchOutput outputSink,
@@ -210,31 +219,63 @@ namespace TomodachiDrawer.Core
                     entryToolbar
                 );
 
-                // TODO: If we know the bucket will be filling like... over a thousand pixels, we can probably
-                // skip this step since we can reasonably assume that will be much faster than the alternative.
-                // Although need to expose that through to here.
                 if (chosen.Clicks > 0) // If we found any bucketetable zones, make sure its actually better.
                 {
-                    var plain = BuildLayerPlan(
-                        l,
-                        image.Width,
-                        image.Height,
-                        settings,
-                        false,
-                        painted,
-                        entryX,
-                        entryY,
-                        entryToolbar
-                    );
+                    int averageZonePixels = chosen.BucketedPixelCount / chosen.Clicks;
 
-                    _log(
-                        $"	Bucket: {chosen.Seconds:F3}s ({chosen.Clicks} clicks) vs plain {plain.Seconds:F3}s -> {(plain.Ms < chosen.Ms ? "plain" : "bucket")} (saving {-(chosen.Seconds - plain.Seconds):F2}s)"
-                    );
+                    if (
+                        BucketSkipComparisonEnabled
+                        && averageZonePixels >= BucketSkipComparisonAverageZonePixelThreshold
+                    )
+                    {
+                        _log(
+                            $"	Bucket zones average {averageZonePixels}px/click ({chosen.BucketedPixelCount}px over {chosen.Clicks} clicks, >= {BucketSkipComparisonAverageZonePixelThreshold}), skipping plain-route comparison"
+                        );
+                        OnBucketDecision?.Invoke(
+                            new BucketRouteDecision(
+                                chosen.Clicks,
+                                chosen.BucketedPixelCount,
+                                true,
+                                null,
+                                null
+                            )
+                        );
+                    }
+                    else
+                    {
+                        var plain = BuildLayerPlan(
+                            l,
+                            image.Width,
+                            image.Height,
+                            settings,
+                            false,
+                            painted,
+                            entryX,
+                            entryY,
+                            entryToolbar
+                        );
 
-                    // Paranoia navigation mode makes each click cost about 5s of menu BS
-                    // so if the plain route is faster, just do that.
-                    if (plain.Ms < chosen.Ms)
-                        chosen = plain;
+                        bool bucketWon = plain.Ms >= chosen.Ms;
+                        double marginSeconds = plain.Seconds - chosen.Seconds;
+
+                        _log(
+                            $"	Bucket: {chosen.Seconds:F3}s ({chosen.Clicks} clicks, {chosen.BucketedPixelCount}px, {averageZonePixels}px/click) vs plain {plain.Seconds:F3}s -> {(bucketWon ? "bucket" : "plain")} (saving {marginSeconds:F2}s)"
+                        );
+                        OnBucketDecision?.Invoke(
+                            new BucketRouteDecision(
+                                chosen.Clicks,
+                                chosen.BucketedPixelCount,
+                                false,
+                                bucketWon,
+                                marginSeconds
+                            )
+                        );
+
+                        // Paranoia navigation mode makes each click cost about 5s of menu BS
+                        // so if the plain route is faster, just do that.
+                        if (!bucketWon)
+                            chosen = plain;
+                    }
                 }
 
                 chosen.Sink.ReplayTo(_realOutput);
@@ -266,6 +307,7 @@ namespace TomodachiDrawer.Core
             int EndY,
             CanvasToolbar.ToolbarState EndToolbar,
             int Clicks,
+            int BucketedPixelCount,
             string Summary
         )
         {
@@ -297,8 +339,12 @@ namespace TomodachiDrawer.Core
 
             var l = solid.Clone();
 
+            int preBucketFineDetailCount = l.FineDetailPoints.Count;
             int clicks = useBuckets
                 ? DetectBucketZones(l, width, height, painted, settings.MinBucketZoneSize)
+                : 0;
+            int bucketedPixelCount = useBuckets
+                ? preBucketFineDetailCount - l.FineDetailPoints.Count
                 : 0;
 
             if (!settings.DisableLargeBrush)
@@ -411,6 +457,7 @@ namespace TomodachiDrawer.Core
                 _cursorY,
                 _toolbar.Snapshot(),
                 clicks,
+                bucketedPixelCount,
                 summary.Count > 0 ? string.Join(", ", summary) : "nothing to draw"
             );
         }
