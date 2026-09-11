@@ -155,7 +155,7 @@ namespace TomodachiDrawer.Core
                     _palette.SelectColour(bucketColour.Value, 25.0f);
                     _toolbar.SelectBucket(bucketParanoia);
                     _realOutput.Tap(Button.A, bucketParanoia ? 100 : 25, bucketParanoia ? 75 : 25);
-                    _realOutput.Delay(bucketParanoia ? 1500 : 750); // This is probably generous but bucket fill seems to cause a short stutter.
+                    _realOutput.Delay(bucketParanoia ? 2000 : 1000); // This is probably generous but bucket fill seems to cause a short stutter.
 
                     // Get off the bucket before we go picking the first layer's colour, otherwise the
                     // whole palette menu is navigated in the lag hell. Costs nothing, the first layer
