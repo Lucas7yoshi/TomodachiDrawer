@@ -805,10 +805,11 @@ public partial class MainWindow : Window
         _previewCts?.Dispose();
         var cts = new CancellationTokenSource();
         _previewCts = cts;
+        var token = cts.Token; // captured so we never touch cts.Token again after a later call disposes cts out from under us
 
         try
         {
-            await Task.Delay(PreviewDebounceMs, cts.Token);
+            await Task.Delay(PreviewDebounceMs, token);
         }
         catch (OperationCanceledException)
         {
@@ -822,10 +823,7 @@ public partial class MainWindow : Window
         SKBitmap preview;
         try
         {
-            preview = await Task.Run(
-                    () => GetPreview(source, quantizerSettings, denoiser),
-                    cts.Token
-                )
+            preview = await Task.Run(() => GetPreview(source, quantizerSettings, denoiser), token)
                 .ConfigureAwait(true);
         }
         catch (OperationCanceledException)
@@ -833,7 +831,7 @@ public partial class MainWindow : Window
             return;
         }
 
-        if (cts.Token.IsCancellationRequested)
+        if (token.IsCancellationRequested)
         {
             preview.Dispose();
             return;
