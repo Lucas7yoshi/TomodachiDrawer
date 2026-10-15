@@ -43,27 +43,39 @@ jobs:
             board: waveshare_rp2040_zero
           - platform: rp2350
             board: waveshare_rp2350_zero
+    env: # this will probably never change lol
+      PICO_SDK_VERSION: '2.2.0'
     steps:
     - uses: actions/checkout@v7
+    # Skips the firmware build if the source hasn't changed.
+    - name: Cache firmware
+      id: cache-fw
+      uses: actions/cache@v6
+      with:
+        path: TomodachiDrawer.Firmware/build-${{ matrix.platform }}/TomodachiDrawer.Firmware.${{ matrix.platform }}.uf2
+        key: rp-fw-${{ matrix.platform }}-sdk${{ env.PICO_SDK_VERSION }}-${{ hashFiles('TomodachiDrawer.Firmware/**', '!**/*.md') }}
     - name: Install toolchain
+      if: steps.cache-fw.outputs.cache-hit != 'true'
       run: |
         sudo apt-get update
         sudo apt-get install -y cmake ninja-build gcc-arm-none-eabi libnewlib-arm-none-eabi libstdc++-arm-none-eabi-newlib build-essential python3 git
     - name: Cache pico-sdk
+      if: steps.cache-fw.outputs.cache-hit != 'true'
       id: cache-pico-sdk
       uses: actions/cache@v6
       with:
         path: pico-sdk
-        key: pico-sdk-2.2.0
+        key: pico-sdk-${{ env.PICO_SDK_VERSION }}
     - name: Checkout pico-sdk
-      if: steps.cache-pico-sdk.outputs.cache-hit != 'true'
+      if: steps.cache-fw.outputs.cache-hit != 'true' && steps.cache-pico-sdk.outputs.cache-hit != 'true'
       uses: actions/checkout@v7
       with:
         repository: raspberrypi/pico-sdk
-        ref: '2.2.0'
+        ref: ${{ env.PICO_SDK_VERSION }}
         path: pico-sdk
         submodules: recursive
     - name: Build firmware
+      if: steps.cache-fw.outputs.cache-hit != 'true'
       working-directory: TomodachiDrawer.Firmware
       env:
         PICO_SDK_PATH: ${{ github.workspace }}/pico-sdk
@@ -98,7 +110,15 @@ jobs:
       IDF_VERSION: v6.0
     steps:
     - uses: actions/checkout@v7
+    # Skips the firmware build if the source hasn't changed.
+    - name: Cache firmware
+      id: cache-fw
+      uses: actions/cache@v6
+      with:
+        path: firmware_artifacts
+        key: esp-fw-${{ matrix.board }}-idf${{ env.IDF_VERSION }}-${{ hashFiles('TomodachiDrawer.Firmware.ESP32S3/**', '!**/*.md') }}
     - name: Build firmware
+      if: steps.cache-fw.outputs.cache-hit != 'true'
       uses: espressif/esp-idf-ci-action@9d38657f3d789ca759b2b37aaf5ceffbc42c4f0d
       with:
         esp_idf_version: ${{ env.IDF_VERSION }}
@@ -106,6 +126,7 @@ jobs:
         path: 'TomodachiDrawer.Firmware.ESP32S3'
         command: idf.py -DSDKCONFIG_DEFAULTS="sdkconfig.defaults;sdkconfig.defaults.${{ matrix.board }}" build
     - name: Stage firmware artifacts
+      if: steps.cache-fw.outputs.cache-hit != 'true'
       run: |
         mkdir firmware_artifacts
         cp TomodachiDrawer.Firmware.ESP32S3/build/bootloader/bootloader.bin firmware_artifacts/
