@@ -47,6 +47,8 @@ namespace TomodachiDrawer.UI.Avalonia
 
         private const string TELEMETRY_URL = "https://telemetry.l7y.media/";
 
+        private const bool REPORT_IMAGE_ENABLED = false;
+
         private readonly HttpClient _http;
 
         public TelemetryService()
@@ -96,7 +98,7 @@ namespace TomodachiDrawer.UI.Avalonia
 
         public async Task<bool> ReportImage(ImageEventDto imageData)
         {
-            if (!TelemetryEnabled)
+            if (!TelemetryEnabled || !REPORT_IMAGE_ENABLED)
                 return false;
 
             try

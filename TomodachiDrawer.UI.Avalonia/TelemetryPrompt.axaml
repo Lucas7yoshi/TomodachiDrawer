@@ -28,6 +28,7 @@
         <TextBlock Text="  - CPU architecture" />
         <TextBlock Text="  - App version" />
         <TextBlock FontWeight="SemiBold" Margin="0,4,0,0" Text="When an image is exported:" />
+        <!--
         <TextBlock Text="  - Image dimensions" />
         <TextBlock Text="  - Number of colours in the image" />
         <TextBlock Text="  - Colour quantizer mode and limit" />
@@ -36,6 +37,7 @@
         <TextBlock Text="  - Draw time estimate" />
         <TextBlock Text="  - TSP Time Limit" />
         <TextBlock Text="  - Which chip used (RP2040/RP2350)" />
+        -->
         <TextBlock Text="  - App version" />
         <TextBlock Text="  - Per colour layer: bucket fill clicks, pixels filled, and whether bucket fill was faster than drawing normally" />
         <TextBlock FontWeight="SemiBold" Margin="0,4,0,0" Text="When the app starts and exits:" />
