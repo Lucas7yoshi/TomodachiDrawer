@@ -59,81 +59,96 @@ namespace TomodachiDrawer.Core
         }
 
         // Held Karp TSP solver.
-        // Full disclosure, this ONE function is written by AI as i was struggling to get it to work.
-        // However this is a fairly standard algorithm so i don't feel too bad about this particular case but I nonetheless believe
-        // in being transparent about it.
         // This is for brute-force-ish solving low point count things 100% optimally, really quickly.
+        // as opposed to dealing with the N! problem.
+        // https://rosettacode.org/wiki/Held%E2%80%93Karp_algorithm#C# (GNU Free Document License 1.3)
         private List<CanvasPoint> HeldKarpRoute(CanvasPoint[] points)
         {
             var sw = Stopwatch.StartNew();
             int n = points.Length;
             int start = NearestIndexToCursor(points);
 
-            // Relabel so the start is node 0, keeps the DP masks simple.
-            var nodes = new CanvasPoint[n];
-            nodes[0] = points[start];
+            var cities = new CanvasPoint[n];
+            cities[0] = points[start];
             for (int i = 0, w = 1; i < n; i++)
                 if (i != start)
-                    nodes[w++] = points[i];
+                    cities[w++] = points[i];
 
-            int full = 1 << n;
-            const int INF = int.MaxValue / 2;
-            var dp = new int[full, n]; // dp[mask, j] = cheapest path from start visiting mask, ending at j
-            var parent = new int[full, n];
+            var distances = new int[n, n];
+            for (int i = 0; i < n; i++)
+            for (int j = 0; j < n; j++)
+                distances[i, j] = Chebyshev(cities[i], cities[j]);
 
-            for (int mask = 0; mask < full; mask++)
+            int subsetCount = 1 << n;
+            const int INFINITY = int.MaxValue / 4;
+
+            var dp = new int[subsetCount, n];
+            var parents = new int[subsetCount, n];
+
+            for (int i = 0; i < subsetCount; i++)
             for (int j = 0; j < n; j++)
             {
-                dp[mask, j] = INF;
-                parent[mask, j] = -1;
+                dp[i, j] = INFINITY;
+                parents[i, j] = -1;
             }
 
-            dp[1, 0] = 0; // just the start
-
-            for (int mask = 1; mask < full; mask++)
+            dp[1, 0] = 0;
+            // build up DP table
+            for (int mask = 1; mask < subsetCount; mask++)
             {
                 if ((mask & 1) == 0)
-                    continue; // every path includes the start
-                for (int j = 0; j < n; j++)
+                    continue;
+
+                for (int j = 1; j < n; j++)
                 {
-                    if (dp[mask, j] == INF || (mask & (1 << j)) == 0)
+                    if ((mask & (1 << j)) == 0)
                         continue;
+
+                    int previousMask = mask ^ (1 << j);
                     for (int k = 0; k < n; k++)
                     {
-                        if ((mask & (1 << k)) != 0)
+                        if ((previousMask & (1 << k)) == 0)
                             continue;
-                        int next = mask | (1 << k);
-                        int cost = dp[mask, j] + Chebyshev(nodes[j], nodes[k]);
-                        if (cost < dp[next, k])
+
+                        int cost = dp[previousMask, k] + distances[k, j];
+                        if (cost < dp[mask, j])
                         {
-                            dp[next, k] = cost;
-                            parent[next, k] = j;
+                            dp[mask, j] = cost;
+                            parents[mask, j] = k;
                         }
                     }
                 }
             }
 
-            // Cheapest endpoint over the full set (open path, no return to start).
-            int last = 0,
-                bestCost = INF;
-            for (int j = 0; j < n; j++)
-                if (dp[full - 1, j] < bestCost)
-                {
-                    bestCost = dp[full - 1, j];
-                    last = j;
-                }
-
-            // Walk parents back to rebuild the order.
-            var order = new CanvasPoint[n];
-            int m = full - 1;
-            for (int idx = n - 1; idx >= 0; idx--)
+            // we don't return to the start, so just take the cheapest end city
+            int fullMask = subsetCount - 1;
+            int minCost = INFINITY;
+            int lastCity = 0;
+            for (int j = 1; j < n; j++)
             {
-                order[idx] = nodes[last];
-                int prev = parent[m, last];
-                m ^= 1 << last;
-                last = prev;
+                int cost = dp[fullMask, j];
+                if (cost < minCost)
+                {
+                    minCost = cost;
+                    lastCity = j;
+                }
             }
 
+            var tour = new List<CanvasPoint>(n);
+            int currentMask = fullMask;
+            int currentCity = lastCity;
+
+            while (currentCity != 0)
+            {
+                tour.Add(cities[currentCity]);
+                int prevCity = parents[currentMask, currentCity];
+                currentMask ^= 1 << currentCity;
+                currentCity = prevCity;
+            }
+
+            tour.Add(cities[0]);
+            tour.Reverse();
+            // omitted tour.Add(0) from example here.
 #if DEBUG
             _log($"\tHeld-Karp TSP took {sw.ElapsedMilliseconds}ms");
 #else
@@ -141,11 +156,11 @@ namespace TomodachiDrawer.Core
                 _log($"\tHeld-Karp TSP took {sw.ElapsedMilliseconds}ms");
 #endif
 
-            return order.ToList();
+            return tour;
         }
 
         /// <summary>Greedy nearest-neighbour routing. Last-resort fallback for when OrTools returns no
-        /// solution at all (very large layers).</summary>
+        /// solution at all (very large layers). THIS IS NOT OPTIMAL!!, but should still be better than snaking</summary>
         private List<CanvasPoint> NearestNeighbourRoute(List<CanvasPoint> inputPoints)
         {
 #if DEBUG
