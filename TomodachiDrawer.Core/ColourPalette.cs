@@ -34,7 +34,6 @@ namespace TomodachiDrawer.Core
         {
             ["Euclidean"] = (p => new EuclideanColourMatch(p)),
             ["Redmean"] = (p => new RedmeanColourMatch(p)),
-            ["CieLab"] = (p => new CieLabColourMatch(p)),
         };
 
         private static PaletteColour C(string name, string hex, int x, int y) =>

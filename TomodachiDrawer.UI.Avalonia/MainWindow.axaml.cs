@@ -1766,8 +1766,8 @@ public partial class MainWindow : Window
     {
         _ = ShowMessageAsync(
             "Colour Matchers",
-            "You have 4 options for colour matchers."
-                + "\nEuclidean, Redmean, and CieLab work using the Pro modes default palette."
+            "You have 3 options for colour matchers."
+                + "\nEuclidean and Redmean work using the Pro modes default palette."
                 + "\n\nArbitrary on the other hands works using the full colour range, selecting colours in-game is slower but you can achieve much better results."
                 + "\nYou can tweak the number of colours it has by changing the value to the right of this button."
                 + "\nTry and pick the lowest number that looks good to your standards to minimize draw time."
